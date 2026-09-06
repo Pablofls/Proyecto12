@@ -65,7 +65,9 @@ gcloud compute firewall-rules create permitir-8000 \
 Despues se entra en `http://IP_EXTERNA_DE_LA_VM:8000`.
 
 PostgreSQL y Redis estan publicados solo en `127.0.0.1` dentro de la VM, asi que
-no quedan expuestos a internet aunque el puerto 8000 si lo este.
+no quedan expuestos a internet aunque el puerto 8000 si lo este. Se publican en
+los puertos **55432** y **56379** del host, no en los estandar, porque la VM ya
+tiene un PostgreSQL nativo ocupando el 5432 (ver `docs/BITACORA.md`).
 
 ---
 
@@ -118,6 +120,8 @@ docker compose logs -f app
 docker compose exec app python scripts/migrate.py --estado
 
 # Consola de PostgreSQL
+# Usa SIEMPRE esta forma. La VM tiene ademas un PostgreSQL nativo en el puerto
+# 5432 que no pertenece al proyecto; si ejecutas psql directo hablaras con ese.
 docker compose exec postgres psql -U devoluciones_app -d devoluciones
 
 # Consola de Redis

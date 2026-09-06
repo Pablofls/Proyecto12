@@ -90,3 +90,44 @@ NULL y el detalle se guarda como evidencia de tipo comentario.
 PostgreSQL, no en Mongo. Agregar un tercer motor ahora sumaba superficie de
 falla sin sumar puntos. La columna ya existe, asi que habilitarlo en el segundo
 parcial no requiere migrar datos.
+
+---
+
+## 2026-09-06 — Los puertos de Postgres y Redis se publican en 55432 y 56379
+
+**Contexto.** La VM de GCP ya tenia un PostgreSQL instalado de forma nativa,
+escuchando en `127.0.0.1:5432`, y el contenedor no podia arrancar porque el
+puerto estaba ocupado.
+
+**Decision.** Se movio el mapeo del host a `55432` para PostgreSQL y `56379`
+para Redis, en lugar de apagar el servicio nativo.
+
+**Por que.** No se sabe si ese PostgreSQL nativo lo usa alguien mas o alguna
+practica anterior de la materia, y apagarlo era un riesgo innecesario. La
+aplicacion no se ve afectada: se conecta por la red interna de Docker al nombre
+`postgres`, no por el puerto del host. Ese mapeo solo sirve para conectarse con
+un cliente desde la propia VM.
+
+**Cuidado.** Al conectarte con `psql` desde la VM hay dos bases distintas. La
+del proyecto es la del contenedor. Para entrar a la correcta, usa siempre:
+
+```bash
+docker compose exec postgres psql -U devoluciones_app -d devoluciones
+```
+
+Si usas `psql` directo sin `docker compose exec`, estaras hablando con el
+PostgreSQL nativo, que no tiene nada de este proyecto.
+
+---
+
+## 2026-09-06 — El montaje del codigo lleva la etiqueta `:z` por SELinux
+
+**Contexto.** CentOS Stream 10 corre SELinux en modo `Enforcing`. Sin etiqueta,
+el contenedor no puede leer el directorio del proyecto montado en `/srv/app`.
+
+**Decision.** Se agrego `:z` al montaje en `docker-compose.yml`.
+
+**Por que.** Es la solucion correcta: reetiqueta el directorio para que el
+contenedor pueda accederlo, sin desactivar SELinux en la maquina. Desactivar
+SELinux habria sido mas rapido pero deja la VM menos protegida, y el proyecto
+tiene requisitos de seguridad explicitos (RNF-14).
