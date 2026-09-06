@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titulo %}Bitacora de auditoria{% endblock %}
+{% block contenido %}
+<h1>Bitacora de auditoria</h1>
+<p class="sub">Registro de las operaciones importantes del sistema (RF-30, RN-12).</p>
+
+<form method="get" class="filtros">
+  <div>
+    <label for="accion">Accion</label>
+    <select id="accion" name="accion">
+      <option value="">Todas</option>
+      {% for a in acciones %}
+        <option value="{{ a.accion }}" {{ 'selected' if a.accion == accion else '' }}>{{ a.accion }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="entidad">Entidad</label>
+    <select id="entidad" name="entidad">
+      <option value="">Todas</option>
+      {% for e in entidades %}
+        <option value="{{ e.entidad }}" {{ 'selected' if e.entidad == entidad else '' }}>{{ e.entidad }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="boton" type="submit">Filtrar</button>
+  <a class="boton secundario" href="{{ url_for('panel.bitacora') }}">Limpiar</a>
+</form>
+
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr>
+      <th>Fecha</th><th>Usuario</th><th>Accion</th><th>Entidad</th>
+      <th>ID</th><th>Detalle</th><th>Correlacion</th><th>Origen</th>
+    </tr></thead>
+    <tbody>
+    {% for r in registros %}
+      <tr>
+        <td>{{ r.fecha.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+        <td>{{ r.usuario or '(sistema)' }}</td>
+        <td><span class="etiqueta">{{ r.accion }}</span></td>
+        <td>{{ r.entidad }}</td>
+        <td>{{ r.entidad_id or '' }}</td>
+        <td>{{ r.detalle or '' }}</td>
+        <td class="nota">{{ r.correlation_id or '' }}</td>
+        <td class="nota">{{ r.ip_origen or '' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="vacio">Sin registros.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

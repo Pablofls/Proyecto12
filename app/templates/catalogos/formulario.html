@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titulo %}{{ definicion.titulo }}{% endblock %}
+{% block contenido %}
+<h1>{{ 'Editar registro' if registro else 'Nuevo registro' }}</h1>
+<p class="sub">{{ definicion.titulo }}</p>
+
+<div class="tarjeta">
+<form method="post" class="formulario">
+  {% for c in definicion.campos %}
+    <label for="{{ c.nombre }}">{{ c.etiqueta }}{{ ' *' if c.requerido else '' }}</label>
+    {% if c.tipo == 'seleccion' %}
+      <select id="{{ c.nombre }}" name="{{ c.nombre }}" {{ 'required' if c.requerido else '' }}>
+        <option value="">Selecciona...</option>
+        {% for valor, texto in c.opciones %}
+          <option value="{{ valor }}" {{ 'selected' if registro and registro[c.nombre] == valor else '' }}>{{ texto }}</option>
+        {% endfor %}
+      </select>
+    {% elif c.tipo == 'referencia' %}
+      <select id="{{ c.nombre }}" name="{{ c.nombre }}" {{ 'required' if c.requerido else '' }}>
+        <option value="">Selecciona...</option>
+        {% for o in referencias.get(c.nombre, []) %}
+          <option value="{{ o.id }}" {{ 'selected' if registro and registro[c.nombre]|string == o.id|string else '' }}>{{ o.etiqueta }}</option>
+        {% endfor %}
+      </select>
+    {% elif c.tipo == 'fecha' %}
+      <input type="date" id="{{ c.nombre }}" name="{{ c.nombre }}"
+             value="{{ registro[c.nombre] if registro and registro[c.nombre] else '' }}">
+    {% else %}
+      <input type="text" id="{{ c.nombre }}" name="{{ c.nombre }}" {{ 'required' if c.requerido else '' }}
+             value="{{ registro[c.nombre] if registro and registro[c.nombre] else '' }}">
+    {% endif %}
+  {% endfor %}
+
+  <div class="acciones">
+    <button class="boton" type="submit">Guardar</button>
+    <a class="boton secundario" href="{{ url_for('catalogos.listar', catalogo=catalogo) }}">Cancelar</a>
+  </div>
+</form>
+</div>
+{% endblock %}

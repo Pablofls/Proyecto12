@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titulo %}Panel{% endblock %}
+{% block contenido %}
+<h1>Panel general</h1>
+<p class="sub">Estado actual de las devoluciones registradas en la plataforma.</p>
+
+<div class="rejilla">
+  <div class="indicador"><div class="rotulo">Total de devoluciones</div><div class="cifra">{{ total }}</div></div>
+  {% for fila in resumen %}
+    <div class="indicador">
+      <div class="rotulo">{{ fila.estado|replace('_', ' ')|capitalize }}</div>
+      <div class="cifra">{{ fila.total }}</div>
+    </div>
+  {% endfor %}
+</div>
+
+<h2>Ultimas devoluciones</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr>
+      <th>Folio</th><th>Producto</th><th>Tipo</th><th>Motivo</th>
+      <th>Cliente</th><th>Estado</th><th>Fecha</th>
+    </tr></thead>
+    <tbody>
+    {% for d in recientes %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">{{ d.folio_devolucion }}</a></td>
+        <td>{{ d.producto }}</td>
+        <td><span class="etiqueta {{ 'azul' if d.clasificacion_temperatura == 'refrigerado' else '' }}">{{ d.clasificacion_temperatura|replace('_', ' ') }}</span></td>
+        <td>{{ d.motivo }}</td>
+        <td>{{ d.cliente }}</td>
+        <td><span class="etiqueta">{{ d.estado|replace('_', ' ') }}</span></td>
+        <td>{{ d.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="vacio">Todavia no hay devoluciones registradas.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

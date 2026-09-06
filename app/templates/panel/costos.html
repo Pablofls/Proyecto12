@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titulo %}Costos{% endblock %}
+{% block contenido %}
+<h1>Costos del proceso</h1>
+<p class="sub">Costos acumulados por etapa de la logistica inversa (RF-27).</p>
+
+<div class="rejilla">
+  <div class="indicador"><div class="rotulo">Total acumulado</div><div class="cifra">$ {{ '%.2f'|format(total_general) }}</div></div>
+  {% for f in por_etapa %}
+    <div class="indicador">
+      <div class="rotulo">{{ f.etapa|capitalize }} ({{ f.casos }})</div>
+      <div class="cifra">$ {{ '%.2f'|format(f.total or 0) }}</div>
+    </div>
+  {% endfor %}
+</div>
+
+<h2>Detalle</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Devolucion</th><th>Etapa</th><th>Monto</th><th>Fecha</th></tr></thead>
+    <tbody>
+    {% for c in detalle %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=c.devolucion_id) }}">{{ c.folio_devolucion }}</a></td>
+        <td>{{ c.etapa|capitalize }}</td>
+        <td>$ {{ '%.2f'|format(c.monto) }}</td>
+        <td>{{ c.fecha.strftime('%d/%m/%Y') }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" class="vacio">Sin costos registrados.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

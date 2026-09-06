@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Plataforma de devoluciones{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+  {% block cabeza %}{% endblock %}
+</head>
+<body>
+{% if usuario_actual %}
+<header class="barra">
+  <div class="marca">DEVOLUCIONES &middot; LOGISTICA INVERSA</div>
+  <div class="sesion">
+    <span>{{ usuario_actual.nombre }} &mdash; {{ rol_actual }}</span>
+    <form method="post" action="{{ url_for('auth.logout') }}">
+      <button class="salir" type="submit">Cerrar sesion</button>
+    </form>
+  </div>
+</header>
+
+{% macro enlace(endpoint, texto, roles) -%}
+  {% if rol_actual in roles %}
+    <a href="{{ url_for(endpoint) }}"
+       class="{{ 'activo' if request.endpoint == endpoint else '' }}">{{ texto }}</a>
+  {% endif %}
+{%- endmacro %}
+
+<nav class="menu">
+  {{ enlace('panel.principal', 'Panel', TODOS) }}
+  {{ enlace('ventas.listar', 'Ventas', TODOS) }}
+  {{ enlace('devoluciones.listar', 'Devoluciones', TODOS) }}
+  {{ enlace('logistica.listar', 'Recolecciones', ['Coordinador de Logistica', 'Encargado del Centro de Devoluciones']) }}
+  {{ enlace('inspecciones.listar', 'Inspecciones', ['Inspector', 'Analista de Devoluciones', 'Encargado del Centro de Devoluciones']) }}
+  {{ enlace('inspecciones.inventario', 'Inventario', ['Encargado del Centro de Devoluciones', 'Analista de Devoluciones']) }}
+  {{ enlace('reembolsos.listar', 'Reembolsos', ['Encargado de Reembolsos', 'Analista de Devoluciones']) }}
+  {{ enlace('panel.causas', 'Causas', ['Analista de Devoluciones', 'Administrador']) }}
+  {{ enlace('panel.costos', 'Costos', ['Analista de Devoluciones', 'Encargado de Reembolsos', 'Administrador']) }}
+  {{ enlace('catalogos.indice', 'Catalogos', ['Administrador', 'Analista de Devoluciones']) }}
+  {{ enlace('usuarios.listar', 'Usuarios', ['Administrador', 'Analista de Devoluciones']) }}
+  {{ enlace('panel.bitacora', 'Bitacora', ['Administrador', 'Analista de Devoluciones']) }}
+</nav>
+{% endif %}
+
+<main>
+  <div class="avisos">
+    {% for categoria, mensaje in get_flashed_messages(with_categories=true) %}
+      <div class="aviso-msg {{ categoria }}">{{ mensaje }}</div>
+    {% endfor %}
+  </div>
+  {% block contenido %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titulo %}Registrar devolucion{% endblock %}
+{% block contenido %}
+<h1>Registrar devolucion</h1>
+<p class="sub">Venta {{ linea.folio_venta }} &middot; {{ linea.producto }}</p>
+
+<div class="tarjeta">
+  <dl class="datos">
+    <dt>Producto</dt><dd>{{ linea.producto }} ({{ linea.sku }})</dd>
+    <dt>Clasificacion</dt><dd>{{ linea.clasificacion_temperatura|replace('_', ' ') }}</dd>
+    <dt>Lote</dt><dd>{{ linea.numero_lote }}</dd>
+    <dt>Caducidad</dt><dd>{{ linea.fecha_caducidad.strftime('%d/%m/%Y') if linea.fecha_caducidad else 'No aplica' }}</dd>
+    <dt>Fecha de compra</dt><dd>{{ linea.fecha_venta.strftime('%d/%m/%Y') }}</dd>
+    <dt>Unidades disponibles</dt><dd>{{ disponible }} de {{ linea.cantidad }}</dd>
+  </dl>
+</div>
+
+<div class="tarjeta">
+<form method="post" class="formulario">
+  <input type="hidden" name="venta_detalle_id" value="{{ linea.id }}">
+
+  <label for="motivo_id">Motivo de la devolucion *</label>
+  <select id="motivo_id" name="motivo_id" required>
+    <option value="">Selecciona...</option>
+    {% for m in motivos %}<option value="{{ m.id }}">{{ m.nombre }}</option>{% endfor %}
+  </select>
+
+  <label for="cantidad_devuelta">Cantidad a devolver *</label>
+  <input type="number" id="cantidad_devuelta" name="cantidad_devuelta"
+         min="1" max="{{ disponible }}" value="1" required>
+
+  <label for="descripcion_problema">Descripcion del problema *</label>
+  <textarea id="descripcion_problema" name="descripcion_problema" required minlength="10"
+            placeholder="Describe que le paso al producto."></textarea>
+
+  <p class="nota">
+    El sistema generara un folio unico e irrepetible para tu solicitud (RN-02).
+    Podras agregar fotografias y comentarios como evidencia desde el expediente.
+  </p>
+
+  <div class="acciones">
+    <button class="boton" type="submit">Registrar devolucion</button>
+    <a class="boton secundario" href="{{ url_for('ventas.detalle', venta_id=linea.venta_id) }}">Cancelar</a>
+  </div>
+</form>
+</div>
+{% endblock %}

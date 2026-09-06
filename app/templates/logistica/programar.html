@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titulo %}Programar recoleccion{% endblock %}
+{% block contenido %}
+<h1>Programar recoleccion</h1>
+<p class="sub">Devolucion {{ d.folio_devolucion }} &middot; {{ d.producto }}</p>
+
+<div class="tarjeta">
+  <dl class="datos">
+    <dt>Cliente</dt><dd>{{ d.cliente }}</dd>
+    <dt>Producto</dt><dd>{{ d.producto }} ({{ d.clasificacion_temperatura|replace('_', ' ') }})</dd>
+    <dt>Tienda de origen</dt><dd>{{ d.tienda }}</dd>
+  </dl>
+  {% if d.clasificacion_temperatura == 'refrigerado' %}
+  <p class="nota">
+    Producto refrigerado: considera transporte con control de temperatura para no
+    romper la cadena de frio antes de la inspeccion (RN-06).
+  </p>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+<form method="post" class="formulario">
+  <label for="fecha_programada">Fecha de recoleccion *</label>
+  <input type="date" id="fecha_programada" name="fecha_programada" required>
+
+  <label for="lugar">Lugar de recoleccion *</label>
+  <input type="text" id="lugar" name="lugar" required placeholder="Domicilio o tienda">
+
+  <label for="ruta_id">Ruta</label>
+  <select id="ruta_id" name="ruta_id">
+    <option value="">Sin asignar</option>
+    {% for r in rutas %}<option value="{{ r.id }}">{{ r.origen }} -> {{ r.destino }}</option>{% endfor %}
+  </select>
+
+  <label for="transportista_id">Transportista</label>
+  <select id="transportista_id" name="transportista_id">
+    <option value="">Sin asignar</option>
+    {% for t in transportistas %}<option value="{{ t.id }}">{{ t.nombre }}{% if t.empresa %} ({{ t.empresa }}){% endif %}</option>{% endfor %}
+  </select>
+
+  <p class="nota">Una recoleccion solo puede marcarse como completada cuando tiene fecha, lugar, ruta y transportista (RN-08).</p>
+
+  <div class="acciones">
+    <button class="boton" type="submit">Programar</button>
+    <a class="boton secundario" href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">Cancelar</a>
+  </div>
+</form>
+</div>
+{% endblock %}

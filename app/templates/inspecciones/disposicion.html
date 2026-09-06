@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titulo %}Disposicion del producto{% endblock %}
+{% block contenido %}
+<h1>Destino del producto</h1>
+<p class="sub">{{ d.folio_devolucion }} &middot; {{ d.producto }}</p>
+
+<div class="tarjeta">
+  <dl class="datos">
+    <dt>Resultado de la inspeccion</dt><dd>{{ inspeccion.resultado_general }}</dd>
+    <dt>Apto para inventario</dt>
+    <dd><span class="etiqueta {{ 'verde' if inspeccion.apto_para_inventario else 'roja' }}">{{ 'si' if inspeccion.apto_para_inventario else 'no' }}</span></dd>
+  </dl>
+  {% if not inspeccion.apto_para_inventario %}
+  <p class="nota">
+    La inspeccion marco este producto como no apto. La base de datos rechazara
+    cualquier intento de asignarle el destino "inventario" (RN-06, RN-07).
+  </p>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+<form method="post" class="formulario">
+  <label for="destino">Destino *</label>
+  <select id="destino" name="destino" required>
+    {% for valor, texto in destinos %}
+      <option value="{{ valor }}" {{ 'disabled' if valor == 'inventario' and not inspeccion.apto_para_inventario else '' }}>{{ texto }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="justificacion">Justificacion</label>
+  <textarea id="justificacion" name="justificacion"
+            placeholder="Por que se asigna este destino."></textarea>
+
+  <div class="acciones">
+    <button class="boton" type="submit">Registrar disposicion</button>
+    <a class="boton secundario" href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">Cancelar</a>
+  </div>
+</form>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block titulo %}Inventario recuperado{% endblock %}
+{% block contenido %}
+<h1>Inventario recuperado</h1>
+<p class="sub">Productos que regresaron al inventario, con su etiqueta de control (RF-19).</p>
+
+{% if por_etiquetar %}
+<h2>Pendientes de etiquetar</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Folio</th><th>Producto</th><th>SKU</th><th></th></tr></thead>
+    <tbody>
+    {% for p in por_etiquetar %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=p.devolucion_id) }}">{{ p.folio_devolucion }}</a></td>
+        <td>{{ p.producto }}</td>
+        <td>{{ p.sku }}</td>
+        <td>
+          {% if rol_actual == 'Encargado del Centro de Devoluciones' %}
+          <form method="post" action="{{ url_for('inspecciones.etiquetar', disposicion_id=p.disposicion_id) }}">
+            <button class="boton pequeno" type="submit">Generar etiqueta</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<h2>Articulos en inventario recuperado</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Etiqueta</th><th>Producto</th><th>SKU</th><th>Devolucion</th><th>Estado</th><th>Ingreso</th></tr></thead>
+    <tbody>
+    {% for a in articulos %}
+      <tr>
+        <td><strong>{{ a.etiqueta_codigo }}</strong></td>
+        <td>{{ a.producto }}</td>
+        <td>{{ a.sku }}</td>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=a.devolucion_id) }}">{{ a.folio_devolucion }}</a></td>
+        <td><span class="etiqueta">{{ a.estado }}</span></td>
+        <td>{{ a.fecha_ingreso.strftime('%d/%m/%Y') }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="vacio">Sin articulos recuperados.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

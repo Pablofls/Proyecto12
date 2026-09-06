@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block titulo %}Venta {{ venta.folio_venta }}{% endblock %}
+{% block contenido %}
+<h1>Venta {{ venta.folio_venta }}</h1>
+<p class="sub"><a href="{{ url_for('ventas.listar') }}">Ventas</a> / {{ venta.folio_venta }}</p>
+
+<div class="tarjeta">
+  <dl class="datos">
+    <dt>Cliente</dt><dd>{{ venta.cliente }}</dd>
+    <dt>Tienda</dt><dd>{{ venta.tienda }}</dd>
+    <dt>Fecha de venta</dt><dd>{{ venta.fecha_venta.strftime('%d/%m/%Y') }}</dd>
+  </dl>
+</div>
+
+<h2>Articulos de la venta</h2>
+<p class="nota">
+  La devolucion se registra sobre la linea especifica, no sobre la venta completa,
+  para poder devolver un solo articulo de una compra con varios (RF-06).
+</p>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr>
+      <th>Producto</th><th>SKU</th><th>Tipo</th><th>Lote</th><th>Caducidad</th>
+      <th>Proveedor</th><th>Cantidad</th><th>Precio</th><th>Devuelto</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for l in lineas %}
+      <tr>
+        <td>{{ l.producto }}</td>
+        <td>{{ l.sku }}</td>
+        <td><span class="etiqueta {{ 'azul' if l.clasificacion_temperatura == 'refrigerado' else '' }}">{{ l.clasificacion_temperatura|replace('_', ' ') }}</span></td>
+        <td>{{ l.numero_lote }}</td>
+        <td>{{ l.fecha_caducidad.strftime('%d/%m/%Y') if l.fecha_caducidad else '' }}</td>
+        <td>{{ l.proveedor }}</td>
+        <td>{{ l.cantidad }}</td>
+        <td>$ {{ '%.2f'|format(l.precio_unitario) }}</td>
+        <td>{{ l.ya_devuelto }}</td>
+        <td>
+          {% if rol_actual in ['Cliente', 'Analista de Devoluciones'] %}
+            {% if l.ya_devuelto < l.cantidad %}
+              <a class="boton pequeno" href="{{ url_for('devoluciones.nueva', venta_detalle_id=l.id) }}">Devolver</a>
+            {% else %}
+              <span class="nota">Sin unidades disponibles</span>
+            {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

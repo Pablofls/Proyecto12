@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block titulo %}Panel de causas{% endblock %}
+{% block cabeza %}
+<script src="https://code.highcharts.com/highcharts.js"></script>
+{% endblock %}
+{% block contenido %}
+<h1>Panel de causas</h1>
+<p class="sub">
+  Version inicial de RF-26. Agrupa las devoluciones por los atributos definidos por
+  el negocio (RN-10). El analisis de Pareto y el ranking de causas se implementaran
+  en el microservicio de causa raiz.
+</p>
+
+<div class="tarjeta"><div id="gr_motivo" style="height:320px;"></div></div>
+
+<div class="rejilla">
+  <div class="tarjeta"><div id="gr_lote" style="height:300px;"></div></div>
+  <div class="tarjeta"><div id="gr_proveedor" style="height:300px;"></div></div>
+</div>
+
+<h2>Devoluciones por producto</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Producto</th><th>Devoluciones</th></tr></thead>
+    <tbody>
+      {% for f in por_producto %}
+        <tr><td>{{ f.etiqueta }}</td><td>{{ f.total }}</td></tr>
+      {% else %}
+        <tr><td colspan="2" class="vacio">Sin datos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Devoluciones por clasificacion de temperatura</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Clasificacion</th><th>Devoluciones</th></tr></thead>
+    <tbody>
+      {% for f in por_clasificacion %}
+        <tr><td>{{ f.etiqueta|replace('_', ' ') }}</td><td>{{ f.total }}</td></tr>
+      {% else %}
+        <tr><td colspan="2" class="vacio">Sin datos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+  function grafica(destino, titulo, categorias, valores, tipo) {
+    Highcharts.chart(destino, {
+      chart: { type: tipo || 'column' },
+      title: { text: titulo, style: { fontSize: '15px' } },
+      xAxis: { categories: categorias },
+      yAxis: { title: { text: 'Devoluciones' }, allowDecimals: false },
+      legend: { enabled: false },
+      credits: { enabled: false },
+      series: [{ name: 'Devoluciones', data: valores, color: '#1f6f4a' }]
+    });
+  }
+
+  grafica(
+    'gr_motivo', 'Devoluciones por motivo',
+    {{ por_motivo | map(attribute='etiqueta') | list | tojson }},
+    {{ por_motivo | map(attribute='total') | list | tojson }}
+  );
+  grafica(
+    'gr_lote', 'Lotes con mas devoluciones',
+    {{ por_lote | map(attribute='etiqueta') | list | tojson }},
+    {{ por_lote | map(attribute='total') | list | tojson }}
+  );
+  grafica(
+    'gr_proveedor', 'Devoluciones por proveedor',
+    {{ por_proveedor | map(attribute='etiqueta') | list | tojson }},
+    {{ por_proveedor | map(attribute='total') | list | tojson }},
+    'bar'
+  );
+</script>
+{% endblock %}

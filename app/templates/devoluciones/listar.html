@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titulo %}Devoluciones{% endblock %}
+{% block contenido %}
+<h1>Devoluciones</h1>
+<p class="sub">Expedientes registrados en la plataforma.</p>
+
+<form method="get" class="filtros">
+  <div>
+    <label for="q">Folio o producto</label>
+    <input type="text" id="q" name="q" value="{{ busqueda }}">
+  </div>
+  <div>
+    <label for="estado">Estado</label>
+    <select id="estado" name="estado">
+      <option value="">Todos</option>
+      {% for e in ['solicitada','en_revision','autorizada','rechazada','en_recoleccion','recibida','en_inspeccion','resuelta','cerrada'] %}
+        <option value="{{ e }}" {{ 'selected' if estado == e else '' }}>{{ e|replace('_', ' ') }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="boton" type="submit">Filtrar</button>
+  <a class="boton secundario" href="{{ url_for('devoluciones.listar') }}">Limpiar</a>
+</form>
+
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr>
+      <th>Folio</th><th>Venta</th><th>Producto</th><th>Tipo</th><th>Lote</th>
+      <th>Motivo</th><th>Cliente</th><th>Estado</th><th>Fecha</th>
+    </tr></thead>
+    <tbody>
+    {% for d in devoluciones %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">{{ d.folio_devolucion }}</a></td>
+        <td>{{ d.folio_venta }}</td>
+        <td>{{ d.producto }}</td>
+        <td><span class="etiqueta {{ 'azul' if d.clasificacion_temperatura == 'refrigerado' else '' }}">{{ d.clasificacion_temperatura|replace('_', ' ') }}</span></td>
+        <td>{{ d.numero_lote }}</td>
+        <td>{{ d.motivo }}</td>
+        <td>{{ d.cliente }}</td>
+        <td><span class="etiqueta">{{ d.estado|replace('_', ' ') }}</span></td>
+        <td>{{ d.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="9" class="vacio">No hay devoluciones que coincidan.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

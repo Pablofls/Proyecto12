@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}Inspecciones{% endblock %}
+{% block contenido %}
+<h1>Inspecciones</h1>
+<p class="sub">Productos recibidos en el centro pendientes de revision (RF-16, RF-17).</p>
+
+<h2>Pendientes de inspeccion</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Folio</th><th>Producto</th><th>Tipo</th><th>Lote</th><th>Caducidad</th><th>Motivo</th><th></th></tr></thead>
+    <tbody>
+    {% for p in pendientes %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=p.id) }}">{{ p.folio_devolucion }}</a></td>
+        <td>{{ p.producto }}</td>
+        <td><span class="etiqueta {{ 'azul' if p.clasificacion_temperatura == 'refrigerado' else '' }}">{{ p.clasificacion_temperatura|replace('_', ' ') }}</span></td>
+        <td>{{ p.numero_lote }}</td>
+        <td>{{ p.fecha_caducidad.strftime('%d/%m/%Y') if p.fecha_caducidad else '' }}</td>
+        <td>{{ p.motivo }}</td>
+        <td>
+          {% if rol_actual == 'Inspector' %}
+            <a class="boton pequeno" href="{{ url_for('inspecciones.registrar', devolucion_id=p.id) }}">Inspeccionar</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="vacio">No hay productos pendientes de inspeccion.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Inspecciones realizadas</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Folio</th><th>Producto</th><th>Inspector</th><th>Resultado</th><th>Apto</th><th>Fecha</th></tr></thead>
+    <tbody>
+    {% for i in realizadas %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=i.devolucion_id) }}">{{ i.folio_devolucion }}</a></td>
+        <td>{{ i.producto }}</td>
+        <td>{{ i.inspector }}</td>
+        <td>{{ i.resultado_general }}</td>
+        <td><span class="etiqueta {{ 'verde' if i.apto_para_inventario else 'roja' }}">{{ 'si' if i.apto_para_inventario else 'no' }}</span></td>
+        <td>{{ i.fecha_inspeccion.strftime('%d/%m/%Y %H:%M') }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="vacio">Sin inspecciones registradas.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

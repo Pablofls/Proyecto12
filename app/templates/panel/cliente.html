@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titulo %}Mis devoluciones{% endblock %}
+{% block contenido %}
+<h1>Mis devoluciones</h1>
+<p class="sub">Consulta el avance de las solicitudes que has registrado.</p>
+
+<div class="rejilla">
+  {% for fila in resumen %}
+    <div class="indicador">
+      <div class="rotulo">{{ fila.estado|replace('_', ' ')|capitalize }}</div>
+      <div class="cifra">{{ fila.total }}</div>
+    </div>
+  {% else %}
+    <div class="indicador"><div class="rotulo">Solicitudes</div><div class="cifra">0</div></div>
+  {% endfor %}
+</div>
+
+<div class="acciones">
+  <a class="boton" href="{{ url_for('ventas.listar') }}">Registrar una devolucion desde mis compras</a>
+</div>
+
+<h2>Solicitudes recientes</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Folio</th><th>Producto</th><th>Estado</th><th>Fecha</th></tr></thead>
+    <tbody>
+    {% for d in recientes %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">{{ d.folio_devolucion }}</a></td>
+        <td>{{ d.producto }}</td>
+        <td><span class="etiqueta">{{ d.estado|replace('_', ' ') }}</span></td>
+        <td>{{ d.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" class="vacio">Aun no has registrado devoluciones.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

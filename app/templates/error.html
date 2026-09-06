@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titulo %}Error {{ codigo }}{% endblock %}
+{% block contenido %}
+<div class="tarjeta">
+  <h1>Error {{ codigo }}</h1>
+  <p class="sub">{{ mensaje }}</p>
+  <a class="boton secundario" href="{{ url_for('panel.principal') if usuario_actual else url_for('auth.login') }}">Volver</a>
+</div>
+{% endblock %}

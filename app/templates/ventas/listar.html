@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titulo %}Ventas{% endblock %}
+{% block contenido %}
+<h1>{{ 'Mis compras' if rol_actual == 'Cliente' else 'Ventas' }}</h1>
+<p class="sub">Toda devolucion debe partir de una venta registrada (RN-01).</p>
+
+<form method="get" class="filtros">
+  <div>
+    <label for="q">Folio de venta</label>
+    <input type="text" id="q" name="q" value="{{ busqueda }}" placeholder="VTA-2026-...">
+  </div>
+  <button class="boton" type="submit">Buscar</button>
+  <a class="boton secundario" href="{{ url_for('ventas.listar') }}">Limpiar</a>
+</form>
+
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Folio</th><th>Cliente</th><th>Tienda</th><th>Fecha</th><th>Articulos</th><th>Total</th><th></th></tr></thead>
+    <tbody>
+    {% for v in ventas %}
+      <tr>
+        <td>{{ v.folio_venta }}</td>
+        <td>{{ v.cliente }}</td>
+        <td>{{ v.tienda }}</td>
+        <td>{{ v.fecha_venta.strftime('%d/%m/%Y') }}</td>
+        <td>{{ v.lineas }}</td>
+        <td>$ {{ '%.2f'|format(v.total) }}</td>
+        <td><a class="boton secundario pequeno" href="{{ url_for('ventas.detalle', venta_id=v.id) }}">Ver detalle</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="vacio">Sin ventas registradas.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

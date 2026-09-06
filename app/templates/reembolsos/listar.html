@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}Reembolsos{% endblock %}
+{% block contenido %}
+<h1>Reembolsos</h1>
+<p class="sub">Solo se gestionan reembolsos de devoluciones ya autorizadas (RN-04).</p>
+
+<h2>Pendientes de resolver</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Folio</th><th>Cliente</th><th>Producto</th><th>Estado</th><th>Valor devuelto</th><th></th></tr></thead>
+    <tbody>
+    {% for p in pendientes %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=p.id) }}">{{ p.folio_devolucion }}</a></td>
+        <td>{{ p.cliente }}</td>
+        <td>{{ p.producto }}</td>
+        <td><span class="etiqueta">{{ p.estado|replace('_', ' ') }}</span></td>
+        <td>$ {{ '%.2f'|format(p.valor_devuelto) }}</td>
+        <td>
+          {% if rol_actual == 'Encargado de Reembolsos' %}
+            <a class="boton pequeno" href="{{ url_for('reembolsos.registrar', devolucion_id=p.id) }}">Gestionar</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="vacio">No hay reembolsos pendientes.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Reembolsos registrados</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Folio</th><th>Cliente</th><th>Monto</th><th>Metodo</th><th>Estado</th><th>Responsable</th><th>Fecha</th></tr></thead>
+    <tbody>
+    {% for r in registrados %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=r.devolucion_id) }}">{{ r.folio_devolucion }}</a></td>
+        <td>{{ r.cliente }}</td>
+        <td>$ {{ '%.2f'|format(r.monto) }}</td>
+        <td>{{ r.metodo or '' }}</td>
+        <td><span class="etiqueta {{ 'verde' if r.estado == 'aprobado' else 'roja' }}">{{ r.estado }}</span></td>
+        <td>{{ r.encargado }}</td>
+        <td>{{ r.fecha_resolucion.strftime('%d/%m/%Y') if r.fecha_resolucion else '' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="vacio">Sin reembolsos registrados.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

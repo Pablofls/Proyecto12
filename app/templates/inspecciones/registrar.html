@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titulo %}Inspeccionar producto{% endblock %}
+{% block contenido %}
+<h1>Inspeccion del producto</h1>
+<p class="sub">{{ d.folio_devolucion }} &middot; {{ d.producto }} ({{ d.clasificacion_temperatura|replace('_', ' ') }})</p>
+
+<div class="tarjeta">
+  <dl class="datos">
+    <dt>Lote</dt><dd>{{ d.numero_lote }}</dd>
+    <dt>Caducidad del lote</dt><dd>{{ d.fecha_caducidad.strftime('%d/%m/%Y') if d.fecha_caducidad else 'No aplica' }}</dd>
+    <dt>Motivo reportado</dt><dd>{{ d.motivo }}</dd>
+    <dt>Descripcion del cliente</dt><dd>{{ d.descripcion_problema }}</dd>
+  </dl>
+</div>
+
+<div class="tarjeta">
+<form method="post" class="formulario">
+  <label for="estado_empaque">Estado del empaque *</label>
+  <input type="text" id="estado_empaque" name="estado_empaque" required
+         placeholder="Integro, abierto, roto, humedo...">
+
+  <label for="danos">Presenta danos fisicos visibles</label>
+  <select id="danos" name="danos"><option value="no">No</option><option value="si">Si</option></select>
+
+  <label for="caducidad_vencida">Fecha de caducidad vencida</label>
+  <select id="caducidad_vencida" name="caducidad_vencida"><option value="no">No</option><option value="si">Si</option></select>
+
+  {% if refrigerado %}
+  <h2>Condiciones de refrigeracion (RN-05)</h2>
+  <label for="temperatura_recepcion">Temperatura de recepcion en grados Celsius *</label>
+  <input type="number" step="0.1" id="temperatura_recepcion" name="temperatura_recepcion" required>
+
+  <label for="minutos_fuera">Minutos fuera de refrigeracion *</label>
+  <input type="number" min="0" id="minutos_fuera" name="minutos_fuera" required>
+
+  <label for="cadena_frio_rota">Ruptura documentada de la cadena de frio</label>
+  <select id="cadena_frio_rota" name="cadena_frio_rota"><option value="no">No</option><option value="si">Si</option></select>
+  {% endif %}
+
+  <label for="observaciones">Observaciones</label>
+  <textarea id="observaciones" name="observaciones"></textarea>
+
+  <p class="nota">
+    El sistema calculara automaticamente si el producto es apto para inventario.
+    Un producto con danos, caducidad vencida{% if refrigerado %}, cadena de frio rota o
+    demasiado tiempo fuera de refrigeracion{% endif %} no podra regresar al inventario (RN-06, RN-07).
+  </p>
+
+  <div class="acciones">
+    <button class="boton" type="submit">Registrar inspeccion</button>
+    <a class="boton secundario" href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">Cancelar</a>
+  </div>
+</form>
+</div>
+{% endblock %}

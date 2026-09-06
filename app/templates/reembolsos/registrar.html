@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titulo %}Gestionar reembolso{% endblock %}
+{% block contenido %}
+<h1>Gestionar reembolso</h1>
+<p class="sub">{{ d.folio_devolucion }} &middot; {{ d.cliente }}</p>
+
+<div class="tarjeta">
+  <dl class="datos">
+    <dt>Producto</dt><dd>{{ d.producto }}</dd>
+    <dt>Cantidad devuelta</dt><dd>{{ d.cantidad_devuelta }}</dd>
+    <dt>Precio unitario</dt><dd>$ {{ '%.2f'|format(d.precio_unitario) }}</dd>
+    <dt>Valor maximo a reembolsar</dt><dd><strong>$ {{ '%.2f'|format(d.valor_devuelto) }}</strong></dd>
+    <dt>Estado de la devolucion</dt><dd><span class="etiqueta">{{ d.estado|replace('_', ' ') }}</span></dd>
+  </dl>
+  <p class="nota">
+    La base de datos rechaza cualquier monto superior al valor de lo devuelto y
+    cualquier aprobacion sobre una devolucion sin autorizar (RN-04, RF-25).
+  </p>
+</div>
+
+<div class="tarjeta">
+<form method="post" class="formulario">
+  <label for="monto">Monto a reembolsar</label>
+  <input type="number" step="0.01" min="0" max="{{ d.valor_devuelto }}" id="monto" name="monto"
+         value="{{ '%.2f'|format(d.valor_devuelto) }}">
+
+  <label for="metodo">Metodo</label>
+  <select id="metodo" name="metodo">
+    {% for valor, texto in metodos %}<option value="{{ valor }}">{{ texto }}</option>{% endfor %}
+  </select>
+
+  <div class="acciones">
+    <button class="boton" type="submit" name="decision" value="aprobado">Aprobar reembolso</button>
+    <button class="boton peligro" type="submit" name="decision" value="rechazado">Rechazar</button>
+    <a class="boton secundario" href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">Cancelar</a>
+  </div>
+</form>
+</div>
+{% endblock %}

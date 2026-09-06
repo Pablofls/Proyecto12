@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titulo %}Catalogos{% endblock %}
+{% block contenido %}
+<h1>Catalogos</h1>
+<p class="sub">Informacion base del sistema (RF-05). Los registros no se borran: se desactivan.</p>
+<div class="rejilla">
+  {% for clave, definicion in catalogos.items() %}
+    <a class="indicador" style="text-decoration:none;display:block;" href="{{ url_for('catalogos.listar', catalogo=clave) }}">
+      <div class="rotulo">Catalogo</div>
+      <div style="font-size:18px;font-weight:600;color:var(--verde);">{{ definicion.titulo }}</div>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block titulo %}{{ d.folio_devolucion }}{% endblock %}
+{% block contenido %}
+<h1>Expediente {{ d.folio_devolucion }}</h1>
+<p class="sub">
+  <a href="{{ url_for('devoluciones.listar') }}">Devoluciones</a> / {{ d.folio_devolucion }}
+  &middot; <span class="etiqueta">{{ d.estado|replace('_', ' ') }}</span>
+</p>
+
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Informacion general</h2>
+  <dl class="datos">
+    <dt>Cliente</dt><dd>{{ d.cliente }}</dd>
+    <dt>Venta</dt><dd><a href="{{ url_for('ventas.detalle', venta_id=d.venta_id) }}">{{ d.folio_venta }}</a> del {{ d.fecha_venta.strftime('%d/%m/%Y') }}</dd>
+    <dt>Tienda</dt><dd>{{ d.tienda }}</dd>
+    <dt>Producto</dt><dd>{{ d.producto }} ({{ d.sku }})</dd>
+    <dt>Clasificacion</dt><dd><span class="etiqueta {{ 'azul' if d.clasificacion_temperatura == 'refrigerado' else '' }}">{{ d.clasificacion_temperatura|replace('_', ' ') }}</span></dd>
+    <dt>Lote</dt><dd>{{ d.numero_lote }}{% if d.fecha_caducidad %} &middot; caduca {{ d.fecha_caducidad.strftime('%d/%m/%Y') }}{% endif %}</dd>
+    <dt>Proveedor</dt><dd>{{ d.proveedor }}</dd>
+    <dt>Motivo</dt><dd>{{ d.motivo }}</dd>
+    <dt>Cantidad devuelta</dt><dd>{{ d.cantidad_devuelta }} de {{ d.cantidad_comprada }}</dd>
+    <dt>Valor devuelto</dt><dd>$ {{ '%.2f'|format(d.valor_devuelto) }}</dd>
+    <dt>Descripcion</dt><dd>{{ d.descripcion_problema }}</dd>
+    <dt>Solicitada</dt><dd>{{ d.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}</dd>
+    {% if d.analista %}<dt>Analista</dt><dd>{{ d.analista }}</dd>{% endif %}
+    {% if d.fecha_autorizacion %}<dt>Autorizada</dt><dd>{{ d.fecha_autorizacion.strftime('%d/%m/%Y %H:%M') }}</dd>{% endif %}
+  </dl>
+</div>
+
+{% if rol_actual == 'Analista de Devoluciones' and d.estado in estados_revisables %}
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Revisar solicitud (RF-10)</h2>
+  <form method="post" action="{{ url_for('devoluciones.resolver', devolucion_id=d.id) }}" class="formulario">
+    <label for="justificacion">Justificacion o comentario</label>
+    <textarea id="justificacion" name="justificacion"
+              placeholder="Obligatorio si se rechaza la solicitud."></textarea>
+    <div class="acciones">
+      <button class="boton" type="submit" name="decision" value="autorizar">Autorizar</button>
+      <button class="boton peligro" type="submit" name="decision" value="rechazar">Rechazar</button>
+      <button class="boton secundario" type="submit" name="decision" value="informacion">Solicitar informacion</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Logistica inversa</h2>
+  {% if recoleccion %}
+    <dl class="datos">
+      <dt>Estado</dt><dd><span class="etiqueta">{{ recoleccion.estado }}</span></dd>
+      <dt>Fecha programada</dt><dd>{{ recoleccion.fecha_programada.strftime('%d/%m/%Y') if recoleccion.fecha_programada else '' }}</dd>
+      <dt>Lugar</dt><dd>{{ recoleccion.lugar or '' }}</dd>
+      <dt>Ruta</dt><dd>{{ (recoleccion.origen ~ ' -> ' ~ recoleccion.destino) if recoleccion.origen else 'Sin asignar' }}</dd>
+      <dt>Transportista</dt><dd>{{ recoleccion.transportista or 'Sin asignar' }}</dd>
+      <dt>Coordinador</dt><dd>{{ recoleccion.coordinador or '' }}</dd>
+    </dl>
+    {% if rol_actual == 'Coordinador de Logistica' and recoleccion.estado != 'completada' %}
+      <form method="post" action="{{ url_for('logistica.actualizar_estado', recoleccion_id=recoleccion.id) }}" class="acciones">
+        <select name="estado">
+          {% for e in ['programada','asignada','en_transito','completada','fallida'] %}
+            <option value="{{ e }}" {{ 'selected' if recoleccion.estado == e else '' }}>{{ e|replace('_',' ') }}</option>
+          {% endfor %}
+        </select>
+        <button class="boton pequeno" type="submit">Actualizar</button>
+      </form>
+    {% endif %}
+  {% elif d.estado == 'autorizada' and rol_actual == 'Coordinador de Logistica' %}
+    <p class="nota">Esta devolucion esta autorizada y no tiene recoleccion programada.</p>
+    <div class="acciones">
+      <a class="boton" href="{{ url_for('logistica.programar', devolucion_id=d.id) }}">Programar recoleccion</a>
+    </div>
+  {% else %}
+    <p class="nota">Sin recoleccion registrada.</p>
+  {% endif %}
+
+  {% if recepcion %}
+    <h2>Recepcion en el centro</h2>
+    <dl class="datos">
+      <dt>Encargado</dt><dd>{{ recepcion.encargado }}</dd>
+      <dt>Fecha</dt><dd>{{ recepcion.fecha_recepcion.strftime('%d/%m/%Y %H:%M') }}</dd>
+      <dt>Coincide con expediente</dt>
+      <dd><span class="etiqueta {{ 'verde' if recepcion.coincide_expediente else 'roja' }}">{{ 'si' if recepcion.coincide_expediente else 'no' }}</span></dd>
+    </dl>
+  {% elif d.estado == 'en_recoleccion' and rol_actual == 'Encargado del Centro de Devoluciones' %}
+    <h2>Recepcion en el centro</h2>
+    <form method="post" action="{{ url_for('logistica.registrar_recepcion', devolucion_id=d.id) }}" class="formulario">
+      <label for="coincide_expediente">El producto recibido coincide con el expediente</label>
+      <select id="coincide_expediente" name="coincide_expediente">
+        <option value="si">Si</option>
+        <option value="no">No</option>
+      </select>
+      <div class="acciones"><button class="boton" type="submit">Confirmar recepcion</button></div>
+    </form>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Inspeccion y disposicion</h2>
+  {% if inspeccion %}
+    <dl class="datos">
+      <dt>Inspector</dt><dd>{{ inspeccion.inspector }}</dd>
+      <dt>Fecha</dt><dd>{{ inspeccion.fecha_inspeccion.strftime('%d/%m/%Y %H:%M') }}</dd>
+      <dt>Resultado</dt><dd>{{ inspeccion.resultado_general }}</dd>
+      <dt>Apto para inventario</dt>
+      <dd><span class="etiqueta {{ 'verde' if inspeccion.apto_para_inventario else 'roja' }}">{{ 'si' if inspeccion.apto_para_inventario else 'no' }}</span></dd>
+    </dl>
+  {% elif d.estado in ['recibida', 'en_inspeccion'] and rol_actual == 'Inspector' %}
+    <p class="nota">El producto esta listo para inspeccion.</p>
+    <div class="acciones">
+      <a class="boton" href="{{ url_for('inspecciones.registrar', devolucion_id=d.id) }}">Registrar inspeccion</a>
+    </div>
+  {% else %}
+    <p class="nota">Sin inspeccion registrada.</p>
+  {% endif %}
+
+  {% if disposicion %}
+    <dl class="datos" style="margin-top:14px;">
+      <dt>Destino</dt><dd><span class="etiqueta azul">{{ disposicion.destino|replace('_', ' ') }}</span></dd>
+      <dt>Decidido por</dt><dd>{{ disposicion.analista }}</dd>
+      <dt>Fecha</dt><dd>{{ disposicion.fecha_decision.strftime('%d/%m/%Y %H:%M') }}</dd>
+      <dt>Justificacion</dt><dd>{{ disposicion.justificacion or '' }}</dd>
+    </dl>
+  {% elif inspeccion and rol_actual == 'Analista de Devoluciones' %}
+    <div class="acciones">
+      <a class="boton" href="{{ url_for('inspecciones.disposicion', devolucion_id=d.id) }}">Decidir destino del producto</a>
+    </div>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Reembolso</h2>
+  {% if reembolso %}
+    <dl class="datos">
+      <dt>Estado</dt>
+      <dd><span class="etiqueta {{ 'verde' if reembolso.estado == 'aprobado' else 'roja' }}">{{ reembolso.estado }}</span></dd>
+      <dt>Monto</dt><dd>$ {{ '%.2f'|format(reembolso.monto) }}</dd>
+      <dt>Metodo</dt><dd>{{ reembolso.metodo or 'No aplica' }}</dd>
+      <dt>Responsable</dt><dd>{{ reembolso.encargado }}</dd>
+      <dt>Resolucion</dt><dd>{{ reembolso.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if reembolso.fecha_resolucion else '' }}</dd>
+    </dl>
+  {% elif rol_actual == 'Encargado de Reembolsos' and d.estado not in ['solicitada', 'en_revision', 'rechazada'] %}
+    <div class="acciones">
+      <a class="boton" href="{{ url_for('reembolsos.registrar', devolucion_id=d.id) }}">Gestionar reembolso</a>
+    </div>
+  {% else %}
+    <p class="nota">Sin reembolso registrado.</p>
+  {% endif %}
+
+  {% if costos %}
+    <h2>Costos del caso</h2>
+    <div class="tabla-envoltura">
+      <table>
+        <thead><tr><th>Etapa</th><th>Monto</th><th>Fecha</th></tr></thead>
+        <tbody>
+          {% for c in costos %}
+            <tr><td>{{ c.etapa|capitalize }}</td><td>$ {{ '%.2f'|format(c.monto) }}</td><td>{{ c.fecha.strftime('%d/%m/%Y') }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Evidencias ({{ evidencias|length }})</h2>
+  {% if rol_actual in ['Cliente', 'Inspector', 'Analista de Devoluciones'] %}
+  <form method="post" action="{{ url_for('devoluciones.agregar_evidencia', devolucion_id=d.id) }}" class="formulario">
+    <label for="tipo">Tipo de evidencia</label>
+    <select id="tipo" name="tipo">
+      <option value="comentario">Comentario</option>
+      <option value="fotografia">Fotografia</option>
+      <option value="documento">Documento</option>
+    </select>
+    <label for="comentario">Comentario</label>
+    <textarea id="comentario" name="comentario"></textarea>
+    <label for="nombre_original">Nombre del archivo (solo para fotografia o documento)</label>
+    <input type="text" id="nombre_original" name="nombre_original" placeholder="empaque_danado.jpg">
+    <p class="nota">
+      En esta version se registra la referencia de la evidencia. La carga al bucket
+      y los enlaces firmados de duracion limitada se habilitan con Google Cloud
+      Storage (RNF-15, RN-14).
+    </p>
+    <div class="acciones"><button class="boton" type="submit">Agregar evidencia</button></div>
+  </form>
+  {% endif %}
+
+  <div class="tabla-envoltura" style="margin-top:16px;">
+    <table>
+      <thead><tr><th>Tipo</th><th>Etapa</th><th>Contenido</th><th>Autor</th><th>Fecha</th></tr></thead>
+      <tbody>
+      {% for e in evidencias %}
+        <tr>
+          <td><span class="etiqueta">{{ e.tipo }}</span></td>
+          <td>{{ e.etapa }}</td>
+          <td>{{ e.comentario or e.nombre_original }}</td>
+          <td>{{ e.autor }}</td>
+          <td>{{ e.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="vacio">Sin evidencias registradas.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Historial del caso</h2>
+  <p class="nota">Reconstruido desde la bitacora de auditoria (RF-11, RF-30).</p>
+  <ul class="linea-tiempo">
+    {% for h in historial %}
+      <li>
+        <div><strong>{{ h.accion|replace('_', ' ')|capitalize }}</strong> &mdash; {{ h.detalle or '' }}</div>
+        <div class="cuando">{{ h.fecha.strftime('%d/%m/%Y %H:%M') }} &middot; {{ h.usuario or '(sistema)' }}</div>
+      </li>
+    {% else %}
+      <li>Sin movimientos registrados.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titulo %}Recolecciones{% endblock %}
+{% block contenido %}
+<h1>Recolecciones</h1>
+<p class="sub">Programacion y seguimiento de la logistica inversa (RF-12, RF-13).</p>
+
+{% if pendientes %}
+<h2>Autorizadas sin recoleccion programada</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Folio</th><th>Producto</th><th>Autorizada</th><th></th></tr></thead>
+    <tbody>
+    {% for p in pendientes %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=p.id) }}">{{ p.folio_devolucion }}</a></td>
+        <td>{{ p.producto }}</td>
+        <td>{{ p.fecha_autorizacion.strftime('%d/%m/%Y') if p.fecha_autorizacion else '' }}</td>
+        <td>
+          {% if rol_actual == 'Coordinador de Logistica' %}
+            <a class="boton pequeno" href="{{ url_for('logistica.programar', devolucion_id=p.id) }}">Programar</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<h2>Recolecciones registradas</h2>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr>
+      <th>Folio</th><th>Producto</th><th>Tipo</th><th>Fecha</th><th>Lugar</th>
+      <th>Ruta</th><th>Transportista</th><th>Estado</th>
+    </tr></thead>
+    <tbody>
+    {% for r in recolecciones %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=r.devolucion_id) }}">{{ r.folio_devolucion }}</a></td>
+        <td>{{ r.producto }}</td>
+        <td><span class="etiqueta {{ 'azul' if r.clasificacion_temperatura == 'refrigerado' else '' }}">{{ r.clasificacion_temperatura|replace('_', ' ') }}</span></td>
+        <td>{{ r.fecha_programada.strftime('%d/%m/%Y') if r.fecha_programada else '' }}</td>
+        <td>{{ r.lugar or '' }}</td>
+        <td>{{ (r.origen ~ ' -> ' ~ r.destino) if r.origen else 'Sin asignar' }}</td>
+        <td>{{ r.transportista or 'Sin asignar' }}</td>
+        <td><span class="etiqueta">{{ r.estado }}</span></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="vacio">Sin recolecciones registradas.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
