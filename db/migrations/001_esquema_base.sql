@@ -308,24 +308,3 @@ CREATE INDEX idx_notificaciones_usuario    ON notificaciones(usuario_id);
 CREATE INDEX idx_notificaciones_devolucion ON notificaciones(devolucion_id);
 CREATE INDEX idx_bitacora_usuario          ON bitacora(usuario_id);
 
--- =============================================================================
--- 7. DATOS INICIALES (seed) -- para poder probar el login y el flujo completo
--- =============================================================================
-
-INSERT INTO roles (nombre, descripcion) VALUES
-    ('Cliente', 'Solicita devoluciones y consulta su estado'),
-    ('Inspector', 'Escanea e inspecciona productos devueltos'),
-    ('Encargado del Centro de Devoluciones', 'Confirma recepcion y controla inventario recuperado'),
-    ('Coordinador de Logistica', 'Programa y asigna recolecciones'),
-    ('Analista de Devoluciones', 'Autoriza solicitudes y decide el destino del producto'),
-    ('Encargado de Reembolsos', 'Aprueba y registra reembolsos'),
-    ('Administrador', 'Gestiona usuarios, catalogos y monitoreo');
-
--- Ejemplo de catalogos minimos para poder hacer pruebas de extremo a extremo
-INSERT INTO proveedores (nombre, contacto) VALUES ('Lacteos del Norte', 'contacto@lacteosnorte.com');
-INSERT INTO productos (sku, nombre, clasificacion_temperatura, proveedor_id) VALUES ('LAC-001', 'Leche Entera 1L', 'refrigerado', 1);
-INSERT INTO lotes (producto_id, proveedor_id, numero_lote, fecha_fabricacion, fecha_caducidad) VALUES (1, 1, 'L-2026-045', '2026-08-01', '2026-09-15');
-INSERT INTO tiendas (nombre, direccion) VALUES ('Tienda Centro', 'Av. Principal 123');
-INSERT INTO rutas (origen, destino) VALUES ('Tienda Centro', 'Centro de Devoluciones Norte');
-INSERT INTO transportistas (nombre, empresa) VALUES ('Juan Perez', 'Transportes Rapidos SA');
-INSERT INTO motivos (nombre, descripcion) VALUES ('Producto dañado', 'El empaque o el producto llego danado');
