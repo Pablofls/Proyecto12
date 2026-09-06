@@ -134,7 +134,6 @@ def crear_devoluciones(cur, detalles, usuarios):
         ["en_inspeccion"] * 3 + ["resuelta"] * 3 + ["cerrada"] * 5
     )
 
-    cur.execute("SELECT id, ruta_id FROM rutas LIMIT 1")
     cur.execute("SELECT id FROM rutas ORDER BY id")
     rutas = [f["id"] for f in cur.fetchall()]
     cur.execute("SELECT id FROM transportistas ORDER BY id")
