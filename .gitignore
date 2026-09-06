@@ -1,0 +1,18 @@
+# Entorno y secretos -- nunca se versionan (RNF-14)
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Datos locales y volumenes de Docker
+db/data/
+*.dump
+*.sql.gz
+
+# Sistema
+.DS_Store
