@@ -69,6 +69,17 @@ input[type=date], select, textarea {
   border-radius: 5px; font-size: 14px; font-family: inherit; background: #fff;
 }
 textarea { min-height: 90px; resize: vertical; }
+.campo-password { position: relative; }
+.campo-password input { padding-right: 42px; }
+.ver-password {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 0;
+  background: none; border: 0; border-radius: 5px;
+  color: var(--gris); cursor: pointer;
+}
+.ver-password:hover { color: var(--verde); background: var(--verde-claro); }
+.ver-password:focus-visible { outline: 2px solid var(--verde); outline-offset: 1px; }
 .boton {
   display: inline-block; background: var(--verde); color: #fff; border: 0;
   padding: 9px 16px; border-radius: 5px; cursor: pointer; text-decoration: none;
