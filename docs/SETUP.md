@@ -130,6 +130,10 @@ docker compose exec redis redis-cli
 # Reiniciar solo la aplicacion tras un cambio de codigo
 docker compose restart app
 
+# Recrear la aplicacion tras un cambio en el .env
+# (restart no relee el archivo de entorno; up -d si)
+docker compose up -d app
+
 # Ver los ultimos errores
 docker compose logs --tail=100 app
 ```
@@ -158,8 +162,15 @@ una sola vez.
 Para cambiarla en las cuentas que ya existen:
 
 ```bash
+docker compose up -d app
 docker compose exec app python scripts/seed_demo.py --rotar
 ```
+
+**Usa `up -d`, no `restart`.** `docker compose restart` reinicia el proceso pero
+conserva la configuracion con la que se creo el contenedor, de modo que no
+relee el `.env`. Si cambias una variable y solo reinicias, el contenedor sigue
+viendo el valor anterior. `up -d` recrea el contenedor cuando detecta que el
+entorno cambio.
 
 Eso tambien desbloquea cualquier cuenta que se haya bloqueado por intentos
 fallidos.
