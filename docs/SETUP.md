@@ -150,8 +150,19 @@ docker compose exec app python scripts/seed_demo.py
 
 ## 4. Cuentas de demostracion
 
-Todas usan la contrasena `Devoluciones2026`. Son cuentas de demostracion y solo
-existen dentro de la VM del proyecto.
+La contrasena **no esta en el repositorio**. Se define en `PASSWORD_DEMO` dentro
+del `.env` de la VM, que esta fuera de git. El script `scripts/seed_demo.py` la
+imprime al terminar; si la variable esta vacia, genera una al azar y la muestra
+una sola vez.
+
+Para cambiarla en las cuentas que ya existen:
+
+```bash
+docker compose exec app python scripts/seed_demo.py --rotar
+```
+
+Eso tambien desbloquea cualquier cuenta que se haya bloqueado por intentos
+fallidos.
 
 | Rol | Correo |
 |---|---|
@@ -167,7 +178,28 @@ existen dentro de la VM del proyecto.
 
 Tras 5 intentos fallidos la cuenta se bloquea 15 minutos (RNF-12). Para
 desbloquearla sin esperar, entra como administrador y usa el boton
-"Desbloquear" en la pantalla de usuarios.
+"Desbloquear" en la pantalla de usuarios, o corre el script con `--rotar`.
+
+## Exponer la aplicacion a mas gente
+
+El firewall de GCP limita quien puede abrir el puerto 8000. Para dejarlo
+accesible desde cualquier lado:
+
+```bash
+gcloud compute firewall-rules update permitir-8000-devoluciones --source-ranges=0.0.0.0/0
+```
+
+Antes de hacerlo, asegurate de que `PASSWORD_DEMO` sea una contrasena que no
+este en ningun lado publico. Ten presente ademas que la aplicacion sirve por
+HTTP sin cifrar, asi que las credenciales viajan en claro; para el alcance de
+este parcial se acepta, y el cifrado de comunicaciones (RNF-14) se resuelve al
+poner la plataforma detras de un proxy con TLS en el tercer parcial.
+
+Para volver a restringirlo:
+
+```bash
+gcloud compute firewall-rules update permitir-8000-devoluciones --source-ranges=TU_IP/32
+```
 
 ---
 

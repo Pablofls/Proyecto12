@@ -131,3 +131,26 @@ el contenedor no puede leer el directorio del proyecto montado en `/srv/app`.
 contenedor pueda accederlo, sin desactivar SELinux en la maquina. Desactivar
 SELinux habria sido mas rapido pero deja la VM menos protegida, y el proyecto
 tiene requisitos de seguridad explicitos (RNF-14).
+
+---
+
+## 2026-09-06 — La contrasena de demostracion sale del repositorio
+
+**Contexto.** El repositorio es publico y `scripts/seed_demo.py` traia la
+contrasena escrita en el codigo, ademas de repetirla en `docs/SETUP.md`.
+Cualquiera que encontrara la IP de la VM y leyera el repositorio podia entrar
+como administrador.
+
+**Decision.** La contrasena se toma de `PASSWORD_DEMO` en el `.env`, que esta
+fuera de git. Si la variable esta vacia, el script genera una al azar y la
+imprime una sola vez. Se agrego `--rotar` para cambiarla en las cuentas que ya
+existen sin volver a sembrar los datos.
+
+**Por que.** Permite compartir la liga de la aplicacion con quien sea sin
+regalar el acceso, y deja el repositorio limpio de credenciales (RNF-14,
+RNF-16). La contrasena anterior debe considerarse comprometida: quedo en el
+historial de git, que es publico y no se reescribe.
+
+**Pendiente.** La aplicacion sirve por HTTP sin cifrar. Si se abre a todo
+internet, las credenciales viajan en claro. El cifrado de comunicaciones se
+resuelve al poner la plataforma detras de un proxy con TLS en el tercer parcial.

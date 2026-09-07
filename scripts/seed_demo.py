@@ -6,19 +6,40 @@ Se ejecuta DESPUES de las migraciones y del seed de catalogos:
     docker compose exec -T postgres psql -U $POSTGRES_USER -d $POSTGRES_DB < db/seeds/001_catalogos.sql
     docker compose exec app python scripts/seed_demo.py
 
-Es idempotente: si los usuarios de demostracion ya existen, no hace nada.
-Las contrasenas se generan con el mismo hash que usa la aplicacion (RNF-07);
-son credenciales de demostracion y no deben usarse fuera de la VM del proyecto.
+Para cambiar la contrasena de las cuentas que ya existen:
+
+    docker compose exec app python scripts/seed_demo.py --rotar
+
+La contrasena NO vive en este archivo: se toma de PASSWORD_DEMO en el .env, que
+esta fuera de git. Si esa variable esta vacia, el script genera una al azar y la
+imprime una sola vez. Asi el repositorio puede ser publico sin regalar el acceso
+(RNF-14, RNF-16).
+
+Es idempotente: si los usuarios de demostracion ya existen, no los duplica. Las
+contrasenas se guardan con el mismo hash que usa la aplicacion (RNF-07).
 """
 import os
 import random
+import secrets
+import sys
 from datetime import date, timedelta
 
 import psycopg2
 import psycopg2.extras
 from werkzeug.security import generate_password_hash
 
-PASSWORD_DEMO = "Devoluciones2026"
+
+def obtener_password():
+    """Devuelve (password, fue_generada).
+
+    Preferimos la del .env para que el equipo comparta la misma. Si no esta
+    definida, generamos una al azar: es preferible una contrasena que hay que
+    anotar a una escrita en un repositorio publico.
+    """
+    definida = os.environ.get("PASSWORD_DEMO", "").strip()
+    if definida:
+        return definida, False
+    return secrets.token_urlsafe(12), True
 
 USUARIOS = [
     ("Ana Lopez Garcia",   "ana.cliente@demo.mx",       "Cliente"),
@@ -44,8 +65,8 @@ def conectar():
     )
 
 
-def crear_usuarios(cur):
-    hash_demo = generate_password_hash(PASSWORD_DEMO)
+def crear_usuarios(cur, password):
+    hash_demo = generate_password_hash(password)
     cur.execute("SELECT id, nombre FROM roles")
     roles = {fila["nombre"]: fila["id"] for fila in cur.fetchall()}
 
@@ -248,12 +269,38 @@ def crear_devoluciones(cur, detalles, usuarios):
             )
 
 
+def rotar_passwords(cur, password):
+    """Cambia la contrasena de todas las cuentas de demostracion y las desbloquea."""
+    nuevo_hash = generate_password_hash(password)
+    correos = [email for _, email, _ in USUARIOS]
+    cur.execute(
+        """
+        UPDATE usuarios
+           SET password_hash = %s, bloqueado_hasta = NULL, estado = 'activo'
+         WHERE email = ANY(%s)
+        """,
+        (nuevo_hash, correos),
+    )
+    return cur.rowcount
+
+
 def main():
     random.seed(12)  # Datos reproducibles entre integrantes del equipo.
+    password, generada = obtener_password()
+
+    if "--rotar" in sys.argv:
+        with conectar() as conn:
+            with conn.cursor() as cur:
+                actualizadas = rotar_passwords(cur, password)
+            conn.commit()
+        print(f"Contrasena actualizada en {actualizadas} cuentas de demostracion.")
+        anunciar_password(password, generada)
+        return
+
     with conectar() as conn:
         with conn.cursor() as cur:
             print("Creando usuarios de demostracion ...")
-            usuarios = crear_usuarios(cur)
+            usuarios = crear_usuarios(cur, password)
             clientes = [usuarios[e] for _, e, r in USUARIOS if r == "Cliente"]
 
             print("Creando ventas ...")
@@ -267,9 +314,23 @@ def main():
         conn.commit()
 
     print("\nDatos de demostracion listos.")
-    print(f"Contrasena para todas las cuentas de demostracion: {PASSWORD_DEMO}")
+    anunciar_password(password, generada)
+
+
+def anunciar_password(password, generada):
+    print()
     for nombre, email, rol in USUARIOS:
         print(f"  {rol:<38} {email}")
+    print()
+    print(f"  Contrasena de todas las cuentas: {password}")
+    if generada:
+        print()
+        print("  Se genero al azar porque PASSWORD_DEMO no esta definida en el .env.")
+        print("  Anotala: no vuelve a mostrarse. Para fijarla, agrega al .env de la VM")
+        print(f"    PASSWORD_DEMO={password}")
+        print("  y vuelve a ejecutar este script con --rotar.")
+    print()
+    print("  Nunca escribas esta contrasena en el repositorio.")
 
 
 if __name__ == "__main__":
