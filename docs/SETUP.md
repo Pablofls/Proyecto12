@@ -127,7 +127,8 @@ docker compose exec postgres psql -U devoluciones_app -d devoluciones
 # Consola de Redis
 docker compose exec redis redis-cli
 
-# Reiniciar solo la aplicacion tras un cambio de codigo
+# Reiniciar solo la aplicacion tras un cambio de codigo Python
+# (las plantillas se recargan solas cuando FLASK_ENV=development)
 docker compose restart app
 
 # Recrear la aplicacion tras un cambio en el .env

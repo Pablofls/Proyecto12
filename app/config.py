@@ -32,6 +32,12 @@ class Config:
 
     GCS_BUCKET = os.environ.get("GCS_BUCKET", "")
 
+    # Jinja compila las plantillas una vez y las guarda en memoria. Bajo gunicorn
+    # eso significa que editar una plantilla no surte efecto hasta reiniciar el
+    # contenedor, lo cual confunde durante el desarrollo. Con FLASK_ENV=development
+    # se recargan al vuelo; en produccion se deja la cache, que es mas rapida.
+    TEMPLATES_AUTO_RELOAD = os.environ.get("FLASK_ENV", "") == "development"
+
     @classmethod
     def session_redis(cls):
         return redis.Redis(host=cls.REDIS_HOST, port=cls.REDIS_PORT, db=0)
