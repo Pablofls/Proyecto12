@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "componentes.html" as componentes %}
 {% block titulo %}{{ 'Editar usuario' if usuario else 'Nuevo usuario' }}{% endblock %}
 {% block contenido %}
 <h1>{{ 'Editar usuario' if usuario else 'Nuevo usuario' }}</h1>
@@ -33,9 +34,10 @@
   </select>
   {% endif %}
 
-  <label for="password">Contrasena {{ '(dejar vacio para no cambiarla)' if usuario else '' }}</label>
-  <input type="password" id="password" name="password" {{ '' if usuario else 'required' }}
-         minlength="8" autocomplete="new-password">
+  {{ componentes.campo_password(
+       "password", "password",
+       "Contrasena" ~ (" (dejar vacio para no cambiarla)" if usuario else ""),
+       requerido=(usuario is none), autocomplete="new-password", minlength=8) }}
 
   <div class="acciones">
     <button class="boton" type="submit">Guardar</button>
