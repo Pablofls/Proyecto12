@@ -53,7 +53,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-03 | Los clientes no acceden directo a las bases | Postgres y Redis publicados solo en `127.0.0.1` | implementado |
 | RNF-04 | Movil consume JSON, escritorio XML | — | pendiente |
 | RNF-05 | Versionamiento y Swagger | — | pendiente |
-| RNF-06 | Distribucion entre Postgres, Mongo, Redis y bucket | Postgres y Redis en uso; Mongo y GCS declarados | parcial |
+| RNF-06 | Distribucion entre Postgres, Mongo, Redis y bucket | Postgres y Redis en uso. Mongo y GCS estan disenados (secciones 4.4 y 4.6) pero NO implementados: no hay servicio de Mongo en el compose y `inspecciones_ref.mongo_doc_id` queda en NULL | parcial |
 | RNF-07 | Hash seguro de contrasenas | `werkzeug.security` en `auth.py` y `usuarios.py` | implementado |
 | RNF-08 | JWT corto y token de renovacion | Sesion en Redis; JWT queda para el segundo parcial | parcial |
 | RNF-09 | Verificar rol y permisos antes de cada operacion | `roles_required`, `exigir_devolucion_visible` | implementado |
