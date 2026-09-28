@@ -10,14 +10,18 @@
 -- Trazabilidad: RF-27, RN-10, HU-23, UC-23
 -- =============================================================================
 
--- Reclasificacion de datos existentes antes de endurecer el CHECK.
+-- El CHECK viejo se quita primero: si se reclasifican los datos mientras
+-- sigue activo, el propio UPDATE lo viola (el CHECK anterior no conocia
+-- 'transporte' ni 'otros' como valores permitidos).
+ALTER TABLE costos DROP CONSTRAINT costos_etapa_check;
+
+-- Reclasificacion de datos existentes, ya sin el CHECK viejo de por medio.
 -- 'recoleccion' pasa a 'transporte' (mismo hecho, nombre mas preciso).
 -- 'disposicion' no distinguia destino: se reclasifica como 'otros' hasta que
 -- el analista la corrija manualmente por caso.
 UPDATE costos SET etapa = 'transporte' WHERE etapa = 'recoleccion';
 UPDATE costos SET etapa = 'otros'      WHERE etapa = 'disposicion';
 
-ALTER TABLE costos DROP CONSTRAINT costos_etapa_check;
 ALTER TABLE costos ADD CONSTRAINT costos_etapa_check CHECK (etapa IN (
     'transporte', 'inspeccion', 'almacenamiento', 'reacondicionamiento',
     'destruccion', 'reembolso', 'otros'
