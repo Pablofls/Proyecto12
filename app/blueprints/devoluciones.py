@@ -3,14 +3,14 @@
 Es el modulo central del sistema. Toda devolucion nace de una linea de venta
 (RN-01) y avanza por los estados definidos en el esquema.
 
-Trazabilidad: RF-06 a RF-11, RF-21, RN-01, RN-02, RN-12,
-              HU-06 a HU-11, UC-06, UC-07, UC-08, UC-09
+Trazabilidad: RF-06 a RF-11, RF-21, RF-27, RN-01, RN-02, RN-12,
+              HU-06 a HU-11, UC-06, UC-07, UC-08, UC-09, UC-23
 """
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from app.db import consultar, ejecutar
 from app.security import (
-    ANALISTA, CLIENTE, INSPECTOR, TODOS_LOS_ROLES,
+    ADMINISTRADOR, ANALISTA, CLIENTE, INSPECTOR, TODOS_LOS_ROLES,
     exigir_devolucion_visible, registrar_bitacora, roles_required, usuario_actual,
 )
 
@@ -368,4 +368,34 @@ def resolver(devolucion_id):
     else:
         abort(400)
 
+    return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
+
+
+@bp.post("/<int:devolucion_id>/costos")
+@roles_required(ANALISTA, ADMINISTRADOR)
+def agregar_costo(devolucion_id):
+    """Registra un costo manual ('otros') no capturado por el flujo normal (RF-27).
+
+    Los costos de transporte, inspeccion, almacenamiento, reacondicionamiento,
+    destruccion y reembolso se generan en su propio modulo, donde se conoce el
+    monto real. Esta ruta cubre correcciones y gastos imprevistos.
+    """
+    expediente = obtener_expediente(devolucion_id)
+    if expediente is None:
+        abort(404)
+
+    monto = request.form.get("monto", type=float)
+    nota = (request.form.get("nota") or "").strip()
+
+    if monto is None or monto <= 0:
+        flash("Captura un monto valido.", "error")
+        return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
+
+    ejecutar(
+        "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'otros', %s)",
+        (devolucion_id, monto),
+    )
+    registrar_bitacora("costo_manual", "devoluciones", devolucion_id,
+                       f"Costo 'otros' registrado por {monto}. {nota}".strip())
+    flash("Costo registrado.", "ok")
     return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))

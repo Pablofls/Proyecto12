@@ -14,6 +14,36 @@
   {% endfor %}
 </div>
 
+<h2>Devoluciones con mayor costo total</h2>
+<p class="sub">Transporte + inspeccion + almacenamiento + reacondicionamiento + destruccion + reembolso + otros (RF-27).</p>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr>
+      <th>Folio</th><th>Producto</th><th>Transporte</th><th>Inspeccion</th>
+      <th>Almacenamiento</th><th>Reacond.</th><th>Destruccion</th>
+      <th>Reembolso</th><th>Otros</th><th>Costo total</th>
+    </tr></thead>
+    <tbody>
+    {% for c in mas_costosas %}
+      <tr>
+        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=c.devolucion_id) }}">{{ c.folio_devolucion }}</a></td>
+        <td>{{ c.producto }}</td>
+        <td>$ {{ '%.2f'|format(c.costo_transporte) }}</td>
+        <td>$ {{ '%.2f'|format(c.costo_inspeccion) }}</td>
+        <td>$ {{ '%.2f'|format(c.costo_almacenamiento) }}</td>
+        <td>$ {{ '%.2f'|format(c.costo_reacondicionamiento) }}</td>
+        <td>$ {{ '%.2f'|format(c.costo_destruccion) }}</td>
+        <td>$ {{ '%.2f'|format(c.monto_reembolsado) }}</td>
+        <td>$ {{ '%.2f'|format(c.costo_otros) }}</td>
+        <td><strong>$ {{ '%.2f'|format(c.costo_total) }}</strong></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="10" class="vacio">Sin costos registrados.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
 <h2>Detalle</h2>
 <div class="tabla-envoltura">
   <table>

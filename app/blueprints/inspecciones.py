@@ -5,7 +5,7 @@ inventario. El veredicto se calcula aqui y se guarda en la columna
 inspecciones_ref.apto_para_inventario, que es la que el trigger de PostgreSQL
 consulta para impedir una disposicion invalida (RN-06, RN-07).
 
-Trazabilidad: RF-16, RF-17, RF-18, RF-19, RN-05, RN-06, RN-07,
+Trazabilidad: RF-16, RF-17, RF-18, RF-19, RF-27, RN-05, RN-06, RN-07,
               HU-14 a HU-17, UC-14, UC-15, UC-16
 """
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
@@ -32,7 +32,17 @@ DESTINOS = [
     ("reciclaje", "Reciclaje"),
     ("devolucion_proveedor", "Devolucion al proveedor"),
     ("desecho", "Desecho"),
+    ("donacion", "Donacion"),
 ]
+
+# A que etapa de costos se atribuye el costo de ejecutar cada destino (RF-27).
+# Un destino que no aparece aqui (inventario, reciclaje, devolucion_proveedor,
+# donacion) no genera un costo de disposicion propio en esta version.
+ETAPA_COSTO_POR_DESTINO = {
+    "reparacion": "reacondicionamiento",
+    "reacondicionamiento": "reacondicionamiento",
+    "desecho": "destruccion",
+}
 
 
 def evaluar_aptitud(refrigerado, danos, caducidad_vencida, cadena_frio_rota, minutos_fuera):
@@ -123,6 +133,7 @@ def registrar(devolucion_id):
         caducidad_vencida = request.form.get("caducidad_vencida") == "si"
         estado_empaque = (request.form.get("estado_empaque") or "").strip()
         observaciones = (request.form.get("observaciones") or "").strip()
+        costo_inspeccion = request.form.get("costo_inspeccion", type=float)
 
         cadena_frio_rota = False
         minutos_fuera = None
@@ -175,6 +186,12 @@ def registrar(devolucion_id):
             (devolucion_id, usuario_actual()["id"], " | ".join(detalle_partes)),
         )
 
+        if costo_inspeccion is not None and costo_inspeccion > 0:
+            ejecutar(
+                "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'inspeccion', %s)",
+                (devolucion_id, costo_inspeccion),
+            )
+
         cambiar_estado(devolucion_id, "en_inspeccion",
                        f"Inspeccion registrada. Resultado: {resultado}")
         flash(f"Inspeccion registrada. Resultado: {resultado}.", "ok" if apto else "aviso")
@@ -211,6 +228,7 @@ def disposicion(devolucion_id):
     if request.method == "POST":
         destino = request.form.get("destino")
         justificacion = (request.form.get("justificacion") or "").strip()
+        costo_disposicion = request.form.get("costo_disposicion", type=float)
         if destino not in dict(DESTINOS):
             abort(400)
 
@@ -228,6 +246,15 @@ def disposicion(devolucion_id):
             flash(str(exc).split("CONTEXT:")[0].strip(), "error")
             return render_template("inspecciones/disposicion.html", d=expediente,
                                    inspeccion=inspeccion, destinos=DESTINOS), 409
+
+        # El costo de ejecutar la disposicion (reacondicionar o destruir) se
+        # atribuye a la etapa correspondiente; otros destinos no lo requieren (RF-27).
+        etapa_costo = ETAPA_COSTO_POR_DESTINO.get(destino)
+        if etapa_costo and costo_disposicion is not None and costo_disposicion > 0:
+            ejecutar(
+                "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, %s, %s)",
+                (devolucion_id, etapa_costo, costo_disposicion),
+            )
 
         cambiar_estado(devolucion_id, "resuelta", f"Destino asignado: {destino}. {justificacion}".strip())
         flash("Disposicion registrada.", "ok")

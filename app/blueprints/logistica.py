@@ -1,6 +1,6 @@
 """Logistica inversa: programacion de recoleccion y recepcion en el centro.
 
-Trazabilidad: RF-12, RF-13, RF-15, RN-08, HU-12, HU-13, UC-10, UC-11, UC-13
+Trazabilidad: RF-12, RF-13, RF-15, RF-27, RN-08, HU-12, HU-13, UC-10, UC-11, UC-13
 """
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
@@ -110,6 +110,7 @@ def actualizar_estado(recoleccion_id):
     nuevo = request.form.get("estado")
     ruta_id = request.form.get("ruta_id", type=int)
     transportista_id = request.form.get("transportista_id", type=int)
+    costo_transporte = request.form.get("costo_transporte", type=float)
 
     if nuevo not in ESTADOS_RECOLECCION:
         abort(400)
@@ -137,6 +138,17 @@ def actualizar_estado(recoleccion_id):
     )
     registrar_bitacora("estado_recoleccion", "devoluciones", recoleccion["devolucion_id"],
                        f"La recoleccion paso al estado '{nuevo}'")
+
+    # El costo de transporte se conoce hasta que el coordinador cierra la
+    # recoleccion (RF-27): antes puede cambiar de ruta o transportista.
+    if nuevo == "completada" and costo_transporte is not None and costo_transporte > 0:
+        ejecutar(
+            "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'transporte', %s)",
+            (recoleccion["devolucion_id"], costo_transporte),
+        )
+        registrar_bitacora("costo_transporte", "devoluciones", recoleccion["devolucion_id"],
+                           f"Costo de transporte registrado: {costo_transporte}")
+
     flash("Recoleccion actualizada.", "ok")
     return redirect(url_for("devoluciones.detalle", devolucion_id=recoleccion["devolucion_id"]))
 
@@ -153,6 +165,8 @@ def registrar_recepcion(devolucion_id):
         return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
     coincide = request.form.get("coincide_expediente") == "si"
+    costo_almacenamiento = request.form.get("costo_almacenamiento", type=float)
+
     ejecutar(
         """
         INSERT INTO recepciones (devolucion_id, encargado_id, coincide_expediente)
@@ -168,5 +182,15 @@ def registrar_recepcion(devolucion_id):
         "Producto recibido en el centro de devoluciones. "
         + ("Coincide con el expediente." if coincide else "NO coincide con el expediente."),
     )
+
+    # Costo estimado de almacenamiento mientras el producto espera inspeccion
+    # y disposicion (RF-27). Es una estimacion del encargado, no un calculo
+    # automatico: el tiempo real de estancia no se conoce todavia en este punto.
+    if costo_almacenamiento is not None and costo_almacenamiento > 0:
+        ejecutar(
+            "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'almacenamiento', %s)",
+            (devolucion_id, costo_almacenamiento),
+        )
+
     flash("Recepcion registrada.", "ok")
     return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))

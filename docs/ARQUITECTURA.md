@@ -92,6 +92,17 @@ levantaria todos los bloqueos (RNF-21).
    identificador de la devolucion de otro cliente recibe 403 igualmente. Esto es
    lo que la seccion 5.3 del documento describe como autorizacion por recurso.
 
+## Vistas de solo lectura
+
+`vista_costo_devolucion` (migracion 010) agrega, por devolucion, el total de
+`costos` desglosado por etapa (transporte, inspeccion, almacenamiento,
+reacondicionamiento, destruccion, reembolso, otros). Es una vista y no una
+columna en `devoluciones` para no duplicar un dato que ya vive en `costos`:
+guardarlo aparte obligaria a mantenerlo sincronizado a mano cada vez que se
+inserta un costo, lo que rompe la normalizacion y es una fuente comun de
+datos desincronizados. `panel.costos` y el analisis de causa raiz la
+consultan directamente.
+
 ## Preparacion para los siguientes parciales
 
 El monolito ya incluye piezas que solo tienen sentido en la arquitectura

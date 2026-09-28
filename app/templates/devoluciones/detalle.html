@@ -61,6 +61,8 @@
             <option value="{{ e }}" {{ 'selected' if recoleccion.estado == e else '' }}>{{ e|replace('_',' ') }}</option>
           {% endfor %}
         </select>
+        <input type="number" step="0.01" min="0" name="costo_transporte"
+               placeholder="Costo de transporte (si se completa)">
         <button class="boton pequeno" type="submit">Actualizar</button>
       </form>
     {% endif %}
@@ -89,6 +91,8 @@
         <option value="si">Si</option>
         <option value="no">No</option>
       </select>
+      <label for="costo_almacenamiento">Costo estimado de almacenamiento (opcional)</label>
+      <input type="number" step="0.01" min="0" id="costo_almacenamiento" name="costo_almacenamiento">
       <div class="acciones"><button class="boton" type="submit">Confirmar recepcion</button></div>
     </form>
   {% endif %}
@@ -146,8 +150,8 @@
     <p class="nota">Sin reembolso registrado.</p>
   {% endif %}
 
+  <h2>Costos del caso</h2>
   {% if costos %}
-    <h2>Costos del caso</h2>
     <div class="tabla-envoltura">
       <table>
         <thead><tr><th>Etapa</th><th>Monto</th><th>Fecha</th></tr></thead>
@@ -158,6 +162,17 @@
         </tbody>
       </table>
     </div>
+    <p class="nota">Costo total del caso: <strong>$ {{ '%.2f'|format(costos|sum(attribute='monto')) }}</strong></p>
+  {% else %}
+    <p class="nota">Sin costos registrados todavia.</p>
+  {% endif %}
+
+  {% if rol_actual in ['Analista de Devoluciones', 'Administrador'] %}
+    <form method="post" action="{{ url_for('devoluciones.agregar_costo', devolucion_id=d.id) }}" class="acciones">
+      <input type="number" step="0.01" min="0" name="monto" placeholder="Monto" required>
+      <input type="text" name="nota" placeholder="Motivo del costo (otros)">
+      <button class="boton pequeno" type="submit">Agregar costo</button>
+    </form>
   {% endif %}
 </div>
 

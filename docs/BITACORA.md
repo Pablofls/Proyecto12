@@ -154,3 +154,53 @@ historial de git, que es publico y no se reescribe.
 **Pendiente.** La aplicacion sirve por HTTP sin cifrar. Si se abre a todo
 internet, las credenciales viajan en claro. El cifrado de comunicaciones se
 resuelve al poner la plataforma detras de un proxy con TLS en el tercer parcial.
+
+---
+
+## 2026-09-27 — Costo total por devolucion: vista, no columna calculada
+
+**Contexto.** La retroalimentacion del profesor sobre el primer parcial senalo
+que el analisis de causa raiz es debil porque no muestra impacto economico:
+solo `reembolsos.py` insertaba en `costos` (etapa `reembolso`); transporte,
+inspeccion, almacenamiento, reacondicionamiento y destruccion nunca generaban
+un registro, asi que el "costo total de la devolucion" no se podia calcular.
+
+**Decision.** Se amplio el enum de `costos.etapa` (migracion 009) y se agrego
+la captura del monto en cada modulo que ya conoce ese costo: `logistica.py`
+(transporte al completar la recoleccion, almacenamiento al recibir),
+`inspecciones.py` (inspeccion al registrar, reacondicionamiento/destruccion al
+decidir la disposicion) y una ruta manual en `devoluciones.py` para "otros"
+costos no previstos. El total se expone con `vista_costo_devolucion`
+(migracion 010), una vista de solo lectura sobre `costos`, en vez de una
+columna en `devoluciones` que hubiera que mantener sincronizada a mano.
+
+**Por que.** Una columna calculada dependeria de datos que viven en otra
+tabla (`costos`), no de la llave primaria de `devoluciones`: es exactamente el
+tipo de dependencia que rompe la normalizacion y que se desincroniza en cuanto
+alguien inserta un costo sin acordarse de actualizarla. La vista siempre lee
+el dato vivo sin duplicarlo.
+
+**Relacionado.** Se aprovecho el mismo cambio para agregar el destino
+`donacion` a `disposiciones` (migracion 011), que la retroalimentacion pide
+explicitamente y que faltaba en el catalogo.
+
+---
+
+## 2026-09-27 — RF-24 (ranking de causas) se adelanta al monolito
+
+**Contexto.** `docs/TRAZABILIDAD.md` marcaba RF-24 como pendiente del
+microservicio de causa raiz (segundo/tercer parcial), y `panel/causas.html`
+decia textualmente que el Pareto se implementaria ahi. La retroalimentacion
+del primer parcial exige que el monolito ya cruce
+venta-producto-lote-proveedor-tienda-ruta-transportista-motivo y muestre
+Pareto de causas dentro de las proximas dos semanas.
+
+**Decision.** RF-23, RF-24 y RF-26 se completan en el monolito ahora, no se
+esperan al microservicio. Ver bloque 2 del plan de correccion (analisis de
+causa raiz en `panel.causas`).
+
+**Por que.** Es una instruccion directa de la retroalimentacion sobre esta
+entrega, no una preferencia del equipo. El cruce se resuelve por completo con
+`JOIN` sobre tablas ya existentes (`recolecciones` ya tiene `ruta_id` y
+`transportista_id`, `ventas` ya tiene `tienda_id`), asi que no requiere mover
+la logica a un servicio nuevo para cumplirla.

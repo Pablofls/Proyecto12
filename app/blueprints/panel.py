@@ -151,9 +151,27 @@ def costos():
          ORDER BY c.fecha DESC, c.id DESC LIMIT 100
         """
     )
+    # Top de devoluciones con mayor costo total, usando la vista de la
+    # migracion 010 (no se recalcula el desglose aqui).
+    mas_costosas = consultar(
+        """
+        SELECT d.id AS devolucion_id, d.folio_devolucion, p.nombre AS producto,
+               v.costo_transporte, v.costo_inspeccion, v.costo_almacenamiento,
+               v.costo_reacondicionamiento, v.costo_destruccion,
+               v.monto_reembolsado, v.costo_otros, v.costo_total
+          FROM vista_costo_devolucion v
+          JOIN devoluciones d   ON d.id = v.devolucion_id
+          JOIN venta_detalle vd ON vd.id = d.venta_detalle_id
+          JOIN lotes l          ON l.id = vd.lote_id
+          JOIN productos p      ON p.id = l.producto_id
+         WHERE d.eliminado_en IS NULL
+         ORDER BY v.costo_total DESC LIMIT 15
+        """
+    )
     total_general = sum((f["total"] or 0) for f in por_etapa)
     return render_template("panel/costos.html", por_etapa=por_etapa,
-                           detalle=detalle, total_general=total_general)
+                           detalle=detalle, mas_costosas=mas_costosas,
+                           total_general=total_general)
 
 
 @bp.get("/bitacora")

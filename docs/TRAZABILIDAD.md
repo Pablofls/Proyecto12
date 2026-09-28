@@ -28,7 +28,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-15 | Confirmar recepcion en el centro | `logistica.registrar_recepcion` | implementado |
 | RF-16 | Registrar estado fisico, empaque y caducidad | `inspecciones.registrar` | implementado |
 | RF-17 | Datos de refrigeracion y cadena de frio | `inspecciones.registrar` | implementado |
-| RF-18 | Determinar el destino del producto | `inspecciones.disposicion` | implementado |
+| RF-18 | Determinar el destino del producto | `inspecciones.disposicion`, destinos ampliados en `db/migrations/011_destino_donacion.sql` | implementado |
 | RF-19 | Etiquetas e inventario recuperable | `inspecciones.inventario`, `inspecciones.etiquetar` | parcial (falta impresion) |
 | RF-20 | Aprobar o rechazar el reembolso | `app/blueprints/reembolsos.py` | implementado |
 | RF-21 | Un solo reembolso valido por devolucion | `UNIQUE devolucion_id` + validacion en `reembolsos.registrar` | implementado |
@@ -37,7 +37,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-24 | Ranking de causas probables | — | pendiente (microservicio de causa raiz) |
 | RF-25 | Senalar posible fraude | `db/migrations/006_validaciones_reembolso.sql` (monto excesivo) | parcial |
 | RF-26 | Panel de causas y Pareto | `panel.causas` | parcial (falta Pareto) |
-| RF-27 | Consulta de costos | `panel.costos` | implementado |
+| RF-27 | Consulta de costos y costo total por devolucion | `panel.costos`, captura de costo en `logistica.py`, `inspecciones.py`, `devoluciones.agregar_costo`; `db/migrations/009_ampliar_tipos_costo.sql`, `010_vista_costo_devolucion.sql` | implementado |
 | RF-28 | Generar y exportar reportes | — | pendiente |
 | RF-29 | Notificaciones automaticas | tabla `notificaciones` creada, sin uso | pendiente |
 | RF-30 | Bitacora de operaciones | `app/security.py:registrar_bitacora`, `panel.bitacora` | implementado |
