@@ -64,20 +64,26 @@ justificacion. La decision queda registrada con su nombre y la fecha (RN-12).
 
 **Decidir el destino del producto.** Cuando existe una inspeccion, el expediente
 ofrece decidir la disposicion: inventario, reparacion, reacondicionamiento,
-reciclaje, devolucion al proveedor o desecho (RF-18).
+reciclaje, devolucion al proveedor, desecho o donacion (RF-18). Si el destino
+es reparacion, reacondicionamiento o desecho, tambien se puede capturar el
+costo de ejecutarlo (RF-27).
 
 Si la inspeccion marco el producto como no apto, la opcion *inventario* aparece
 deshabilitada, y si alguien manipula la peticion para forzarla, PostgreSQL la
 rechaza con un mensaje explicito. La regla se cumple en la base de datos, no en
 el formulario (RN-06, RN-07).
 
-**Panel de causas.** Agrupa las devoluciones por motivo, producto, lote,
-proveedor y clasificacion de temperatura, con graficas. Sirve para detectar que
-un lote o un proveedor concentra casos (RF-26, RN-10). Conforme a RN-09, el
-panel presenta coincidencias: no determina causas ni asigna responsabilidades.
+**Panel de causas.** Cruza venta-producto-lote-proveedor-tienda-ruta-
+transportista-motivo, con filtros por fecha, producto, lote, proveedor,
+tienda, ruta, motivo y estado (RF-23, RF-24). Muestra Pareto de motivos con
+porcentaje acumulado, tasas de devolucion contra lo vendido (no solo conteo),
+lotes y tiendas con comportamiento atipico, rutas relacionadas con dano, y el
+costo economico por causa (RF-26). Conforme a RN-09, el panel presenta
+coincidencias: no determina causas ni asigna responsabilidades.
 
-**Costos.** Muestra el gasto acumulado por etapa del proceso y el detalle por
-caso (RF-27).
+**Costos.** Muestra el gasto acumulado por etapa del proceso, el detalle por
+caso y el costo total por devolucion desglosado (transporte, inspeccion,
+almacenamiento, reacondicionamiento, destruccion, reembolso, otros) (RF-27).
 
 **Bitacora.** Consulta el historial de acciones del sistema, con filtros por
 accion y entidad (RF-30).

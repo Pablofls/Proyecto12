@@ -4,76 +4,285 @@
 <script src="https://code.highcharts.com/highcharts.js"></script>
 {% endblock %}
 {% block contenido %}
-<h1>Panel de causas</h1>
+<h1>Analisis de causa raiz</h1>
 <p class="sub">
-  Version inicial de RF-26. Agrupa las devoluciones por los atributos definidos por
-  el negocio (RN-10). El analisis de Pareto y el ranking de causas se implementaran
-  en el microservicio de causa raiz.
+  Cruce venta-producto-lote-proveedor-tienda-ruta-transportista-motivo (RF-23,
+  RF-24). El panel es apoyo para el analista: no asigna responsabilidad de
+  forma automatica (RN-09).
 </p>
 
-<div class="tarjeta"><div id="gr_motivo" style="height:320px;"></div></div>
+<form method="get" class="filtros">
+  <div>
+    <label for="fecha_inicio">Desde</label>
+    <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ filtros.fecha_inicio or '' }}">
+  </div>
+  <div>
+    <label for="fecha_fin">Hasta</label>
+    <input type="date" id="fecha_fin" name="fecha_fin" value="{{ filtros.fecha_fin or '' }}">
+  </div>
+  <div>
+    <label for="producto_id">Producto</label>
+    <select id="producto_id" name="producto_id">
+      <option value="">Todos</option>
+      {% for p in productos %}
+        <option value="{{ p.id }}" {{ 'selected' if filtros.producto_id == p.id else '' }}>{{ p.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="lote">Lote</label>
+    <input type="text" id="lote" name="lote" placeholder="numero de lote"
+           value="{{ (filtros.lote or '').strip('%') }}">
+  </div>
+  <div>
+    <label for="proveedor_id">Proveedor</label>
+    <select id="proveedor_id" name="proveedor_id">
+      <option value="">Todos</option>
+      {% for pr in proveedores %}
+        <option value="{{ pr.id }}" {{ 'selected' if filtros.proveedor_id == pr.id else '' }}>{{ pr.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="tienda_id">Tienda</label>
+    <select id="tienda_id" name="tienda_id">
+      <option value="">Todas</option>
+      {% for t in tiendas %}
+        <option value="{{ t.id }}" {{ 'selected' if filtros.tienda_id == t.id else '' }}>{{ t.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="ruta_id">Ruta</label>
+    <select id="ruta_id" name="ruta_id">
+      <option value="">Todas</option>
+      {% for r in rutas %}
+        <option value="{{ r.id }}" {{ 'selected' if filtros.ruta_id == r.id else '' }}>{{ r.origen }} -&gt; {{ r.destino }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="motivo_id">Motivo</label>
+    <select id="motivo_id" name="motivo_id">
+      <option value="">Todos</option>
+      {% for m in motivos %}
+        <option value="{{ m.id }}" {{ 'selected' if filtros.motivo_id == m.id else '' }}>{{ m.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="estado">Estado</label>
+    <select id="estado" name="estado">
+      <option value="">Todos</option>
+      {% for e in ['solicitada','en_revision','autorizada','rechazada','en_recoleccion','recibida','en_inspeccion','resuelta','cerrada'] %}
+        <option value="{{ e }}" {{ 'selected' if filtros.estado == e else '' }}>{{ e|replace('_', ' ') }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="boton" type="submit">Filtrar</button>
+  <a class="boton secundario" href="{{ url_for('panel.causas') }}">Limpiar</a>
+</form>
+
+<h2>Pareto de motivos</h2>
+<p class="sub">Que porcentaje de las causas explica la mayoria de las devoluciones (RF-26).</p>
+<div class="tarjeta"><div id="gr_pareto" style="height:340px;"></div></div>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Motivo</th><th>Devoluciones</th><th>% del total</th><th>% acumulado</th></tr></thead>
+    <tbody>
+      {% for f in pareto_motivos %}
+        <tr><td>{{ f.etiqueta }}</td><td>{{ f.total }}</td><td>{{ f.porcentaje }}%</td>
+            <td><strong>{{ f.porcentaje_acumulado }}%</strong></td></tr>
+      {% else %}
+        <tr><td colspan="4" class="vacio">Sin datos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Devoluciones por dimension</h2>
+<div class="rejilla">
+  <div class="tarjeta"><div id="gr_producto" style="height:280px;"></div></div>
+  <div class="tarjeta"><div id="gr_lote" style="height:280px;"></div></div>
+  <div class="tarjeta"><div id="gr_proveedor" style="height:280px;"></div></div>
+  <div class="tarjeta"><div id="gr_tienda" style="height:280px;"></div></div>
+  <div class="tarjeta"><div id="gr_ruta" style="height:280px;"></div></div>
+  <div class="tarjeta"><div id="gr_clasificacion" style="height:280px;"></div></div>
+</div>
+
+<h2>Cruce de causa raiz</h2>
+<p class="sub">
+  Producto - lote - proveedor - ruta - tienda. La columna "% del lote" muestra
+  que tan concentrado esta ese lote en esa ruta/tienda (el patron que describe
+  la retroalimentacion: "X% de las devoluciones del lote L pasaron por la ruta R").
+</p>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr>
+      <th>Producto</th><th>Lote</th><th>Proveedor</th><th>Ruta</th><th>Tienda</th>
+      <th>Devoluciones</th><th>% del lote</th>
+    </tr></thead>
+    <tbody>
+      {% for c in cruce_causas %}
+        <tr>
+          <td>{{ c.producto }}</td><td>{{ c.lote }}</td><td>{{ c.proveedor }}</td>
+          <td>{{ c.ruta }}</td><td>{{ c.tienda }}</td><td>{{ c.total }}</td>
+          <td><strong>{{ c.porcentaje_del_lote }}%</strong></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="vacio">Sin datos con estos filtros.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Tasa de devolucion por producto</h2>
+<p class="sub">Devoluciones sobre unidades vendidas, no solo conteo (RF-23).</p>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr>
+      <th>Producto</th><th>Devoluciones</th><th>Unidades devueltas</th>
+      <th>Unidades vendidas</th><th>Tasa de devolucion</th>
+    </tr></thead>
+    <tbody>
+      {% for t in tasa_producto %}
+        <tr>
+          <td>{{ t.producto }}</td><td>{{ t.devoluciones }}</td>
+          <td>{{ t.unidades_devueltas }}</td><td>{{ t.unidades_vendidas }}</td>
+          <td>{{ t.tasa_devolucion if t.tasa_devolucion is not none else 'Sin ventas en el periodo' }}{{ '%' if t.tasa_devolucion is not none else '' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="vacio">Sin datos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
 <div class="rejilla">
-  <div class="tarjeta"><div id="gr_lote" style="height:300px;"></div></div>
-  <div class="tarjeta"><div id="gr_proveedor" style="height:300px;"></div></div>
+  <div>
+    <h2>Lotes anomalos</h2>
+    <p class="sub">Tasa del lote contra el promedio de los lotes visibles con este filtro.</p>
+    <div class="tabla-envoltura">
+      <table>
+        <thead><tr><th>Lote</th><th>Producto</th><th>Proveedor</th><th>Tasa</th><th></th></tr></thead>
+        <tbody>
+          {% for l in lotes_anomalos %}
+            <tr>
+              <td>{{ l.numero_lote }}</td><td>{{ l.producto }}</td><td>{{ l.proveedor }}</td>
+              <td>{{ l.tasa }}%</td>
+              <td>
+                {% if l.tasa_promedio and l.tasa > l.tasa_promedio * 2 %}
+                  <span class="etiqueta roja">anomalo</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="vacio">Sin datos.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <h2>Tiendas atipicas</h2>
+    <p class="sub">Mismo calculo, agrupado por tienda.</p>
+    <div class="tabla-envoltura">
+      <table>
+        <thead><tr><th>Tienda</th><th>Devoluciones</th><th>Tasa</th><th></th></tr></thead>
+        <tbody>
+          {% for t in tiendas_atipicas %}
+            <tr>
+              <td>{{ t.tienda }}</td><td>{{ t.devoluciones }}</td><td>{{ t.tasa }}%</td>
+              <td>
+                {% if t.tasa_promedio and t.tasa > t.tasa_promedio * 2 %}
+                  <span class="etiqueta roja">atipica</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="vacio">Sin datos.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
-<h2>Devoluciones por producto</h2>
+<h2>Rutas relacionadas con dano</h2>
+<p class="sub">Recolecciones cuya inspeccion marco el producto como no apto para inventario.</p>
 <div class="tabla-envoltura">
   <table>
-    <thead><tr><th>Producto</th><th>Devoluciones</th></tr></thead>
+    <thead><tr><th>Ruta</th><th>Transportista</th><th>Recolecciones</th><th>No aptas</th><th>% dano</th></tr></thead>
     <tbody>
-      {% for f in por_producto %}
-        <tr><td>{{ f.etiqueta }}</td><td>{{ f.total }}</td></tr>
+      {% for r in rutas_dano %}
+        <tr>
+          <td>{{ r.ruta }}</td><td>{{ r.transportista or 'Sin asignar' }}</td>
+          <td>{{ r.total_recolecciones }}</td><td>{{ r.no_aptas }}</td>
+          <td><strong>{{ r.porcentaje_dano }}%</strong></td>
+        </tr>
       {% else %}
-        <tr><td colspan="2" class="vacio">Sin datos.</td></tr>
+        <tr><td colspan="5" class="vacio">Sin rutas con dano registrado.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-<h2>Devoluciones por clasificacion de temperatura</h2>
-<div class="tabla-envoltura">
-  <table>
-    <thead><tr><th>Clasificacion</th><th>Devoluciones</th></tr></thead>
-    <tbody>
-      {% for f in por_clasificacion %}
-        <tr><td>{{ f.etiqueta|replace('_', ' ') }}</td><td>{{ f.total }}</td></tr>
-      {% else %}
-        <tr><td colspan="2" class="vacio">Sin datos.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<h2>Costo por causa</h2>
+<p class="sub">Impacto economico por motivo, usando el costo total de cada devolucion (RF-26, RF-27).</p>
+<div class="tarjeta"><div id="gr_costo_causa" style="height:320px;"></div></div>
 
 <script>
-  function grafica(destino, titulo, categorias, valores, tipo) {
+  function grafica(destino, titulo, categorias, valores, tipo, etiquetaSerie) {
     Highcharts.chart(destino, {
       chart: { type: tipo || 'column' },
       title: { text: titulo, style: { fontSize: '15px' } },
       xAxis: { categories: categorias },
-      yAxis: { title: { text: 'Devoluciones' }, allowDecimals: false },
+      yAxis: { title: { text: etiquetaSerie || 'Devoluciones' }, allowDecimals: false },
       legend: { enabled: false },
       credits: { enabled: false },
-      series: [{ name: 'Devoluciones', data: valores, color: '#1f6f4a' }]
+      series: [{ name: etiquetaSerie || 'Devoluciones', data: valores, color: '#1f6f4a' }]
     });
   }
 
-  grafica(
-    'gr_motivo', 'Devoluciones por motivo',
-    {{ por_motivo | map(attribute='etiqueta') | list | tojson }},
-    {{ por_motivo | map(attribute='total') | list | tojson }}
-  );
-  grafica(
-    'gr_lote', 'Lotes con mas devoluciones',
-    {{ por_lote | map(attribute='etiqueta') | list | tojson }},
-    {{ por_lote | map(attribute='total') | list | tojson }}
-  );
-  grafica(
-    'gr_proveedor', 'Devoluciones por proveedor',
-    {{ por_proveedor | map(attribute='etiqueta') | list | tojson }},
-    {{ por_proveedor | map(attribute='total') | list | tojson }},
-    'bar'
-  );
+  grafica('gr_producto', 'Por producto',
+    {{ por_producto|map(attribute='etiqueta')|list|tojson }},
+    {{ por_producto|map(attribute='total')|list|tojson }});
+  grafica('gr_lote', 'Por lote',
+    {{ por_lote|map(attribute='etiqueta')|list|tojson }},
+    {{ por_lote|map(attribute='total')|list|tojson }});
+  grafica('gr_proveedor', 'Por proveedor',
+    {{ por_proveedor|map(attribute='etiqueta')|list|tojson }},
+    {{ por_proveedor|map(attribute='total')|list|tojson }});
+  grafica('gr_tienda', 'Por tienda',
+    {{ por_tienda|map(attribute='etiqueta')|list|tojson }},
+    {{ por_tienda|map(attribute='total')|list|tojson }});
+  grafica('gr_ruta', 'Por ruta',
+    {{ por_ruta|map(attribute='etiqueta')|list|tojson }},
+    {{ por_ruta|map(attribute='total')|list|tojson }});
+  grafica('gr_clasificacion', 'Por clasificacion de temperatura',
+    {{ por_clasificacion|map(attribute='etiqueta')|list|tojson }},
+    {{ por_clasificacion|map(attribute='total')|list|tojson }});
+  grafica('gr_costo_causa', 'Costo total por motivo',
+    {{ costo_por_causa|map(attribute='motivo')|list|tojson }},
+    {{ costo_por_causa|map(attribute='costo_total')|list|tojson }},
+    'column', 'Costo ($)');
+
+  Highcharts.chart('gr_pareto', {
+    chart: { zoomType: 'xy' },
+    title: { text: null },
+    credits: { enabled: false },
+    xAxis: [{ categories: {{ pareto_motivos|map(attribute='etiqueta')|list|tojson }} }],
+    yAxis: [
+      { title: { text: 'Devoluciones' }, allowDecimals: false },
+      { title: { text: '% acumulado' }, max: 100, opposite: true }
+    ],
+    series: [
+      { name: 'Devoluciones', type: 'column', color: '#1f6f4a',
+        data: {{ pareto_motivos|map(attribute='total')|list|tojson }} },
+      { name: '% acumulado', type: 'line', color: '#c0392b', yAxis: 1,
+        data: {{ pareto_motivos|map(attribute='porcentaje_acumulado')|list|tojson }} }
+    ]
+  });
 </script>
 {% endblock %}

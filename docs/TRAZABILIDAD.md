@@ -33,10 +33,10 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-20 | Aprobar o rechazar el reembolso | `app/blueprints/reembolsos.py` | implementado |
 | RF-21 | Un solo reembolso valido por devolucion | `UNIQUE devolucion_id` + validacion en `reembolsos.registrar` | implementado |
 | RF-22 | Sugerencia automatica del motivo | — | pendiente (microservicio de clasificacion) |
-| RF-23 | Agrupar devoluciones por caracteristicas | `panel.causas` (agrupacion basica) | parcial |
-| RF-24 | Ranking de causas probables | — | pendiente (microservicio de causa raiz) |
+| RF-23 | Agrupar devoluciones por caracteristicas y tasas de devolucion | `panel.causas`: agrupacion por motivo/producto/lote/proveedor/tienda/ruta, tasas contra unidades vendidas, lotes y tiendas atipicos | implementado |
+| RF-24 | Ranking de causas probables | `panel.causas`: cruce producto-lote-proveedor-ruta-tienda con `% del lote`, rutas relacionadas con dano | implementado (se adelanto al monolito por la retroalimentacion del profesor; ver `docs/BITACORA.md`) |
 | RF-25 | Senalar posible fraude | `db/migrations/006_validaciones_reembolso.sql` (monto excesivo) | parcial |
-| RF-26 | Panel de causas y Pareto | `panel.causas` | parcial (falta Pareto) |
+| RF-26 | Panel de causas y Pareto | `panel.causas`: Pareto de motivos con porcentaje acumulado, costo por causa via `vista_costo_devolucion` | implementado |
 | RF-27 | Consulta de costos y costo total por devolucion | `panel.costos`, captura de costo en `logistica.py`, `inspecciones.py`, `devoluciones.agregar_costo`; `db/migrations/009_ampliar_tipos_costo.sql`, `010_vista_costo_devolucion.sql` | implementado |
 | RF-28 | Generar y exportar reportes | — | pendiente |
 | RF-29 | Notificaciones automaticas | tabla `notificaciones` creada, sin uso | pendiente |
@@ -92,7 +92,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RN-07 | Danos, caducidad o cadena rota impiden inventario | `evaluar_aptitud` + los dos triggers de la migracion 006 |
 | RN-08 | Recoleccion completada requiere datos completos | `logistica.actualizar_estado` |
 | RN-09 | El analisis es apoyo, no determinacion automatica | El panel de causas solo agrupa; no asigna responsabilidad |
-| RN-10 | Agrupacion por atributos definidos por el negocio | `panel.causas` agrupa por motivo, producto, lote y proveedor |
+| RN-10 | Agrupacion por atributos definidos por el negocio | `panel.causas` agrupa y filtra por motivo, producto, lote, proveedor, tienda, ruta y estado |
 | RN-11 | La clasificacion automatica es sugerencia | Sin clasificacion automatica todavia; el motivo lo elige el usuario |
 | RN-12 | Toda decision queda registrada con usuario y fecha | `registrar_bitacora` en cada operacion |
 | RN-13 | Cada usuario solo ejecuta lo de su rol | `roles_required` en todas las vistas |
