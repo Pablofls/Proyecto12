@@ -269,6 +269,28 @@ def crear_devoluciones(cur, detalles, usuarios):
             )
 
 
+def backfill_fecha_cierre(cur):
+    """Llena fecha_cierre en devoluciones 'cerrada'/'rechazada' sembradas antes
+    de existir esa columna (migracion 012).
+
+    Los datos de demostracion se insertan directo con
+    'INSERT INTO devoluciones (..., estado)', sin pasar por
+    devoluciones.py:cambiar_estado, que es donde la app normalmente llena
+    fecha_cierre. Sin este backfill, el KPI de tiempo de resolucion del panel
+    ejecutivo (RF-26) se queda en NULL para siempre en un ambiente sembrado
+    antes de la migracion 012. Es idempotente: solo toca filas con
+    fecha_cierre todavia en NULL, asi que correrlo de nuevo no cambia nada.
+    """
+    cur.execute(
+        """
+        UPDATE devoluciones
+           SET fecha_cierre = fecha_solicitud + INTERVAL '5 days'
+         WHERE estado IN ('cerrada', 'rechazada') AND fecha_cierre IS NULL
+        """
+    )
+    return cur.rowcount
+
+
 def rotar_passwords(cur, password):
     """Cambia la contrasena de todas las cuentas de demostracion y las desbloquea."""
     nuevo_hash = generate_password_hash(password)
@@ -311,6 +333,10 @@ def main():
 
             print("Creando devoluciones ...")
             crear_devoluciones(cur, detalles, usuarios)
+
+            actualizadas = backfill_fecha_cierre(cur)
+            if actualizadas:
+                print(f"  fecha_cierre completada en {actualizadas} devoluciones existentes.")
         conn.commit()
 
     print("\nDatos de demostracion listos.")
