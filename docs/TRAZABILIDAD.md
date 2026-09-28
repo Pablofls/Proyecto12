@@ -102,7 +102,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 ## Casos de uso cubiertos por el monolito
 
 Implementados: UC-01, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-10,
-UC-11, UC-13, UC-14, UC-15, UC-16, UC-17, UC-22 (basico), UC-23, UC-26.
+UC-11, UC-13, UC-14, UC-15, UC-16, UC-17, UC-22, UC-23, UC-26.
 
 Pendientes: UC-02 (recuperar contrasena), UC-12 (escaneo), UC-18 a UC-21
 (algoritmos), UC-24 (exportar reportes), UC-25 (notificaciones), UC-27
