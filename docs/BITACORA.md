@@ -204,3 +204,23 @@ entrega, no una preferencia del equipo. El cruce se resuelve por completo con
 `JOIN` sobre tablas ya existentes (`recolecciones` ya tiene `ruta_id` y
 `transportista_id`, `ventas` ya tiene `tienda_id`), asi que no requiere mover
 la logica a un servicio nuevo para cumplirla.
+
+---
+
+## 2026-09-27 — fecha_cierre se llena en dos lugares, no solo en cambiar_estado
+
+**Contexto.** El KPI de tiempo de resolucion (migracion 012) necesita
+`devoluciones.fecha_cierre` poblada cada vez que el expediente llega a
+`cerrada` o `rechazada`. La mayoria de las transiciones de estado pasan por
+`devoluciones.py:cambiar_estado`, pero el rechazo inicial de una solicitud
+(`devoluciones.resolver`, decision "rechazar") actualiza `estado` y
+`analista_id` en el mismo `UPDATE`, sin pasar por esa funcion.
+
+**Decision.** `cambiar_estado` llena `fecha_cierre` cuando el nuevo estado
+esta en `ESTADOS_TERMINALES`, y el `UPDATE` de `resolver` para "rechazar" la
+llena directamente en la misma sentencia.
+
+**Por que.** Si solo se hubiera tocado `cambiar_estado`, cualquier devolucion
+rechazada en la primera revision (el camino mas comun de rechazo) habria
+quedado con `fecha_cierre` en NULL para siempre, y el KPI de tiempo de
+resolucion la habria ignorado silenciosamente sin que nadie lo notara.

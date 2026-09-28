@@ -75,11 +75,14 @@ el formulario (RN-06, RN-07).
 
 **Panel de causas.** Cruza venta-producto-lote-proveedor-tienda-ruta-
 transportista-motivo, con filtros por fecha, producto, lote, proveedor,
-tienda, ruta, motivo y estado (RF-23, RF-24). Muestra Pareto de motivos con
-porcentaje acumulado, tasas de devolucion contra lo vendido (no solo conteo),
-lotes y tiendas con comportamiento atipico, rutas relacionadas con dano, y el
-costo economico por causa (RF-26). Conforme a RN-09, el panel presenta
-coincidencias: no determina causas ni asigna responsabilidades.
+tienda, ruta, motivo y estado (RF-23, RF-24). Arriba muestra KPIs del periodo
+filtrado (devoluciones, tasa de devolucion, monto reembolsado, costo
+logistico, tiempo promedio de resolucion, % de productos recuperados) y la
+tendencia mensual. Debajo, Pareto de motivos con porcentaje acumulado, tasas
+de devolucion contra lo vendido (no solo conteo), lotes y tiendas con
+comportamiento atipico, rutas relacionadas con dano, y el costo economico por
+causa (RF-26). Conforme a RN-09, el panel presenta coincidencias: no
+determina causas ni asigna responsabilidades.
 
 **Costos.** Muestra el gasto acumulado por etapa del proceso, el detalle por
 caso y el costo total por devolucion desglosado (transporte, inspeccion,

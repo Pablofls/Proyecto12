@@ -19,6 +19,10 @@ bp = Blueprint("devoluciones", __name__, url_prefix="/devoluciones")
 # Estados desde los que el analista todavia puede resolver la solicitud (RF-10).
 ESTADOS_REVISABLES = ("solicitada", "en_revision")
 
+# Estados terminales: aqui se llena fecha_cierre para el KPI de tiempo de
+# resolucion del panel ejecutivo (RF-26).
+ESTADOS_TERMINALES = ("cerrada", "rechazada")
+
 
 def obtener_expediente(devolucion_id):
     """Encabezado del expediente con todo lo que se necesita para mostrarlo."""
@@ -55,8 +59,18 @@ def obtener_expediente(devolucion_id):
 
 
 def cambiar_estado(devolucion_id, nuevo_estado, detalle):
-    """Cambia el estado del expediente y lo deja registrado (RN-12)."""
-    ejecutar("UPDATE devoluciones SET estado = %s WHERE id = %s", (nuevo_estado, devolucion_id))
+    """Cambia el estado del expediente y lo deja registrado (RN-12).
+
+    Si el nuevo estado es terminal (cerrada o rechazada), tambien registra
+    fecha_cierre para el KPI de tiempo de resolucion del panel ejecutivo (RF-26).
+    """
+    if nuevo_estado in ESTADOS_TERMINALES:
+        ejecutar(
+            "UPDATE devoluciones SET estado = %s, fecha_cierre = CURRENT_TIMESTAMP WHERE id = %s",
+            (nuevo_estado, devolucion_id),
+        )
+    else:
+        ejecutar("UPDATE devoluciones SET estado = %s WHERE id = %s", (nuevo_estado, devolucion_id))
     registrar_bitacora("cambio_estado", "devoluciones", devolucion_id, detalle)
 
 
@@ -348,8 +362,14 @@ def resolver(devolucion_id):
         if not justificacion:
             flash("Indica el motivo del rechazo.", "error")
             return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
+        # 'rechazada' es un estado terminal: se llena fecha_cierre aqui mismo
+        # porque este UPDATE tambien fija analista_id (RF-26).
         ejecutar(
-            "UPDATE devoluciones SET estado = 'rechazada', analista_id = %s WHERE id = %s",
+            """
+            UPDATE devoluciones
+               SET estado = 'rechazada', analista_id = %s, fecha_cierre = CURRENT_TIMESTAMP
+             WHERE id = %s
+            """,
             (usuario["id"], devolucion_id),
         )
         registrar_bitacora("rechazo", "devoluciones", devolucion_id,

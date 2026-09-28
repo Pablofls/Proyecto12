@@ -350,6 +350,68 @@ def causas():
         tuple(param_dev),
     )
 
+    # --- KPIs ejecutivos (RF-26): resumen del periodo filtrado. Respetan los
+    # mismos filtros que el resto del panel; sin filtro de fecha, cubren todo
+    # el historial (el analista puede acotar a un mes con fecha_inicio/fecha_fin).
+    kpis = consultar(
+        f"""
+        WITH base AS (
+            SELECT d.id, d.cantidad_devuelta, d.fecha_cierre, d.fecha_solicitud
+            {BASE_CAUSAS}
+            WHERE {where_dev}
+        ),
+        vendido AS (
+            SELECT SUM(vd.cantidad) AS unidades_vendidas {BASE_VENTAS}
+             WHERE {where_venta}
+        ),
+        costos_periodo AS (
+            SELECT COALESCE(SUM(vcd.costo_transporte + vcd.costo_almacenamiento), 0)
+                       AS costo_logistico,
+                   COALESCE(SUM(vcd.monto_reembolsado), 0) AS monto_reembolsado
+              FROM base b
+              LEFT JOIN vista_costo_devolucion vcd ON vcd.devolucion_id = b.id
+        ),
+        disposicion_periodo AS (
+            SELECT COUNT(*) AS total_disposiciones,
+                   COUNT(*) FILTER (WHERE ds.destino = 'inventario') AS recuperados
+              FROM base b JOIN disposiciones ds ON ds.devolucion_id = b.id
+        )
+        SELECT
+            (SELECT COUNT(*) FROM base) AS total_devoluciones,
+            (SELECT COALESCE(SUM(cantidad_devuelta), 0) FROM base) AS unidades_devueltas,
+            (SELECT unidades_vendidas FROM vendido) AS unidades_vendidas,
+            (SELECT costo_logistico FROM costos_periodo) AS costo_logistico,
+            (SELECT monto_reembolsado FROM costos_periodo) AS monto_reembolsado,
+            (SELECT total_disposiciones FROM disposicion_periodo) AS total_disposiciones,
+            (SELECT recuperados FROM disposicion_periodo) AS recuperados,
+            (SELECT AVG(EXTRACT(EPOCH FROM (fecha_cierre - fecha_solicitud)) / 86400.0)
+               FROM base WHERE fecha_cierre IS NOT NULL) AS dias_promedio_resolucion
+        """,
+        tuple(param_dev + param_venta),
+        uno=True,
+    )
+    kpis["tasa_devolucion_global"] = (
+        round(kpis["unidades_devueltas"] * 100.0 / kpis["unidades_vendidas"], 2)
+        if kpis["unidades_vendidas"] else None
+    )
+    kpis["porcentaje_recuperado"] = (
+        round(kpis["recuperados"] * 100.0 / kpis["total_disposiciones"], 1)
+        if kpis["total_disposiciones"] else None
+    )
+
+    # --- Tendencia mensual (RF-26): evolucion de las devoluciones en el
+    # periodo filtrado, agrupadas por mes de solicitud ---
+    tendencia_mensual = consultar(
+        f"""
+        SELECT to_char(date_trunc('month', d.fecha_solicitud), 'YYYY-MM') AS mes,
+               COUNT(*)::integer AS total
+        {BASE_CAUSAS}
+        WHERE {where_dev}
+        GROUP BY 1 ORDER BY 1
+        """,
+        tuple(param_dev),
+    )
+
     # --- Costo por causa (RF-26, RF-27): impacto economico, no solo conteo ---
     # Cast a double precision: la plantilla manda esta serie a Highcharts con
     # |tojson, y el codificador JSON de Flask no serializa Decimal (NUMERIC).
@@ -374,7 +436,7 @@ def causas():
 
     return render_template(
         "panel/causas.html",
-        filtros=valores,
+        filtros=valores, kpis=kpis, tendencia_mensual=tendencia_mensual,
         por_motivo=por_motivo, por_producto=por_producto, por_lote=por_lote,
         por_proveedor=por_proveedor, por_tienda=por_tienda, por_ruta=por_ruta,
         por_clasificacion=por_clasificacion, pareto_motivos=pareto_motivos,

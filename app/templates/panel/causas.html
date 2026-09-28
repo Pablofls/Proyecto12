@@ -83,6 +83,38 @@
   <a class="boton secundario" href="{{ url_for('panel.causas') }}">Limpiar</a>
 </form>
 
+<h2>Indicadores del periodo</h2>
+<p class="sub">Sin fecha en los filtros, cubren todo el historial; agrega fecha desde/hasta para acotar a un mes.</p>
+<div class="rejilla">
+  <div class="indicador">
+    <div class="rotulo">Devoluciones</div>
+    <div class="cifra">{{ kpis.total_devoluciones }}</div>
+  </div>
+  <div class="indicador">
+    <div class="rotulo">Tasa de devolucion</div>
+    <div class="cifra">{{ (kpis.tasa_devolucion_global ~ '%') if kpis.tasa_devolucion_global is not none else 'Sin ventas' }}</div>
+  </div>
+  <div class="indicador">
+    <div class="rotulo">Monto reembolsado</div>
+    <div class="cifra">$ {{ '%.2f'|format(kpis.monto_reembolsado) }}</div>
+  </div>
+  <div class="indicador">
+    <div class="rotulo">Costo logistico</div>
+    <div class="cifra">$ {{ '%.2f'|format(kpis.costo_logistico) }}</div>
+  </div>
+  <div class="indicador">
+    <div class="rotulo">Tiempo promedio de resolucion</div>
+    <div class="cifra">{{ '%.1f dias'|format(kpis.dias_promedio_resolucion) if kpis.dias_promedio_resolucion is not none else 'Sin casos cerrados' }}</div>
+  </div>
+  <div class="indicador">
+    <div class="rotulo">Productos recuperados</div>
+    <div class="cifra">{{ (kpis.porcentaje_recuperado ~ '%') if kpis.porcentaje_recuperado is not none else 'Sin disposiciones' }}</div>
+  </div>
+</div>
+
+<h2>Tendencia mensual</h2>
+<div class="tarjeta"><div id="gr_tendencia" style="height:300px;"></div></div>
+
 <h2>Pareto de motivos</h2>
 <p class="sub">Que porcentaje de las causas explica la mayoria de las devoluciones (RF-26).</p>
 <div class="tarjeta"><div id="gr_pareto" style="height:340px;"></div></div>
@@ -244,6 +276,11 @@
       series: [{ name: etiquetaSerie || 'Devoluciones', data: valores, color: '#1f6f4a' }]
     });
   }
+
+  grafica('gr_tendencia', 'Devoluciones por mes',
+    {{ tendencia_mensual|map(attribute='mes')|list|tojson }},
+    {{ tendencia_mensual|map(attribute='total')|list|tojson }},
+    'line');
 
   grafica('gr_producto', 'Por producto',
     {{ por_producto|map(attribute='etiqueta')|list|tojson }},

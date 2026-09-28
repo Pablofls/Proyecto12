@@ -36,7 +36,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-23 | Agrupar devoluciones por caracteristicas y tasas de devolucion | `panel.causas`: agrupacion por motivo/producto/lote/proveedor/tienda/ruta, tasas contra unidades vendidas, lotes y tiendas atipicos | implementado |
 | RF-24 | Ranking de causas probables | `panel.causas`: cruce producto-lote-proveedor-ruta-tienda con `% del lote`, rutas relacionadas con dano | implementado (se adelanto al monolito por la retroalimentacion del profesor; ver `docs/BITACORA.md`) |
 | RF-25 | Senalar posible fraude | `db/migrations/006_validaciones_reembolso.sql` (monto excesivo) | parcial |
-| RF-26 | Panel de causas y Pareto | `panel.causas`: Pareto de motivos con porcentaje acumulado, costo por causa via `vista_costo_devolucion` | implementado |
+| RF-26 | Panel de causas, Pareto y KPIs ejecutivos | `panel.causas`: Pareto de motivos, costo por causa via `vista_costo_devolucion`, tendencia mensual y KPIs (devoluciones, tasa, monto reembolsado, costo logistico, tiempo promedio de resolucion via `devoluciones.fecha_cierre` en `db/migrations/012_fecha_cierre_devolucion.sql`, % recuperado) | implementado |
 | RF-27 | Consulta de costos y costo total por devolucion | `panel.costos`, captura de costo en `logistica.py`, `inspecciones.py`, `devoluciones.agregar_costo`; `db/migrations/009_ampliar_tipos_costo.sql`, `010_vista_costo_devolucion.sql` | implementado |
 | RF-28 | Generar y exportar reportes | — | pendiente |
 | RF-29 | Notificaciones automaticas | tabla `notificaciones` creada, sin uso | pendiente |
