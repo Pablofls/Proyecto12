@@ -11,17 +11,17 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 
 | ID | Requerimiento | Implementacion | Estado |
 |---|---|---|---|
-| RF-01 | Inicio y cierre de sesion | `app/blueprints/auth.py` | implementado |
+| RF-01 | Inicio y cierre de sesion | `app/blueprints/auth.py`; API: `services/auth` (`POST /api/v1/auth/login`, `/logout`) | implementado |
 | RF-02 | Recuperacion de contrasena | — | pendiente |
 | RF-03 | Administrar usuarios | `app/blueprints/usuarios.py` | implementado |
 | RF-04 | Roles y permisos | `app/security.py`, `db/migrations/008_roles_base.sql` | implementado |
 | RF-05 | Administrar catalogos | `app/blueprints/catalogos.py` | implementado |
 | RF-06 | Devolucion ligada a venta y producto | `db/migrations/002_venta_detalle.sql`, `app/blueprints/devoluciones.py` | implementado |
-| RF-07 | Registrar solicitud con motivo | `devoluciones.nueva` | implementado |
+| RF-07 | Registrar solicitud con motivo | `devoluciones.nueva`; API: `POST /api/v1/devoluciones` (`services/devoluciones`) | implementado |
 | RF-08 | Folio unico de devolucion | `db/migrations/007_folio_devolucion.sql` | implementado |
 | RF-09 | Evidencias (fotos, documentos, comentarios) | `db/migrations/003_evidencias.sql`, `devoluciones.agregar_evidencia` | parcial (falta la carga a GCS) |
-| RF-10 | Autorizar, rechazar o pedir informacion | `devoluciones.resolver` | implementado |
-| RF-11 | Consulta del estado por el cliente | `devoluciones.detalle`, `panel/cliente.html` | implementado |
+| RF-10 | Autorizar, rechazar o pedir informacion | `devoluciones.resolver`; API: `PATCH /api/v1/devoluciones/{id}/resolucion`, correccion con `PUT /api/v1/devoluciones/{id}` | implementado |
+| RF-11 | Consulta del estado por el cliente | `devoluciones.detalle`, `panel/cliente.html`; API: `GET /api/v1/devoluciones` y `/{id}` | implementado |
 | RF-12 | Programar fecha y lugar de recoleccion | `logistica.programar` | implementado |
 | RF-13 | Asignar ruta, transportista y estado | `logistica.actualizar_estado` | implementado |
 | RF-14 | Escaneo de codigos QR o de barras | — | pendiente (aplicacion movil) |
@@ -39,7 +39,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-26 | Panel de causas, Pareto y KPIs ejecutivos | `panel.causas`: Pareto de motivos, costo por causa via `vista_costo_devolucion`, tendencia mensual y KPIs (devoluciones, tasa, monto reembolsado, costo logistico, tiempo promedio de resolucion via `devoluciones.fecha_cierre` en `db/migrations/012_fecha_cierre_devolucion.sql`, % recuperado) | implementado |
 | RF-27 | Consulta de costos y costo total por devolucion | `panel.costos`, captura de costo en `logistica.py`, `inspecciones.py`, `devoluciones.agregar_costo`; `db/migrations/009_ampliar_tipos_costo.sql`, `010_vista_costo_devolucion.sql` | implementado |
 | RF-28 | Generar y exportar reportes | — | pendiente |
-| RF-29 | Notificaciones automaticas | tabla `notificaciones` creada, sin uso | pendiente |
+| RF-29 | Notificaciones automaticas | `services/devoluciones` inserta en `notificaciones` al resolver; falta mostrarlas en la web | parcial |
 | RF-30 | Bitacora de operaciones | `app/security.py:registrar_bitacora`, `panel.bitacora` | implementado |
 | RF-31 | JSON para movil y XML para escritorio | — | pendiente (microservicios) |
 | RF-32 | Monitoreo del estado de los servicios | `/health` | parcial |
@@ -77,13 +77,13 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-27 | Docker y Google Compute Engine | `docker-compose.yml`, VM del equipo | implementado |
 | RNF-28 | Pruebas | — | pendiente |
 | RNF-29 | Locust con distintos perfiles | — | pendiente |
-| RNF-30 | Retencion y eliminacion logica | `db/migrations/005_eliminacion_logica.sql` | implementado |
+| RNF-30 | Retencion y eliminacion logica | `db/migrations/005_eliminacion_logica.sql`; `DELETE /api/v1/devoluciones/{id}` marca `eliminado_en` | implementado |
 
 ## Reglas de negocio
 
 | ID | Regla | Donde se hace cumplir |
 |---|---|---|
-| RN-01 | Toda devolucion vinculada a una venta y un producto | `devoluciones.venta_detalle_id NOT NULL`; el formulario solo se abre desde la linea de venta |
+| RN-01 | Toda devolucion vinculada a una venta y un producto | `devoluciones.venta_detalle_id NOT NULL`; el formulario solo se abre desde la linea de venta; la API bloquea la linea y responde 409 `cantidad_excedida` |
 | RN-02 | Folio unico e irrepetible | `seq_folio_devolucion` + `UNIQUE` (migracion 007) |
 | RN-03 | Un solo reembolso valido por devolucion | `UNIQUE (devolucion_id)` en `reembolsos` |
 | RN-04 | El reembolso requiere devolucion autorizada | `fn_validar_reembolso` (migracion 006) + `reembolsos.registrar` |

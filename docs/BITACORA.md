@@ -346,3 +346,34 @@ validan tambien las respuestas generadas contra su esquema.
 - Dependencia nueva `lxml==5.3.0`, solo en los servicios con contratos XSD: la
   biblioteca estandar no valida esquemas. El parser no resuelve entidades ni
   accede a la red (proteccion contra XXE).
+
+---
+
+## 2026-10-18 — Microservicio de devoluciones
+
+**Decision.** `services/devoluciones` (puerto 8002) expone el registro y la
+resolucion de devoluciones con las mismas reglas del monolito: POST para
+registrar, GET para listar (filtros y paginacion) y consultar, PUT para que el
+cliente corrija cuando le piden informacion, PATCH para la resolucion del
+analista y DELETE para cancelar.
+
+**Por que estas reglas.**
+- La linea de venta y la devolucion se bloquean con `SELECT ... FOR UPDATE`:
+  sin eso, dos solicitudes simultaneas podian devolver mas de lo comprado, o
+  dos analistas resolver la misma devolucion.
+- Un cliente que pide una devolucion ajena recibe 403 y queda en la bitacora
+  (`acceso_denegado`), igual que en la web.
+- DELETE es eliminacion logica (`eliminado_en`, RNF-30) y solo procede si
+  ningun analista la ha revisado.
+- Al resolver se inserta en `notificaciones` (RF-29), tabla que existia sin uso.
+- Cada operacion publica un evento en MongoDB (`eventos`). El servicio crea el
+  indice `idx_devolucion_fecha` (create_index es idempotente) porque init.js
+  solo indexa correlation_id y fecha.
+
+**Fechas en las respuestas.** `shared/respuestas.py` convierte fechas a ISO 8601
+y NUMERIC a numero antes de responder; jsonify usaba el formato RFC 822.
+
+**Pruebas.** Unitarias (reglas y API con Redis en memoria) y de integracion
+(`tests/test_integracion.py`): obtienen el token del contenedor auth por HTTP,
+operan contra PostgreSQL, MongoDB y Redis reales, y comprueban que un logout en
+auth revoca el token en devoluciones. Borran lo que crean al terminar.

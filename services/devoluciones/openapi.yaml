@@ -1,0 +1,302 @@
+openapi: 3.0.3
+info:
+  title: Servicio de devoluciones - Plataforma de devoluciones
+  version: "1.0.0"
+  description: |
+    Registro y resolucion de devoluciones: el inicio del proceso de negocio.
+
+    **Como probar en esta pagina:**
+    1. Obtén un token en el servicio auth (`POST /api/v1/auth/login`, puerto 8001)
+       con una cuenta de cliente (p. ej. `ana.cliente@demo.mx`) o de analista
+       (`josue.analista@demo.mx`).
+    2. Presiona **Authorize** y pega el `access_token`.
+
+    **Roles:** el Cliente registra, corrige y cancela sus devoluciones y solo
+    ve las suyas; el Analista de Devoluciones las resuelve; el resto del
+    personal puede consultarlas.
+
+    **Ciclo de estados que maneja este servicio:**
+    `solicitada` → (`en_revision`) → `autorizada` | `rechazada`.
+    Los estados siguientes los mueven logistica, inspecciones y reembolsos.
+
+    Responde en JSON o en XML (`Accept: application/xml`); los cuerpos pueden
+    enviarse en cualquiera de los dos formatos (`Content-Type`).
+
+    **Contratos XML (XSD):**
+    - Registro: [devolucion_nueva.xsd](contratos/devolucion_nueva.xsd)
+    - Correccion: [devolucion_edicion.xsd](contratos/devolucion_edicion.xsd)
+    - Resolucion: [resolucion.xsd](contratos/resolucion.xsd)
+    - Respuesta del registro: [devolucion_creada.xsd](contratos/devolucion_creada.xsd)
+    - Error estandar: [error.xsd](contratos/error.xsd)
+
+    **Persistencia:** PostgreSQL (`devoluciones`, `notificaciones`, `bitacora`),
+    MongoDB (coleccion `eventos`) y Redis (sesion JWT y rate limiting).
+
+    Trazabilidad: RF-06, RF-07, RF-08, RF-10, RF-11, RF-29, RF-30, RN-01,
+    RN-02, RN-12, RNF-09, RNF-30.
+servers:
+  - url: /
+tags:
+  - name: Devoluciones
+  - name: Salud
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+
+  parameters:
+    DevolucionId:
+      name: devolucion_id
+      in: path
+      required: true
+      schema: {type: integer, minimum: 1}
+
+  schemas:
+    Nueva:
+      type: object
+      xml: {name: devolucion}
+      required: [venta_detalle_id, motivo_id, descripcion_problema]
+      properties:
+        venta_detalle_id: {type: integer, minimum: 1, description: "Linea de venta que se devuelve (RN-01)"}
+        motivo_id: {type: integer, minimum: 1}
+        descripcion_problema: {type: string, minLength: 10, maxLength: 2000}
+        cantidad_devuelta: {type: integer, minimum: 1, default: 1}
+    Edicion:
+      type: object
+      xml: {name: devolucion}
+      required: [motivo_id, descripcion_problema, cantidad_devuelta]
+      properties:
+        motivo_id: {type: integer, minimum: 1}
+        descripcion_problema: {type: string, minLength: 10, maxLength: 2000}
+        cantidad_devuelta: {type: integer, minimum: 1}
+    Resolucion:
+      type: object
+      xml: {name: resolucion}
+      required: [decision]
+      properties:
+        decision: {type: string, enum: [autorizar, rechazar, informacion]}
+        justificacion: {type: string, maxLength: 500, description: "Obligatoria para rechazar"}
+    Resumen:
+      type: object
+      properties:
+        id: {type: integer}
+        folio_devolucion: {type: string}
+        estado: {type: string}
+        fecha_solicitud: {type: string, format: date-time}
+        cantidad_devuelta: {type: integer}
+        motivo: {type: string}
+        producto: {type: string}
+        clasificacion_temperatura: {type: string}
+        numero_lote: {type: string}
+        cliente: {type: string}
+        folio_venta: {type: string}
+    Paginacion:
+      type: object
+      properties:
+        pagina: {type: integer}
+        por_pagina: {type: integer}
+        total: {type: integer}
+        paginas: {type: integer}
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          required: [codigo, tipo, mensaje]
+          properties:
+            codigo: {type: integer}
+            tipo: {type: string}
+            mensaje: {type: string}
+            detalles: {nullable: true}
+            correlation_id: {type: string}
+
+  responses:
+    E400:
+      description: Datos invalidos, XML mal formado o que no cumple el XSD
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example:
+            error: {codigo: 400, tipo: validacion, mensaje: "Datos de la devolucion incompletos.",
+                    detalles: [{campo: descripcion_problema, problema: minimo 10 caracteres}],
+                    correlation_id: 3f2a9c1e0b7d4a55}
+    E401:
+      description: Sin token, token invalido, expirado, revocado o sesion inactiva
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    E403:
+      description: El rol no tiene permiso o la devolucion es de otro cliente
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example:
+            error: {codigo: 403, tipo: sin_permiso, mensaje: "La devolucion no pertenece a tu cuenta.",
+                    detalles: null, correlation_id: 3f2a9c1e0b7d4a55}
+    E404:
+      description: La devolucion o la linea de venta no existe
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example:
+            error: {codigo: 404, tipo: no_encontrado, mensaje: "No existe la devolucion 999999.",
+                    detalles: null, correlation_id: 3f2a9c1e0b7d4a55}
+    E409:
+      description: Regla de negocio (cantidad excedida o estado que no lo permite)
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example:
+            error: {codigo: 409, tipo: estado_no_permite, mensaje: "La devolucion ya no esta en revision.",
+                    detalles: {estado_actual: autorizada}, correlation_id: 3f2a9c1e0b7d4a55}
+
+paths:
+  /api/v1/devoluciones:
+    post:
+      tags: [Devoluciones]
+      summary: Registrar una devolucion (Cliente o Analista)
+      description: |
+        Crea el expediente en estado `solicitada` con folio unico (RN-02).
+        El cliente solo puede devolver sus propias compras y no mas de lo que
+        queda por devolver de la linea (409 `cantidad_excedida`). Registra la
+        operacion en la bitacora y un evento `devolucion_registrada` en MongoDB.
+        Limite: 20 registros por minuto por usuario (Redis).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/Nueva"}
+            example: {venta_detalle_id: 12, motivo_id: 3,
+                      descripcion_problema: "El empaque llego roto y el producto derramado.",
+                      cantidad_devuelta: 1}
+          application/xml:
+            schema: {$ref: "#/components/schemas/Nueva"}
+            example: |
+              <devolucion><venta_detalle_id>12</venta_detalle_id><motivo_id>3</motivo_id><descripcion_problema>El empaque llego roto y el producto derramado.</descripcion_problema><cantidad_devuelta>1</cantidad_devuelta></devolucion>
+      responses:
+        "201":
+          description: Devolucion registrada
+          headers:
+            Location: {schema: {type: string}, description: "Ruta del expediente"}
+          content:
+            application/json:
+              example: {id: 31, folio_devolucion: DEV-2026-0031, estado: solicitada,
+                        fecha_solicitud: "2026-10-18T21:30:00+00:00", venta_detalle_id: 12,
+                        motivo_id: 3, descripcion_problema: "El empaque llego roto y el producto derramado.",
+                        cantidad_devuelta: 1}
+        "400": {$ref: "#/components/responses/E400"}
+        "401": {$ref: "#/components/responses/E401"}
+        "403": {$ref: "#/components/responses/E403"}
+        "404": {$ref: "#/components/responses/E404"}
+        "409": {$ref: "#/components/responses/E409"}
+        "429": {description: Limite de registros por minuto}
+    get:
+      tags: [Devoluciones]
+      summary: Listar devoluciones con filtros y paginacion
+      description: El Cliente solo ve las suyas; el personal interno ve todas.
+      parameters:
+        - {name: estado, in: query, schema: {type: string, enum: [solicitada, en_revision, autorizada, rechazada, en_recoleccion, recibida, en_inspeccion, resuelta, cerrada]}}
+        - {name: q, in: query, description: "Folio o nombre del producto", schema: {type: string}}
+        - {name: pagina, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: por_pagina, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200":
+          description: Pagina de resultados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  datos: {type: array, items: {$ref: "#/components/schemas/Resumen"}}
+                  paginacion: {$ref: "#/components/schemas/Paginacion"}
+        "400": {$ref: "#/components/responses/E400"}
+        "401": {$ref: "#/components/responses/E401"}
+
+  /api/v1/devoluciones/{devolucion_id}:
+    parameters: [{$ref: "#/components/parameters/DevolucionId"}]
+    get:
+      tags: [Devoluciones]
+      summary: Expediente con historial (bitacora) y eventos (MongoDB)
+      responses:
+        "200": {description: Expediente completo}
+        "401": {$ref: "#/components/responses/E401"}
+        "403": {$ref: "#/components/responses/E403"}
+        "404": {$ref: "#/components/responses/E404"}
+    put:
+      tags: [Devoluciones]
+      summary: Corregir la solicitud (Cliente)
+      description: |
+        Para responder cuando el analista pidio informacion. Solo el dueno y
+        solo mientras este en `solicitada` o `en_revision`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/Edicion"}
+            example: {motivo_id: 3, descripcion_problema: "Adjunto el detalle: el sello venia abierto desde la tienda.", cantidad_devuelta: 1}
+          application/xml:
+            schema: {$ref: "#/components/schemas/Edicion"}
+      responses:
+        "200": {description: Expediente actualizado}
+        "400": {$ref: "#/components/responses/E400"}
+        "401": {$ref: "#/components/responses/E401"}
+        "403": {$ref: "#/components/responses/E403"}
+        "404": {$ref: "#/components/responses/E404"}
+        "409": {$ref: "#/components/responses/E409"}
+    delete:
+      tags: [Devoluciones]
+      summary: Cancelar la devolucion (Cliente, eliminacion logica)
+      description: Solo si sigue `solicitada` y ningun analista la ha revisado (RNF-30).
+      responses:
+        "200":
+          description: Devolucion cancelada
+          content:
+            application/json:
+              example: {id: 31, folio_devolucion: DEV-2026-0031, mensaje: "Devolucion cancelada."}
+        "401": {$ref: "#/components/responses/E401"}
+        "403": {$ref: "#/components/responses/E403"}
+        "404": {$ref: "#/components/responses/E404"}
+        "409": {$ref: "#/components/responses/E409"}
+
+  /api/v1/devoluciones/{devolucion_id}/resolucion:
+    parameters: [{$ref: "#/components/parameters/DevolucionId"}]
+    patch:
+      tags: [Devoluciones]
+      summary: Autorizar, rechazar o pedir informacion (Analista)
+      description: |
+        Solo sobre devoluciones `solicitada` o `en_revision` (si no, 409).
+        Bloquea la fila mientras decide, notifica al cliente (RF-29) y
+        registra un evento en MongoDB.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/Resolucion"}
+            example: {decision: autorizar, justificacion: "Evidencia suficiente."}
+          application/xml:
+            schema: {$ref: "#/components/schemas/Resolucion"}
+            example: <resolucion><decision>rechazar</decision><justificacion>Fuera de plazo.</justificacion></resolucion>
+      responses:
+        "200":
+          description: Decision aplicada
+          content:
+            application/json:
+              example: {id: 31, folio_devolucion: DEV-2026-0031, estado: autorizada,
+                        decision: autorizar, analista: Josue Berdeal,
+                        notificacion_cliente: "Tu devolucion DEV-2026-0031 fue autorizada. Pronto programaremos la recoleccion."}
+        "400": {$ref: "#/components/responses/E400"}
+        "401": {$ref: "#/components/responses/E401"}
+        "403": {$ref: "#/components/responses/E403"}
+        "404": {$ref: "#/components/responses/E404"}
+        "409": {$ref: "#/components/responses/E409"}
+
+  /health:
+    get:
+      tags: [Salud]
+      summary: Estado del servicio, PostgreSQL, Redis y MongoDB
+      security: []
+      responses:
+        "200": {description: Todo funciona}
+        "503": {description: Alguna dependencia no responde}

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato XML de la respuesta 201 de POST /api/v1/devoluciones
+  (Accept: application/xml). El header Location apunta al expediente.
+
+  Trazabilidad: RF-07, RF-08 (folio unico), RN-02.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="respuesta">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="id" type="xs:positiveInteger"/>
+        <!-- Generado por la secuencia seq_folio_devolucion (migracion 007). -->
+        <xs:element name="folio_devolucion" type="xs:string"/>
+        <xs:element name="estado" type="xs:string" fixed="solicitada"/>
+        <xs:element name="fecha_solicitud" type="xs:dateTime"/>
+        <xs:element name="venta_detalle_id" type="xs:positiveInteger"/>
+        <xs:element name="motivo_id" type="xs:positiveInteger"/>
+        <xs:element name="descripcion_problema" type="xs:string"/>
+        <xs:element name="cantidad_devuelta" type="xs:positiveInteger"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

@@ -13,6 +13,8 @@ import logging
 import time
 import uuid
 import xml.etree.ElementTree as ET
+from datetime import date, datetime
+from decimal import Decimal
 
 from flask import Response, g, jsonify, request
 from werkzeug.exceptions import HTTPException
@@ -81,8 +83,23 @@ def quiere_xml():
     return mejor in TIPOS_XML
 
 
+def _normalizar(valor):
+    """Tipos de PostgreSQL a valores del contrato: fechas en ISO 8601 (jsonify
+    las pondria en formato RFC 822) y montos NUMERIC como numero."""
+    if isinstance(valor, dict):
+        return {k: _normalizar(v) for k, v in valor.items()}
+    if isinstance(valor, (list, tuple)):
+        return [_normalizar(v) for v in valor]
+    if isinstance(valor, (datetime, date)):
+        return valor.isoformat()
+    if isinstance(valor, Decimal):
+        return float(valor)
+    return valor
+
+
 def responder(datos, codigo=200, raiz="respuesta", headers=None):
     """Respuesta exitosa en el formato que pidio el cliente."""
+    datos = _normalizar(datos)
     if quiere_xml():
         resp = Response(a_xml(raiz, datos), status=codigo,
                         mimetype="application/xml")
