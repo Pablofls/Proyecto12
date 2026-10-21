@@ -330,3 +330,19 @@ formulario:
 - **RNF-12** — falla el inicio de sesion cinco veces y muestra el bloqueo.
 - **Autorizacion por recurso** — como `ana.cliente@demo.mx`, abre la URL de una
   devolucion de otro cliente. Responde 403 y el intento queda en la bitacora.
+
+## Pruebas E2E y de integracion (solo en la VM)
+
+Requieren el entorno levantado, migraciones, `seed_demo.py` y `PASSWORD_DEMO` en
+el `.env`. Detalle, variables y como registrar el resultado: `docs/PRUEBAS.md`.
+
+```bash
+# Todo (E2E + integracion por servicio); guarda docs/pruebas/salida_<fecha>.txt
+bash scripts/correr_e2e.sh
+
+# Solo la suite E2E de 11 pasos y casos de seguridad
+docker compose run --rm -v "$PWD":/repo -w /repo -e PYTHONPATH=/repo -e INTEGRACION=1 devoluciones python -m pytest -v -s tests/e2e
+
+# Integracion de un servicio (ejemplo)
+docker compose run --rm -e INTEGRACION=1 logistica python -m pytest -v tests/test_integracion.py
+```

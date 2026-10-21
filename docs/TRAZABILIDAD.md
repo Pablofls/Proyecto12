@@ -18,6 +18,7 @@
 | RF-23, RF-26, RF-30 | `services/analisis_auditoria`: snapshot, Pareto MongoDB, cache Redis y consulta de bitacora | `services/analisis_auditoria/tests/test_pareto.py` |
 | RF-32 | `apps/web/app/microservicios.py` y `/integracion/servicios` consultan los ocho health checks | `apps/web/app/tests/test_microservicios.py` |
 | Integracion web/API | `apps/web/app/api_client.py` y blueprints web: JWT/refresh y flujo funcional por HTTP | `apps/web/app/tests/test_api_client.py` y prueba E2E en VM |
+| RNF-28; RF-29, RF-31; RN-03, RN-06, RN-11, RN-13 | Suite E2E de 11 pasos mas notificaciones por rol y campanita (paso 6b), seguridad y errores, JSON/XML y 429 (`tests/e2e/`) y `test_integracion.py` en los 8 servicios; casos en `docs/PRUEBAS.md` | `tests/e2e/`, `services/*/tests/test_integracion.py`; resultado de la VM pendiente (`docs/pruebas/`) |
 | RF-28, UC-24 | Exportacion CSV (UTF-8 con BOM, streaming, escape de formulas): `apps/web/app/exportacion.py` y `apps/web/app/blueprints/reportes.py` (devoluciones, costos, Pareto de causas, bitacora, reembolsos) | `apps/web/app/tests/test_exportacion.py` y descarga en VM |
 | RF-29, UC-25, RN-13 | Campanita y bandeja por rol: `apps/web/app/notificaciones.py` (matriz de destinatarios), `apps/web/app/blueprints/notificaciones.py`, `templates/_campanita.html`, `db/migrations/013_notificaciones_enlace.sql`; `services/devoluciones/app.py` agrega enlace y aviso al Coordinador | `apps/web/app/tests/test_notificaciones.py` y recorrido por rol en VM |
 
@@ -96,7 +97,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-25 | Mensajes claros al usuario | Mensajes flash en todas las operaciones | implementado |
 | RNF-26 | Adaptarse a distintos tamanos de pantalla | `apps/web/app/static/css/estilos.css` | implementado |
 | RNF-27 | Docker y Google Compute Engine | `docker-compose.yml`, VM del equipo | implementado |
-| RNF-28 | Pruebas | Pruebas unitarias y de API con dobles en `services/*/tests` y `apps/web/app/tests`; cuatro pruebas de integracion de `devoluciones` (`INTEGRACION=1`, solo en la VM). Faltan E2E, carga y recuperacion ante fallos | parcial |
+| RNF-28 | Pruebas | 119 unitarias y de API con dobles en `services/*/tests` y `apps/web/app/tests`; suite E2E `tests/e2e/` y `test_integracion.py` en los ocho servicios (`INTEGRACION=1`, solo en la VM); casos en `docs/PRUEBAS.md`. Falta pegar la salida de la VM; faltan carga y recuperacion ante fallos | parcial |
 | RNF-29 | Locust con distintos perfiles | — | pendiente |
 | RNF-30 | Retencion y eliminacion logica | `db/migrations/005_eliminacion_logica.sql`; `DELETE /api/v1/devoluciones/{id}` marca `eliminado_en` | implementado |
 
