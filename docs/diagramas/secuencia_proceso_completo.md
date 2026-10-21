@@ -2,7 +2,7 @@
 
 Recorre una devolucion de un producto refrigerado desde el login hasta el
 Pareto, con las transiciones de estado que realmente aplica el codigo. Verificado
-contra los `app.py` de los ocho servicios y las migraciones 001 a 012.
+contra los `app.py` de los ocho servicios y las migraciones 001 a 013.
 
 Estados de `devoluciones.estado` (CHECK de la migracion 001):
 `solicitada` -> `en_revision` / `autorizada` / `rechazada` -> `en_recoleccion`

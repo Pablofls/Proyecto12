@@ -19,8 +19,8 @@
 > demostrar desde el codigo (ejecuciones en la VM, capturas, resultados de
 > pruebas) queda marcado como **EVIDENCIA PENDIENTE** con un identificador
 > `EV-nn`; el indice de pendientes esta al final del apartado 13. Lo que
-> depende de la sesion de notificaciones y reportes (RF-28, RF-29) lleva
-> `<!-- ACTUALIZAR tras sesion 01 -->`. El orden sigue el listado de 20
+> depende de la sesion de notificaciones y reportes (RF-28, RF-29) ya se
+> integro en `main` (Pull Request 5) y se refleja en el texto. El orden sigue el listado de 20
 > apartados del plan de documentacion del equipo; el documento del curso
 > (`docs/enunciado/`) no contiene una seccion numerada 13 con esa estructura,
 > asi que se tomo ese listado como guia.
@@ -90,7 +90,7 @@ maquina virtual de GCP del equipo.
 |---|---:|---|
 | Microservicios | 8 | `services/` |
 | Contenedores en Compose | 12 (8 servicios, web, PostgreSQL, Redis, MongoDB) | `docker-compose.yml` |
-| Migraciones SQL | 12 | `db/migrations/` |
+| Migraciones SQL | 13 | `db/migrations/` |
 | Esquemas XSD | 22 (21 por servicio y 1 comun de error) | `services/*/contratos`, `shared/contratos` |
 | Patrones de clave en Redis | 10 | `docs/diagramas/redis_claves.md` |
 | Colecciones MongoDB | 4 | `db/mongo/init.js` |
@@ -138,11 +138,11 @@ estado, esta en [`docs/TRAZABILIDAD.md`](TRAZABILIDAD.md). Resumen:
 
 | Grupo | Total | Implementados | Parciales | Pendientes |
 |---|---:|---:|---:|---|
-| RF (funcionales) | 32 | 27 | 2: RF-19, RF-29 | 3: RF-02, RF-14, RF-28 |
+| RF (funcionales) | 32 | 29 | 1: RF-19 | 2: RF-02, RF-14 |
 | RNF (no funcionales) | 30 | 21 | 5: RNF-13, RNF-14, RNF-15, RNF-21, RNF-28 | 4: RNF-17, RNF-20, RNF-24, RNF-29 |
 | RN (reglas de negocio) | 15 | 14 | 1: RN-14 | 0 |
 
-<!-- ACTUALIZAR tras sesion 01: RF-28 (exportar reportes) y RF-29 (notificaciones visibles en el web) cambian de estado si la sesion 01 entra a main; revisar tambien UC-24 y UC-25 -->
+RF-28 (exportacion CSV) y RF-29 (campanita y bandeja por rol) entraron con la sesion 01 y estan implementados; UC-24 y UC-25 tambien.
 
 **Reglas de negocio** y donde se hacen cumplir:
 
@@ -929,7 +929,7 @@ estado `cerrada`, y los nueve `/health` respondieron 200
 > insignia "API distribuida", panel de causas con Highcharts y bitacora.
 > <!-- EVIDENCIA PENDIENTE: EV-27 capturas del web -->
 
-<!-- ACTUALIZAR tras sesion 01: agregar la campanita de notificaciones por rol (RF-29) y la exportacion CSV de reportes (RF-28) a la lista de funciones del web -->
+- **Notificaciones y reportes (sesion 01)**: campanita y bandeja por rol (`apps/web/app/notificaciones.py`, RF-29) y exportacion CSV de listados y panel (`apps/web/app/exportacion.py`, RF-28). Detalle en `docs/TRAZABILIDAD.md`.
 
 ## 15. Docker
 
@@ -1123,7 +1123,7 @@ corrigieron contra el codigo RNF-13 (de pendiente a parcial), RNF-15 y RN-14
 (de pendiente a parcial por los enlaces firmados HMAC), RNF-28, la cuenta de
 XSD, el lugar de los triggers de RN-07 y los casos de uso UC-18 a UC-21 y UC-27.
 
-<!-- ACTUALIZAR tras sesion 01: RF-28, RF-29, UC-24 y UC-25 -->
+RF-28, RF-29, UC-24 y UC-25 pasaron a implementados al integrar la sesion 01.
 
 Cumplimiento por rubro, segun `AUDITORIA_SEGUNDO_PARCIAL.md` y lo verificado
 aqui:
@@ -1164,8 +1164,6 @@ permite afirmar.
 | RF-02 | Pendiente | Sin implementar y sin una decision registrada en `BITACORA.md`; no bloquea el proceso principal porque el Administrador gestiona las cuentas (RF-03). Requiere definir un canal de entrega (correo) que el proyecto no tiene | Flujo de recuperacion con token de un solo uso |
 | RF-14 | Pendiente | Requiere la aplicacion movil (escaneo de QR o codigo de barras), fuera del alcance acordado | App movil |
 | RF-19 | Parcial | El codigo de etiqueta y el inventario existen; la **impresion** requiere la aplicacion de escritorio e impresora | Impresion de etiquetas |
-| RF-28 | Pendiente | Lo cubre la sesion 01 (exportacion CSV). <!-- ACTUALIZAR tras sesion 01 --> | Confirmar al integrar |
-| RF-29 | Parcial | `devoluciones` y `reembolsos-costos` generan notificaciones; falta mostrarlas en el web. <!-- ACTUALIZAR tras sesion 01 --> | Campanita por rol |
 | RN-14 / RNF-15 | Parcial | Hay enlaces firmados de 15 min sobre volumen local; el almacenamiento en Google Cloud Storage esta planeado para el tercer parcial (`Entregables.md`) | Bucket de GCS y URLs firmadas del proveedor |
 | RNF-13 | Parcial | Solo `auth` y `devoluciones` limitan peticiones | Aplicarlo al resto y al web |
 | RNF-14 | Parcial | Secretos fuera del codigo; falta cifrado de comunicaciones | HTTPS con proxy TLS |
@@ -1179,8 +1177,7 @@ permite afirmar.
 Otros pendientes del entregable del curso: aplicaciones Android y de
 escritorio (fuera de alcance acordado), ejemplos en Swagger de cinco servicios,
 healthchecks de Compose en tres, eventos de MongoDB en los demas servicios,
-pruebas de XXE y de caidas de dependencias, y los pendientes tras la sesion 01
-<!-- ACTUALIZAR tras sesion 01 -->.
+pruebas de XXE y de caidas de dependencias, y la verificacion en la VM de la migracion 013 y de la campanita.
 
 ## 20. Anexo: que cambio en este parcial y reparto
 
@@ -1200,7 +1197,7 @@ git, no una valoracion del esfuerzo.
 
 | Integrante | Identidad en git | Commits | Periodo | Trabajo principal |
 |---|---|---:|---|---|
-| Pablo Flores | `Pablofls` | 31 | 2 sep al 21 oct | Estructura del repositorio y Compose; migraciones 001 a 012; monolito del primer parcial; panel de causas, KPIs y costos; seguridad del seed; reglas del proyecto; integracion final y reestructura del monorepo (PR #3 y #4) |
+| Pablo Flores | `Pablofls` | 31 | 2 sep al 21 oct | Estructura del repositorio y Compose; migraciones 001 a 013 (la 013 con la sesion de notificaciones); monolito del primer parcial; panel de causas, KPIs y costos; seguridad del seed; reglas del proyecto; integracion final y reestructura del monorepo (PR #3 y #4) |
 | David Munoz | `Thedavidzavala6` (8) y `thedavidzavala6` (1) | 9 | 6 sep, 18 oct | MongoDB en Compose; `shared/`; microservicio `auth`; microservicio `devoluciones`; bitacora de decisiones del segundo parcial; correcciones del seed |
 | Roberto Sandoval | `BobbySandoval122` | 7 | 21 oct | `logistica`, `inspecciones`, `reembolsos-costos`, `ventas-catalogos`, `evidencias`, `analisis-auditoria`; panel de salud; consumo de los servicios desde el web; etapas de costo por rol; documentacion de la integracion |
 | Josue Berdeal | — | **0** | — | **Sin commits en el historial** |

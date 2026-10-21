@@ -1,6 +1,6 @@
 # Modelo de datos PostgreSQL (logico y fisico)
 
-Reconstruido leyendo las migraciones `db/migrations/001` a `012` en orden, es
+Reconstruido leyendo las migraciones `db/migrations/001` a `013` en orden, es
 decir, el esquema **resultante** despues de aplicarlas todas (por ejemplo,
 `ventas` ya no tiene `lote_id`, `cantidad` ni `precio` desde la 002, y
 `devoluciones.venta_id` fue sustituido por `venta_detalle_id`). Ninguna
@@ -253,6 +253,7 @@ erDiagram
         int devolucion_id FK "ON DELETE CASCADE, nullable"
         varchar tipo "50"
         varchar mensaje "500"
+        varchar url "255, mig 013, enlace a la pantalla de accion"
         bool leido
         timestamptz fecha_creacion
     }
@@ -316,7 +317,7 @@ Vista `vista_costo_devolucion`: columnas `devolucion_id`, `costo_transporte`,
 `costo_destruccion`, `monto_reembolsado`, `costo_otros` y `costo_total`.
 
 > **EVIDENCIA PENDIENTE [EV-06]:** en la VM, la salida de
-> `docker compose exec app python scripts/migrate.py --estado` con las 12
+> `docker compose exec app python scripts/migrate.py --estado` con las 13
 > migraciones aplicadas y, con `docker compose exec postgres psql -U
 > devoluciones_app -d devoluciones`, la de `\dt`, `\d devoluciones`, `\df fn_*`
 > y la lista de triggers. <!-- EVIDENCIA PENDIENTE: EV-06 esquema real en la VM -->

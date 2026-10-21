@@ -11,6 +11,7 @@ from app.security import (
     ANALISTA, ENCARGADO_REEMBOLSOS, registrar_bitacora, roles_required, usuario_actual,
 )
 from app.blueprints.devoluciones import cambiar_estado, obtener_expediente
+from app.notificaciones import notificar_evento
 
 bp = Blueprint("reembolsos", __name__, url_prefix="/reembolsos")
 
@@ -60,6 +61,14 @@ def listar():
     )
     return render_template("reembolsos/listar.html", pendientes=pendientes,
                            registrados=registrados)
+
+
+def _avisar_resultado(expediente, decision, monto, omitir_cliente=False):
+    """Resultado del reembolso al cliente y al analista; avisa el cierre si aplica."""
+    notificar_evento(f"reembolso_{decision}", expediente,
+                     omitir_cliente=omitir_cliente, monto=f"{monto:,.2f}")
+    if expediente["estado"] == "resuelta":
+        notificar_evento("caso_cerrado", expediente)
 
 
 @bp.route("/<int:devolucion_id>/registrar", methods=["GET", "POST"])
@@ -115,6 +124,9 @@ def registrar(devolucion_id):
                 flash(exc.mensaje, "error")
                 return render_template("reembolsos/registrar.html", d=expediente,
                                        metodos=METODOS), exc.codigo
+            # El microservicio ya avisa al cliente del resultado y cierra el caso;
+            # aqui solo se avisa al analista y se informa el cierre (RF-29).
+            _avisar_resultado(expediente, decision, monto, omitir_cliente=True)
             flash("Reembolso registrado mediante microservicio.", "ok")
             return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
@@ -150,6 +162,7 @@ def registrar(devolucion_id):
             cambiar_estado(devolucion_id, "cerrada",
                            "Caso cerrado tras resolver el reembolso")
 
+        _avisar_resultado(expediente, decision, monto)
         flash("Reembolso registrado.", "ok")
         return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 

@@ -10,6 +10,7 @@ from app.security import (
     COORDINADOR, ENCARGADO_CENTRO, registrar_bitacora, roles_required, usuario_actual,
 )
 from app.blueprints.devoluciones import cambiar_estado, obtener_expediente
+from app.notificaciones import notificar_evento
 
 bp = Blueprint("logistica", __name__, url_prefix="/logistica")
 
@@ -116,6 +117,7 @@ def programar(devolucion_id):
         )
             cambiar_estado(devolucion_id, "en_recoleccion",
                            f"Recoleccion programada para el {fecha} en {lugar}")
+        notificar_evento("recoleccion_programada", expediente, fecha=fecha, lugar=lugar)
         flash("Recoleccion programada.", "ok")
         return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
@@ -200,6 +202,10 @@ def actualizar_estado(recoleccion_id):
             registrar_bitacora("costo_transporte", "devoluciones", recoleccion["devolucion_id"],
                                f"Costo de transporte registrado: {costo_transporte}")
 
+    if nuevo in ("en_transito", "completada") and recoleccion["estado"] != nuevo:
+        expediente = obtener_expediente(recoleccion["devolucion_id"])
+        if expediente is not None:
+            notificar_evento(f"recoleccion_{nuevo}", expediente)
     flash("Recoleccion actualizada.", "ok")
     return redirect(url_for("devoluciones.detalle", devolucion_id=recoleccion["devolucion_id"]))
 
@@ -264,5 +270,6 @@ def registrar_recepcion(devolucion_id):
                 (devolucion_id, costo_almacenamiento),
             )
 
+    notificar_evento("recepcion_confirmada", expediente)
     flash("Recepcion registrada.", "ok")
     return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
