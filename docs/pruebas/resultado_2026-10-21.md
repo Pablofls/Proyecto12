@@ -75,3 +75,24 @@ saltan sin `INTEGRACION=1`; `bash -n scripts/correr_e2e.sh` sin errores.
 Repetir `bash scripts/correr_e2e.sh` en la VM con la rama corregida. Esperado: 100/100 E2E
 y 8/8 servicios. Con esa salida se reemplazan los `fallo` y `bloqueado por 429` de
 `docs/PRUEBAS.md` y se confirma o corrige este documento.
+
+## Corridas posteriores (2026-10-21)
+
+Tras integrar PR #8 (correccion del monto maximo de reembolso y ajustes de la
+suite) y PR #9 (la prueba de devoluciones solo usa cuentas demo), en la VM:
+
+- `bash scripts/correr_e2e.sh`, E2E: **100 passed in 5.84 s** (12 del proceso
+  completo, 23 de seguridad y errores, 8 de JSON/XML y el resto con parametros).
+  El paso 9 aprobo el reembolso de 227.17 con 201, el segundo intento dio 409
+  `reembolso_duplicado` y con el lock tomado 409 `reembolso_en_proceso`.
+- Integracion por servicio: auth 5, ventas 4, evidencias 4, logistica 3,
+  inspecciones 5, reembolsos 5 y analisis 4, todas passed.
+- `devoluciones` (reconstruida la imagen tras PR #9): **4 passed in 1.33 s**.
+  Antes fallaba con 401 al iniciar porque la prueba elegia a `prueba@gmail.com`,
+  una cuenta real con otra contrasena, como "otro cliente".
+
+La causa de que devoluciones fallara una vez mas tras PR #8 fue operativa: la
+suite de cada servicio corre con el archivo que esta dentro de su imagen, y solo
+se habia reconstruido `reembolsos-costos`. Hay que reconstruir cada servicio cuyas
+pruebas cambian.
+
