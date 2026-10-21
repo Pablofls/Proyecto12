@@ -377,3 +377,19 @@ y NUMERIC a numero antes de responder; jsonify usaba el formato RFC 822.
 (`tests/test_integracion.py`): obtienen el token del contenedor auth por HTTP,
 operan contra PostgreSQL, MongoDB y Redis reales, y comprueban que un logout en
 auth revoca el token en devoluciones. Borran lo que crean al terminar.
+
+## Integracion de ramas a main (21 de octubre de 2026)
+
+**Orden.** Las ramas `david/base-microservicios`, `david/servicio-devoluciones`
+y `roberto/integracion-web-microservicios` estaban apiladas (cada una contiene
+a la anterior), asi que entran a `main` con un solo Pull Request y merge commit,
+sin squash: el historial conserva la autoria de cada integrante (evidencia del
+parcial).
+
+**Estructura.** Se mantiene `app/` en la raiz durante la integracion para no
+mezclar un movimiento de carpetas con el primer despliegue conjunto en la VM.
+La reorganizacion del monorepo (`apps/web`, `docs/enunciado`, `docs/postman`)
+va en un PR posterior, una vez validado el despliegue.
+
+**Contingencia.** `USE_MICROSERVICES=false` devuelve el web al modo monolito sin
+tocar codigo.

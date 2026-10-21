@@ -111,10 +111,22 @@ db/
 scripts/
   migrate.py          Aplica las migraciones pendientes
   seed_demo.py        Carga usuarios, ventas y devoluciones de demostracion
-docker/Dockerfile     Imagen de la aplicacion
+  mongo/init.js       Usuario y colecciones de MongoDB (solo con volumen vacio)
+services/             Un microservicio por carpeta (auth, devoluciones, logistica,
+                      inspecciones, reembolsos_costos, ventas_catalogos,
+                      evidencias, analisis_auditoria). Cada uno trae Dockerfile,
+                      app.py, openapi.yaml, contratos/ (XSD) y tests/
+shared/               Libreria comun de los microservicios (JWT, respuestas
+                      JSON/XML, paginacion, Mongo, XSD). Se copia en cada imagen
+postman/              Colecciones de Postman
+docker/Dockerfile     Imagen del monolito web
 docker-compose.yml    Entorno completo (solo se ejecuta en la VM)
 docs/                 Documentacion tecnica del equipo
 ```
+
+Los puertos de la VM son: 8000 web, 8001 a 8008 los microservicios (ver
+`docs/SETUP.md`). El contexto de build de cada servicio es la raiz del
+repositorio para poder copiar `shared/`.
 
 ## Migraciones: la regla mas importante
 
@@ -123,7 +135,7 @@ creas una migracion nueva con el siguiente numero. `scripts/migrate.py` guarda
 un checksum de cada archivo y avisa si alguien rompio esta regla, porque en ese
 momento la base de la VM y el repositorio dejan de coincidir.
 
-Numeracion actual: 001 a 008. La siguiente que crees es `009_...sql`.
+Numeracion actual: 001 a 012. La siguiente que crees es `013_...sql`.
 
 ## Convenciones de codigo
 
