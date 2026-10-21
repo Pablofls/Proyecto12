@@ -1,10 +1,10 @@
-"""Genera postman/devoluciones.postman_collection.json (Postman v2.1).
+"""Genera docs/postman/devoluciones.postman_collection.json (Postman v2.1).
 
 Cada peticion lleva verificaciones automaticas (codigo HTTP, error.tipo,
 X-Correlation-ID) para que el Collection Runner sirva como evidencia.
 Para otro servicio: copiar este archivo y cambiar las peticiones.
 
-    python3 postman/generar_devoluciones.py
+    python3 docs/postman/generar_devoluciones.py
 """
 import json
 import os

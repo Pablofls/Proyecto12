@@ -20,7 +20,7 @@ CONTRATOS = os.path.join(os.path.dirname(__file__), "contratos")
 api_ventas = Blueprint("ventas", __name__, url_prefix="/api/v1/ventas")
 api_catalogos = Blueprint("catalogos", __name__, url_prefix="/api/v1/catalogos")
 
-# Refleja exactamente los siete catalogos en app/blueprints/catalogos.py.
+# Refleja exactamente los siete catalogos en apps/web/app/blueprints/catalogos.py.
 # (tipo, obligatorio, longitud maxima o nombre de la tabla referenciada)
 CATALOGOS = {
     "proveedores": {"nombre": ("texto", True, 150), "contacto": ("texto", False, 150)},

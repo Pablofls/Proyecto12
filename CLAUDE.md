@@ -96,32 +96,39 @@ de escritorio. Los contratos para esos clientes si deben quedar implementados.
 ## Estructura del repositorio
 
 ```
-app/                  Aplicacion Flask
-  __init__.py         Fabrica de la app, health check, manejadores de error
-  config.py           Configuracion desde variables de entorno
-  db.py               Acceso a PostgreSQL
-  cache.py            Acceso a Redis
-  security.py         Roles, decoradores de acceso, bitacora
-  blueprints/         Un modulo por area del negocio
-  templates/          Vistas Jinja2
-  static/css/         Estilos
-db/
-  migrations/         Migraciones SQL numeradas (nunca se editan una vez aplicadas)
-  seeds/              Datos de catalogo
-scripts/
-  migrate.py          Aplica las migraciones pendientes
-  seed_demo.py        Carga usuarios, ventas y devoluciones de demostracion
-  mongo/init.js       Usuario y colecciones de MongoDB (solo con volumen vacio)
+apps/
+  web/                Monolito web (Flask + Jinja2). Futuras apps: android, escritorio
+    app/              Paquete Flask
+      __init__.py     Fabrica de la app, health check, manejadores de error
+      config.py       Configuracion desde variables de entorno
+      db.py           Acceso a PostgreSQL
+      cache.py        Acceso a Redis
+      security.py     Roles, decoradores de acceso, bitacora
+      api_client.py   Cliente HTTP hacia los microservicios (JWT, correlation id)
+      blueprints/     Un modulo por area del negocio
+      templates/      Vistas Jinja2
+      static/         Estilos y JS
+      tests/          Pruebas del web
+    wsgi.py           Punto de entrada de gunicorn
+    requirements.txt  Dependencias del web
+    Dockerfile        Imagen del monolito web (contexto de build: raiz del repo)
 services/             Un microservicio por carpeta (auth, devoluciones, logistica,
                       inspecciones, reembolsos_costos, ventas_catalogos,
                       evidencias, analisis_auditoria). Cada uno trae Dockerfile,
                       app.py, openapi.yaml, contratos/ (XSD) y tests/
 shared/               Libreria comun de los microservicios (JWT, respuestas
                       JSON/XML, paginacion, Mongo, XSD). Se copia en cada imagen
-postman/              Colecciones de Postman
-docker/Dockerfile     Imagen del monolito web
-docker-compose.yml    Entorno completo (solo se ejecuta en la VM)
+db/
+  migrations/         Migraciones SQL numeradas (nunca se editan una vez aplicadas)
+  seeds/              Datos de catalogo
+  mongo/init.js       Usuario y colecciones de MongoDB (solo con volumen vacio)
+scripts/
+  migrate.py          Aplica las migraciones pendientes
+  seed_demo.py        Carga usuarios, ventas y devoluciones de demostracion
 docs/                 Documentacion tecnica del equipo
+  enunciado/          Documento del proyecto, requisitos y entregables (PDF y MD)
+  postman/            Colecciones de Postman y su generador
+docker-compose.yml    Entorno completo (solo se ejecuta en la VM)
 ```
 
 Los puertos de la VM son: 8000 web, 8001 a 8008 los microservicios (ver

@@ -41,8 +41,8 @@ las dos que mas importan:
 | [docs/BITACORA.md](docs/BITACORA.md) | Decisiones tecnicas y su justificacion |
 
 Los documentos del curso (analisis, requisitos y entregables) estan en
-[Descripcion.md](Descripcion.md), [Requisitos.md](Requisitos.md) y
-[Entregables.md](Entregables.md).
+[Descripcion.md](docs/enunciado/Descripcion.md), [Requisitos.md](docs/enunciado/Requisitos.md) y
+[Entregables.md](docs/enunciado/Entregables.md).
 
 ## Arranque rapido (en la VM)
 

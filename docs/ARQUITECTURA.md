@@ -23,7 +23,7 @@ El web conserva un modo de contingencia independiente y expone
 `/integracion/servicios` para que un administrador consulte los ocho health
 checks. En la rama `roberto/integracion-web-microservicios`, el login, las
 consultas de ventas/devoluciones y las mutaciones del proceso completo se
-ejecutan por HTTP contra las API. El cliente comun (`app/api_client.py`) conserva
+ejecutan por HTTP contra las API. El cliente comun (`apps/web/app/api_client.py`) conserva
 JWT en la sesion Redis, renueva access tokens y propaga correlation ids. La
 matriz exacta esta en `docs/INTEGRACION_WEB_MICROSERVICIOS.md`.
 
@@ -45,10 +45,10 @@ logica. Esto es lo que declara la seccion 5.2 del documento.
 Navegador
     |
     v
-Plantillas Jinja2  (app/templates)          <- presentacion
+Plantillas Jinja2  (apps/web/app/templates)          <- presentacion
     |
     v
-Blueprints         (app/blueprints)         <- controladores y reglas del caso de uso
+Blueprints         (apps/web/app/blueprints)         <- controladores y reglas del caso de uso
     |
     v
 db.py / cache.py   (app)                    <- acceso a datos
@@ -58,7 +58,7 @@ PostgreSQL   Redis                          <- contenedores en la VM
 ```
 
 Las plantillas nunca consultan la base de datos. Los blueprints nunca abren
-conexiones a mano: usan `consultar` y `ejecutar` de `app/db.py`. Esa separacion
+conexiones a mano: usan `consultar` y `ejecutar` de `apps/web/app/db.py`. Esa separacion
 es lo que permite mover un modulo a un microservicio mas adelante cambiando solo
 la capa de acceso.
 

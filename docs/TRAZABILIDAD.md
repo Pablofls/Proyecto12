@@ -15,8 +15,8 @@
 | RF-05, RF-06 | `services/ventas_catalogos`: ventas y siete catalogos con listas blancas | `services/ventas_catalogos/tests/test_reglas.py` |
 | RF-09 | `services/evidencias`: comentario JSON/XML y archivos privados con metadatos MongoDB | `services/evidencias/tests/test_seguridad_archivos.py` |
 | RF-23, RF-26, RF-30 | `services/analisis_auditoria`: snapshot, Pareto MongoDB, cache Redis y consulta de bitacora | `services/analisis_auditoria/tests/test_pareto.py` |
-| RF-32 | `app/microservicios.py` y `/integracion/servicios` consultan los ocho health checks | `app/tests/test_microservicios.py` |
-| Integracion web/API | `app/api_client.py` y blueprints web: JWT/refresh y flujo funcional por HTTP | `app/tests/test_api_client.py` y prueba E2E en VM |
+| RF-32 | `apps/web/app/microservicios.py` y `/integracion/servicios` consultan los ocho health checks | `apps/web/app/tests/test_microservicios.py` |
+| Integracion web/API | `apps/web/app/api_client.py` y blueprints web: JWT/refresh y flujo funcional por HTTP | `apps/web/app/tests/test_api_client.py` y prueba E2E en VM |
 
 Relaciona los identificadores del documento con el lugar del repositorio donde
 quedan implementados. **Actualiza esta tabla en el mismo commit en el que
@@ -29,12 +29,12 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 
 | ID | Requerimiento | Implementacion | Estado |
 |---|---|---|---|
-| RF-01 | Inicio y cierre de sesion | `app/blueprints/auth.py`; API: `services/auth` (`POST /api/v1/auth/login`, `/logout`) | implementado |
+| RF-01 | Inicio y cierre de sesion | `apps/web/app/blueprints/auth.py`; API: `services/auth` (`POST /api/v1/auth/login`, `/logout`) | implementado |
 | RF-02 | Recuperacion de contrasena | — | pendiente |
-| RF-03 | Administrar usuarios | `app/blueprints/usuarios.py` | implementado |
-| RF-04 | Roles y permisos | `app/security.py`, `db/migrations/008_roles_base.sql` | implementado |
-| RF-05 | Administrar catalogos | `app/blueprints/catalogos.py` | implementado |
-| RF-06 | Devolucion ligada a venta y producto | `db/migrations/002_venta_detalle.sql`, `app/blueprints/devoluciones.py` | implementado |
+| RF-03 | Administrar usuarios | `apps/web/app/blueprints/usuarios.py` | implementado |
+| RF-04 | Roles y permisos | `apps/web/app/security.py`, `db/migrations/008_roles_base.sql` | implementado |
+| RF-05 | Administrar catalogos | `apps/web/app/blueprints/catalogos.py` | implementado |
+| RF-06 | Devolucion ligada a venta y producto | `db/migrations/002_venta_detalle.sql`, `apps/web/app/blueprints/devoluciones.py` | implementado |
 | RF-07 | Registrar solicitud con motivo | `devoluciones.nueva`; API: `POST /api/v1/devoluciones` (`services/devoluciones`) | implementado |
 | RF-08 | Folio unico de devolucion | `db/migrations/007_folio_devolucion.sql` | implementado |
 | RF-09 | Evidencias (fotos, documentos, comentarios) | `services/evidencias`: volumen privado, referencia PostgreSQL y metadatos MongoDB | implementado para esta entrega |
@@ -48,7 +48,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-17 | Datos de refrigeracion y cadena de frio | `inspecciones.registrar` | implementado |
 | RF-18 | Determinar el destino del producto | `inspecciones.disposicion`, destinos ampliados en `db/migrations/011_destino_donacion.sql` | implementado |
 | RF-19 | Etiquetas e inventario recuperable | `inspecciones.inventario`, `inspecciones.etiquetar` | parcial (falta impresion) |
-| RF-20 | Aprobar o rechazar el reembolso | `app/blueprints/reembolsos.py` | implementado |
+| RF-20 | Aprobar o rechazar el reembolso | `apps/web/app/blueprints/reembolsos.py` | implementado |
 | RF-21 | Un solo reembolso valido por devolucion | `UNIQUE devolucion_id` + validacion en `reembolsos.registrar` | implementado |
 | RF-22 | Sugerencia automatica del motivo | `POST /api/v1/analisis/clasificar-motivo`; ranking explicable y confirmacion humana | implementado |
 | RF-23 | Agrupar devoluciones por caracteristicas y tasas de devolucion | `panel.causas`: agrupacion por motivo/producto/lote/proveedor/tienda/ruta, tasas contra unidades vendidas, lotes y tiendas atipicos | implementado |
@@ -58,7 +58,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-27 | Consulta de costos y costo total por devolucion | `panel.costos`, captura de costo en `logistica.py`, `inspecciones.py`, `devoluciones.agregar_costo`; `db/migrations/009_ampliar_tipos_costo.sql`, `010_vista_costo_devolucion.sql` | implementado |
 | RF-28 | Generar y exportar reportes | — | pendiente |
 | RF-29 | Notificaciones automaticas | `services/devoluciones` inserta en `notificaciones` al resolver; falta mostrarlas en la web | parcial |
-| RF-30 | Bitacora de operaciones | `app/security.py:registrar_bitacora`, `panel.bitacora` | implementado |
+| RF-30 | Bitacora de operaciones | `apps/web/app/security.py:registrar_bitacora`, `panel.bitacora` | implementado |
 | RF-31 | JSON para movil y XML para escritorio | `shared/respuestas.py`, contratos XSD y OpenAPI de los ocho servicios | implementado |
 | RF-32 | Monitoreo del estado de los servicios | `/health` en cada contenedor y `/integracion/servicios` en el web | implementado |
 
@@ -76,10 +76,10 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-08 | JWT corto y token de renovacion | `services/auth` emite access/refresh y todos verifican sesion/revocacion Redis | implementado |
 | RNF-09 | Verificar rol y permisos antes de cada operacion | `roles_required`, `exigir_devolucion_visible` | implementado |
 | RNF-10 | Validar los datos antes de almacenarlos | Validacion en navegador y servidor en cada blueprint | implementado |
-| RNF-11 | Proteccion contra inyeccion SQL y XXE | Parametros ligados en `app/db.py`; lista blanca en `catalogos.py` | implementado (XXE no aplica aun) |
-| RNF-12 | Registro de intentos fallidos y bloqueo | `app/cache.py`, `db/migrations/004_control_accesos.sql` | implementado |
+| RNF-11 | Proteccion contra inyeccion SQL y XXE | Parametros ligados en `apps/web/app/db.py`; lista blanca en `catalogos.py` | implementado (XXE no aplica aun) |
+| RNF-12 | Registro de intentos fallidos y bloqueo | `apps/web/app/cache.py`, `db/migrations/004_control_accesos.sql` | implementado |
 | RNF-13 | Limitacion de peticiones | — | pendiente |
-| RNF-14 | Cifrado y secretos fuera del codigo | `.env` fuera de git, `app/config.py` | parcial (falta HTTPS) |
+| RNF-14 | Cifrado y secretos fuera del codigo | `.env` fuera de git, `apps/web/app/config.py` | parcial (falta HTTPS) |
 | RNF-15 | Enlaces firmados para evidencias privadas | Estructura lista en `evidencias`; sin GCS todavia | pendiente |
 | RNF-16 | Ocultar informacion sensible | Mensaje de login generico; bitacora sin datos sensibles | implementado |
 | RNF-17 | Separacion por organizacion | No aplica en el alcance actual | pendiente |
@@ -88,10 +88,10 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-20 | Escalar agregando instancias | — | pendiente |
 | RNF-21 | Una falla parcial no tumba todo | `/health` degradado; bloqueo persistido en Postgres | parcial |
 | RNF-22 | Health checks | `/health` y `healthcheck` en el compose | implementado |
-| RNF-23 | Identificador de correlacion | `app/security.py:correlation_id` | implementado |
+| RNF-23 | Identificador de correlacion | `apps/web/app/security.py:correlation_id` | implementado |
 | RNF-24 | Respaldo y recuperacion | — | pendiente |
 | RNF-25 | Mensajes claros al usuario | Mensajes flash en todas las operaciones | implementado |
-| RNF-26 | Adaptarse a distintos tamanos de pantalla | `app/static/css/estilos.css` | implementado |
+| RNF-26 | Adaptarse a distintos tamanos de pantalla | `apps/web/app/static/css/estilos.css` | implementado |
 | RNF-27 | Docker y Google Compute Engine | `docker-compose.yml`, VM del equipo | implementado |
 | RNF-28 | Pruebas | — | pendiente |
 | RNF-29 | Locust con distintos perfiles | — | pendiente |

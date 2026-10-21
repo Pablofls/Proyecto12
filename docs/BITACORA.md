@@ -393,3 +393,18 @@ va en un PR posterior, una vez validado el despliegue.
 
 **Contingencia.** `USE_MICROSERVICES=false` devuelve el web al modo monolito sin
 tocar codigo.
+
+## Reorganizacion del monorepo (21 de octubre de 2026)
+
+Con la integracion validada en la VM (9 `/health` en 200, 8/8 servicios en el
+panel), se ordeno el repositorio con `git mv` para conservar el historial:
+
+- `app/`, `wsgi.py`, `requirements.txt` y `docker/Dockerfile` pasan a `apps/web/`.
+  El paquete sigue llamandose `app`, asi que ningun `import` cambia. Deja
+  `apps/` listo para las aplicaciones Android y de escritorio del tercer parcial.
+- Los PDF y los `.md` del enunciado pasan a `docs/enunciado/`; `postman/` pasa a
+  `docs/postman/`.
+- El contenedor `app` conserva el contexto de build en la raiz y el bind mount
+  `./:/srv/app`, porque `scripts/migrate.py` y `db/` se ejecutan desde ahi; gunicorn
+  arranca con `--chdir apps/web`.
+- Las migraciones no se tocaron (checksums intactos).
