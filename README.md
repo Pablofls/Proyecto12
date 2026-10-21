@@ -9,16 +9,19 @@ Josue Berdeal · Roberto Sandoval · David Munoz · Pablo Flores
 
 ## Estado actual
 
-**Primer parcial: monolito web funcional.** Sistema web sobre PostgreSQL y
-Redis, ejecutado en contenedores dentro de la VM de GCP del equipo.
+**Segundo parcial: monolito web ampliado y ocho microservicios** (JWT, JSON y
+XML con XSD, PostgreSQL, MongoDB, Redis, Swagger y Docker Compose), ejecutados
+en contenedores dentro de la VM de GCP del equipo. Sobre el monolito web del
+primer parcial, descrito abajo.
 
 Cubre el proceso completo: registro de la solicitud a partir de una venta,
 evidencias, autorizacion, recoleccion, recepcion, inspeccion con condiciones de
 cadena de frio, decision de destino, inventario recuperado, reembolso, costos,
 panel de causas y bitacora de auditoria.
 
-Microservicios, aplicacion movil, aplicacion de escritorio, JWT, XML y Locust
-corresponden a los parciales siguientes.
+Las aplicaciones movil y de escritorio quedan fuera del alcance de esta entrega
+(sus contratos JSON y XML si estan implementados), y las pruebas de carga con
+Locust corresponden al tercer parcial.
 
 ## Antes de tocar el codigo
 
@@ -39,6 +42,8 @@ las dos que mas importan:
 | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | Estructura, capas y decisiones de diseno |
 | [docs/TRAZABILIDAD.md](docs/TRAZABILIDAD.md) | Que RF, RNF y RN cubre cada archivo |
 | [docs/BITACORA.md](docs/BITACORA.md) | Decisiones tecnicas y su justificacion |
+| [docs/DOCUMENTO_TECNICO.md](docs/DOCUMENTO_TECNICO.md) | Documento tecnico integral del segundo parcial |
+| [docs/diagramas/](docs/diagramas/) | Diagramas Mermaid: componentes, despliegue, secuencias, PostgreSQL, MongoDB y Redis |
 
 Los documentos del curso (analisis, requisitos y entregables) estan en
 [Descripcion.md](docs/enunciado/Descripcion.md), [Requisitos.md](docs/enunciado/Requisitos.md) y

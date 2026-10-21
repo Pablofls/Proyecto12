@@ -9,7 +9,8 @@
 | RF-18, RF-19 | `services/inspecciones/app.py`: disposicion validada y etiqueta de inventario | Swagger y prueba integrada en VM |
 | RF-20, RF-21; RN-03, RN-04 | `services/reembolsos_costos/app.py`: reembolso unico con lock Redis | `services/reembolsos_costos/tests/test_api.py` |
 | RF-27 | `services/reembolsos_costos/app.py`: costo y desglose por etapa | Swagger y prueba integrada en VM |
-| RNF-08, RNF-09, RNF-13 | `shared/seguridad.py` usado por los tres servicios | casos 401 y 403 de cada suite |
+| RNF-08, RNF-09 | `shared/seguridad.py` (`requiere_jwt`, `comprobar_en_redis`) usado por los ocho servicios | casos 401 y 403 de cada suite |
+| RNF-13 | `shared/infra.py:limitar` (ventana fija en Redis) usado en `services/auth` (login 10/min por IP, refresh 30/min) y `services/devoluciones` (alta 20/min por usuario) | `services/auth/tests/test_auth.py::test_rate_limit_de_login`, `services/devoluciones/tests/test_api.py::test_rate_limit_de_registro` |
 | RNF-16, RNF-23 | errores uniformes y `X-Correlation-ID` de `shared/respuestas.py` | pruebas de error JSON/XML |
 | RNF-27 | Dockerfile independiente y entradas nuevas de `docker-compose.yml` | `docker compose config` y despliegue VM |
 | RF-05, RF-06 | `services/ventas_catalogos`: ventas y siete catalogos con listas blancas | `services/ventas_catalogos/tests/test_reglas.py` |
@@ -71,19 +72,19 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 |---|---|---|---|
 | RNF-01 | El sistema web funciona de forma independiente | El monolito no depende de otros componentes | implementado |
 | RNF-02 | Cada servicio en su contenedor | ocho Dockerfile y `docker-compose.yml` | implementado |
-| RNF-03 | Los clientes no acceden directo a las bases | Postgres y Redis publicados solo en `127.0.0.1` | implementado |
-| RNF-04 | Movil consume JSON, escritorio XML | negociacion `Accept`, cuerpos JSON/XML y 21 XSD | implementado |
+| RNF-03 | Los clientes no acceden directo a las bases | Postgres, Redis y MongoDB publicados solo en `127.0.0.1` (`docker-compose.yml`) | implementado |
+| RNF-04 | Movil consume JSON, escritorio XML | negociacion `Accept`, cuerpos JSON/XML y 22 XSD (21 por servicio y `shared/contratos/error.xsd`) | implementado |
 | RNF-05 | Versionamiento y Swagger | `/api/v1`, `/docs` y `openapi.yaml` en los ocho servicios | implementado |
 | RNF-06 | Distribucion entre Postgres, Mongo, Redis y almacenamiento | Compose integra las tres bases; inspecciones, evidencias y analisis usan Mongo; evidencias usa volumen privado | implementado |
 | RNF-07 | Hash seguro de contrasenas | `werkzeug.security` en `auth.py` y `usuarios.py` | implementado |
 | RNF-08 | JWT corto y token de renovacion | `services/auth` emite access/refresh y todos verifican sesion/revocacion Redis | implementado |
 | RNF-09 | Verificar rol y permisos antes de cada operacion | `roles_required`, `exigir_devolucion_visible` | implementado |
 | RNF-10 | Validar los datos antes de almacenarlos | Validacion en navegador y servidor en cada blueprint | implementado |
-| RNF-11 | Proteccion contra inyeccion SQL y XXE | Parametros ligados en `apps/web/app/db.py`; lista blanca en `catalogos.py` | implementado (XXE no aplica aun) |
+| RNF-11 | Proteccion contra inyeccion SQL y XXE | Parametros ligados en `apps/web/app/db.py` y `shared/infra.py`; listas blancas en `catalogos.py` y `services/ventas_catalogos`; parser `lxml` sin entidades ni red en `shared/xsd.py` | implementado (sin prueba dedicada de XXE) |
 | RNF-12 | Registro de intentos fallidos y bloqueo | `apps/web/app/cache.py`, `db/migrations/004_control_accesos.sql` | implementado |
-| RNF-13 | Limitacion de peticiones | — | pendiente |
+| RNF-13 | Limitacion de peticiones | `shared/infra.py:limitar`; aplicado solo en `auth` (`/login`, `/refresh`) y `devoluciones` (alta). Los otros seis servicios y el web no limitan | parcial |
 | RNF-14 | Cifrado y secretos fuera del codigo | `.env` fuera de git, `apps/web/app/config.py` | parcial (falta HTTPS) |
-| RNF-15 | Enlaces firmados para evidencias privadas | Estructura lista en `evidencias`; sin GCS todavia | pendiente |
+| RNF-15 | Enlaces firmados para evidencias privadas | `services/evidencias`: enlace HMAC-SHA256 de 15 min (`GET /{id}/enlace`) sobre archivos en volumen privado; el bucket es logico, sin GCS todavia | parcial (falta GCS) |
 | RNF-16 | Ocultar informacion sensible | Mensaje de login generico; bitacora sin datos sensibles | implementado |
 | RNF-17 | Separacion por organizacion | No aplica en el alcance actual | pendiente |
 | RNF-18 | Respuesta maxima de tres segundos | Indices en todas las llaves foraneas | implementado |
@@ -91,12 +92,12 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-20 | Escalar agregando instancias | — | pendiente |
 | RNF-21 | Una falla parcial no tumba todo | `/health` degradado; bloqueo persistido en Postgres | parcial |
 | RNF-22 | Health checks | `/health` y `healthcheck` en el compose | implementado |
-| RNF-23 | Identificador de correlacion | `apps/web/app/security.py:correlation_id` | implementado |
+| RNF-23 | Identificador de correlacion | `apps/web/app/security.py:correlation_id`; `shared/respuestas.py` (header `X-Correlation-ID`, bitacora y coleccion `eventos`) | implementado |
 | RNF-24 | Respaldo y recuperacion | — | pendiente |
 | RNF-25 | Mensajes claros al usuario | Mensajes flash en todas las operaciones | implementado |
 | RNF-26 | Adaptarse a distintos tamanos de pantalla | `apps/web/app/static/css/estilos.css` | implementado |
 | RNF-27 | Docker y Google Compute Engine | `docker-compose.yml`, VM del equipo | implementado |
-| RNF-28 | Pruebas | 119 unitarias; suite E2E `tests/e2e/` y pruebas de integracion por servicio; casos en `docs/PRUEBAS.md`. Falta pegar la salida de la VM | parcial |
+| RNF-28 | Pruebas | 119 unitarias y de API con dobles en `services/*/tests` y `apps/web/app/tests`; suite E2E `tests/e2e/` y `test_integracion.py` en los ocho servicios (`INTEGRACION=1`, solo en la VM); casos en `docs/PRUEBAS.md`. Falta pegar la salida de la VM; faltan carga y recuperacion ante fallos | parcial |
 | RNF-29 | Locust con distintos perfiles | — | pendiente |
 | RNF-30 | Retencion y eliminacion logica | `db/migrations/005_eliminacion_logica.sql`; `DELETE /api/v1/devoluciones/{id}` marca `eliminado_en` | implementado |
 
@@ -110,20 +111,22 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RN-04 | El reembolso requiere devolucion autorizada | `fn_validar_reembolso` (migracion 006) + `reembolsos.registrar` |
 | RN-05 | Clasificacion determina los datos obligatorios | `inspecciones.registrar` exige temperatura y tiempo si es refrigerado |
 | RN-06 | Refrigerado fuera de tiempo no vuelve a inventario | `evaluar_aptitud` + `fn_validar_destino_inventario` |
-| RN-07 | Danos, caducidad o cadena rota impiden inventario | `evaluar_aptitud` + los dos triggers de la migracion 006 |
+| RN-07 | Danos, caducidad o cadena rota impiden inventario | `evaluar_aptitud` + `trg_validar_destino_inventario` (migracion 001) y `trg_validar_inspeccion_vs_disposicion` (migracion 006) |
 | RN-08 | Recoleccion completada requiere datos completos | `logistica.actualizar_estado` |
 | RN-09 | El analisis es apoyo, no determinacion automatica | El panel de causas solo agrupa; no asigna responsabilidad |
 | RN-10 | Agrupacion por atributos definidos por el negocio | `panel.causas` agrupa y filtra por motivo, producto, lote, proveedor, tienda, ruta y estado |
 | RN-11 | La clasificacion automatica es sugerencia | `clasificar-motivo` devuelve `requiere_confirmacion=true`; no modifica la devolucion |
 | RN-12 | Toda decision queda registrada con usuario y fecha | `registrar_bitacora` en cada operacion |
 | RN-13 | Cada usuario solo ejecuta lo de su rol | `roles_required` en todas las vistas |
-| RN-14 | Evidencias privadas por enlaces temporales | Pendiente: requiere GCS |
+| RN-14 | Evidencias privadas por enlaces temporales | Parcial: enlaces temporales HMAC de 15 min en `services/evidencias`; falta almacenar en GCS |
 | RN-15 | No exponer informacion sensible sin autorizacion | Bitacora y errores sin datos sensibles |
 
-## Casos de uso cubiertos por el monolito
+## Casos de uso cubiertos
 
 Implementados: UC-01, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-10,
 UC-11, UC-13, UC-14, UC-15, UC-16, UC-17, UC-22, UC-23, UC-24, UC-25, UC-26.
+Desde el segundo parcial tambien UC-18 a UC-21 (RF-22 a RF-25:
+`services/analisis_auditoria` y `panel.causas`) y UC-27 (RF-32:
+`/integracion/servicios`).
 
-Pendientes: UC-02 (recuperar contrasena), UC-12 (escaneo), UC-18 a UC-21
-(algoritmos), UC-27 (monitoreo de microservicios).
+Pendientes: UC-02 (recuperar contrasena) y UC-12 (escaneo).

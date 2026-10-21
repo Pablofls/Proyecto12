@@ -423,6 +423,32 @@ panel), se ordeno el repositorio con `git mv` para conservar el historial:
   `evidencias` no deja adjuntar despues. RNF-28 queda `parcial` hasta pegar la salida de
   la VM en `docs/pruebas/` (ver `docs/PRUEBAS.md`).
 
+## Diagramas en Mermaid dentro del repositorio (21 de octubre de 2026)
+
+**Decision.** Los ocho diagramas del segundo parcial (componentes, despliegue,
+dos secuencias, comunicacion web-servicios, PostgreSQL, MongoDB y Redis) se
+escriben como bloques Mermaid en `docs/diagramas/*.md` y el documento tecnico
+(`docs/DOCUMENTO_TECNICO.md`) los enlaza.
+
+**Por que.**
+- GitHub renderiza Mermaid, asi que el diagrama se ve en el repositorio sin
+  herramientas externas, y el historial de versiones muestra quien lo cambio y
+  cuando.
+- Es texto: se revisa en un Pull Request y se corrige junto con el codigo que
+  describe, en lugar de quedar como una imagen que nadie reabre.
+- Cada diagrama se redacto leyendo `docker-compose.yml`, las migraciones y los
+  `app.py`, no de memoria. Esa verificacion detecto que las fichas de
+  microservicios mencionaban un `GET /devoluciones/{id}/historial` que no existe,
+  que RNF-13 estaba marcado pendiente pese a que `shared/infra.py:limitar` se
+  usa en `auth` y `devoluciones`, y que solo `devoluciones` publica eventos en la
+  coleccion `eventos` de MongoDB.
+
+**Costo aceptado.** Mermaid tiene limites de maquetacion (un ER grande se
+reparte en varios bloques) y la sintaxis de cada bloque se valido con el
+analizador de Mermaid 10.9.1, no renderizado en GitHub. Si un bloque no se ve
+en GitHub, la causa mas probable es la version del renderizador.
+
+
 ## Notificaciones por rol: campanita, sondeo y matriz de destinatarios (21 de octubre de 2026)
 
 **Contexto.** Solo `services/devoluciones` y `services/reembolsos_costos`
