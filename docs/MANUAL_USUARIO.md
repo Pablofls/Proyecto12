@@ -268,3 +268,29 @@ Quien recibe que, segun el paso del proceso:
 
 Quien ejecuta la accion no recibe aviso de su propia accion. El Administrador no
 recibe avisos del flujo.
+
+---
+
+## Exportar reportes a CSV
+
+Los listados y paneles tienen un boton **Exportar CSV**. El archivo se descarga
+con los **mismos filtros que tengas activos** en la pantalla (por ejemplo, si
+filtraste por estado "autorizada" o por un rango de fechas, el CSV trae solo eso)
+y se abre en Excel con acentos correctos.
+
+| Pantalla | Quien puede exportar | Contenido |
+|---|---|---|
+| Devoluciones | Todos los perfiles (el cliente solo ve y exporta las suyas) | Folio, estado, fecha, motivo, tienda, producto, lote, cliente |
+| Costos | Analista, Encargado de reembolsos, Administrador | Costo por devolucion y por etapa, con total |
+| Causas (Pareto de motivos) | Analista, Administrador | Motivo, devoluciones, porcentaje y porcentaje acumulado, con los filtros del panel |
+| Bitacora | Analista, Administrador | Fecha, usuario, accion, entidad, detalle |
+| Reembolsos | Encargado de reembolsos, Analista | Reembolsos aprobados y rechazados |
+
+- Cada exportacion queda en la bitacora (`exportar_reporte`) con el tipo de
+  reporte y los filtros usados, nunca con el contenido.
+- Una exportacion incluye como maximo 50,000 filas; si necesitas mas, acota con
+  fechas o estado.
+- Por seguridad, el texto que empiece con `=`, `+`, `-` o `@` se marca con un
+  apostrofo al inicio para que Excel no lo ejecute como formula.
+- Si tu perfil no tiene la pantalla, tampoco puede descargar su reporte
+  (responde 403 y se registra el intento).

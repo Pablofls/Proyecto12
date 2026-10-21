@@ -15,6 +15,7 @@ MODULOS_CON_BD = (
     "app.blueprints.panel",
     "app.blueprints.devoluciones",
     "app.blueprints.reembolsos",
+    "app.blueprints.reportes",
 )
 
 

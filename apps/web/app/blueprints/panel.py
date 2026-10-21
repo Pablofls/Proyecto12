@@ -91,6 +91,31 @@ BASE_VENTAS = """
 """
 
 
+def sql_pareto(where_dev):
+    """Pareto de motivos (RF-26). Lo comparten el panel y la exportacion CSV
+    (RF-28) para que el archivo coincida con lo que el analista ve en pantalla.
+
+    Los porcentajes se castean a double precision: la plantilla manda
+    porcentaje_acumulado a Highcharts con |tojson, y Flask no serializa
+    Decimal (lo que devolveria ROUND sobre una division de NUMERIC).
+    """
+    return f"""
+        WITH conteo AS (
+            SELECT m.nombre AS etiqueta, COUNT(*) AS total {BASE_CAUSAS}
+             WHERE {where_dev} GROUP BY m.nombre
+        )
+        SELECT etiqueta, total,
+               ROUND((total * 100.0 / SUM(total) OVER ())::numeric, 1)::double precision
+                   AS porcentaje,
+               ROUND((SUM(total) OVER (ORDER BY total DESC
+                     ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+                     * 100.0 / SUM(total) OVER ())::numeric, 1)::double precision
+                   AS porcentaje_acumulado
+          FROM conteo
+         ORDER BY total DESC
+    """
+
+
 @bp.get("/panel")
 @roles_required(*TODOS_LOS_ROLES)
 def principal():
@@ -224,27 +249,7 @@ def causas():
     )
 
     # --- Pareto de motivos (RF-26): 20% de causas que explican la mayoria ---
-    # Los porcentajes se castean a double precision: la plantilla manda
-    # porcentaje_acumulado a Highcharts con |tojson, y Flask no serializa
-    # Decimal (lo que devolveria ROUND sobre una division de NUMERIC).
-    pareto_motivos = consultar(
-        f"""
-        WITH conteo AS (
-            SELECT m.nombre AS etiqueta, COUNT(*) AS total {BASE_CAUSAS}
-             WHERE {where_dev} GROUP BY m.nombre
-        )
-        SELECT etiqueta, total,
-               ROUND((total * 100.0 / SUM(total) OVER ())::numeric, 1)::double precision
-                   AS porcentaje,
-               ROUND((SUM(total) OVER (ORDER BY total DESC
-                     ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
-                     * 100.0 / SUM(total) OVER ())::numeric, 1)::double precision
-                   AS porcentaje_acumulado
-          FROM conteo
-         ORDER BY total DESC
-        """,
-        tuple(param_dev),
-    )
+    pareto_motivos = consultar(sql_pareto(where_dev), tuple(param_dev))
 
     # --- Cruce multidimensional (RF-24): el hallazgo tipo
     # "68% de las devoluciones del lote L pasaron por la ruta R" ---

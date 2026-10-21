@@ -31,6 +31,7 @@ def create_app():
     from app.blueprints.notificaciones import bp as notificaciones_bp
     from app.blueprints.panel import bp as panel_bp
     from app.blueprints.reembolsos import bp as reembolsos_bp
+    from app.blueprints.reportes import bp as reportes_bp
     from app.blueprints.usuarios import bp as usuarios_bp
     from app.blueprints.ventas import bp as ventas_bp
 
@@ -45,6 +46,7 @@ def create_app():
     app.register_blueprint(integracion_bp)
     app.register_blueprint(reembolsos_bp)
     app.register_blueprint(notificaciones_bp)
+    app.register_blueprint(reportes_bp)
 
     @app.get("/health")
     def health():
