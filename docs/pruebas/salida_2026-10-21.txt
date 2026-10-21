@@ -1,0 +1,568 @@
+=== docker compose run --rm -v /home/pablogcp26/Proyecto12:/repo -w /repo -e PYTHONPATH=/repo -e INTEGRACION=1 devoluciones python -m pytest -v -s -p no:cacheprovider tests/e2e ===
+ Container devoluciones_redis Running 
+ Container devoluciones_mongo Running 
+ Container devoluciones_postgres Running 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_mongo Waiting 
+ Container devoluciones_redis Healthy 
+ Container devoluciones_mongo Healthy 
+ Container devoluciones_postgres Healthy 
+ Container proyecto12-devoluciones-run-066464540dd0 Creating 
+ Container proyecto12-devoluciones-run-066464540dd0 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /repo
+collecting ... collected 100 items
+
+tests/e2e/test_01_proceso_completo.py::test_paso_01_auth_login_sesion_en_redis [E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 11, "nombre": "Miguel Ramos Soto", "email": "miguel.cliente@demo.mx", "rol": "Cliente"}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 16, "nombre": "Josue Berdeal", "email": "josue.analista@demo.mx", "rol": "Analista de Devoluciones"}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 15, "nombre": "David Munoz", "email": "david.logistica@demo.mx", "rol": "Coordinador de Logistica"}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 14, "nombre": "Roberto Sandoval", "email": "roberto.centro@demo.mx", "rol": "Encargado del Centro de Devoluciones"}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 13, "nombre": "Valentina Perez", "email": "valentina.inspector@demo.mx", "rol": "Inspector"}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 17, "nombre": "Carla Trevino", "email": "carla.reembolsos@demo.mx", "rol": "Encargado de Reembolsos"}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 18, "nombre": "Pablo Flores", "email": "pablo.admin@demo.mx", "rol": "Administrador"}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 10, "nombre": "Ana Lopez Garcia", "email": "ana.cliente@demo.mx", "rol": "Cliente"}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 11, "nombre": "Miguel Ramos Soto", "email": "miguel.cliente@demo.mx", "rol": "Cliente"}}
+[E2E] GET /api/v1/auth/sesion -> 200 {"usuario": {"id": 11, "rol": "Cliente", "nombre": "Miguel Ramos Soto"}, "sesion_id": "e66d3e0624f54c7198359bae558cbfaa", "sesion_expira_en_seg": 28800, "token_expira": "2026-10-21T18:37:06+00:00"}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_02_ventas_localiza_linea_con_paginacion [E2E] GET /api/v1/ventas?q=VTA-2026-0001&por_pagina=5 -> 200 {"datos": [{"id": 26, "folio_venta": "VTA-2026-0001", "cliente_id": 11, "fecha_venta": "2026-08-09", "cliente": "Miguel Ramos Soto", "tienda": "Tienda Cumbres", "lineas": 3, "total": 1593.35}], "paginacion": {"pagina": 1, "por_pagina": 5, "total": 1, "paginas": 1}}
+[E2E] GET /api/v1/ventas/26 -> 200 {"id": 26, "folio_venta": "VTA-2026-0001", "fecha_venta": "2026-08-09", "cliente_id": 11, "cliente": "Miguel Ramos Soto", "tienda": "Tienda Cumbres", "lineas": [{"id": 61, "lote_id": 3, "cantidad": 2, "precio_unitario": 134.77, "numero_lote": "L-2026-061", "fecha_caducidad": "2026-09-20", "producto_...(recortado)
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_03_clasificar_motivo_es_solo_sugerencia [E2E] POST /api/v1/analisis/clasificar-motivo -> 200 {"sugerencias": [{"motivo": "Producto danado", "puntaje": 2, "coincidencias": ["danado", "roto"], "motivo_id": 1}], "requiere_confirmacion": true, "explicacion": "La clasificacion orienta; el usuario confirma el motivo."}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_04_cliente_registra_solicitud [E2E] POST /api/v1/devoluciones -> 201 {"id": 56, "folio_devolucion": "DEV-2026-0056", "estado": "solicitada", "fecha_solicitud": "2026-10-21T18:22:06.160373+00:00", "venta_detalle_id": 63, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_05_evidencias_comentario_xml_y_archivo [E2E] POST /api/v1/evidencias -> 201 <?xml version='1.0' encoding='utf-8'?>
+<evidencia><id>10</id><devolucion_id>56</devolucion_id><tipo>comentario</tipo><metadatos_id>6ad902ce1f4384d46cf80031</metadatos_id></evidencia>
+[E2E] POST /api/v1/evidencias -> 201 {"id": 11, "devolucion_id": 56, "tipo": "fotografia", "metadatos_id": "6ad902ce1f4384d46cf80032"}
+[E2E] GET /api/v1/evidencias/11/enlace -> 200 {"url_relativa": "/api/v1/evidencias/11/archivo?exp=1792607826&firma=54ffd61497f2b0180e4cd8fb42415abd2d888eec8da1677f5b965f7b59700ce3", "vigencia_segundos": 900}
+[E2E] GET /api/v1/evidencias/11/archivo?exp=1792607826&firma=54ffd61497f2b0180e4cd8fb42415abd2d888eec8da1677f5b965f7b59700ce3 -> 200 <69 bytes>
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_06_analista_autoriza [E2E] PATCH /api/v1/devoluciones/56/resolucion -> 200 {"id": 56, "folio_devolucion": "DEV-2026-0056", "estado": "autorizada", "decision": "autorizar", "analista": "Josue Berdeal", "notificacion_cliente": "Tu devolucion DEV-2026-0056 fue autorizada. Pronto programaremos la recoleccion."}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_06b_notificaciones_por_rol_y_campanita [E2E][web] POST /login -> 302 <html>
+[E2E][web] POST /login -> 302 <html>
+[E2E][web] POST /login -> 302 <html>
+[E2E][web] GET /notificaciones/resumen -> 200 {"no_leidas": 1, "ultimas": [{"fecha": "21/10/2026 18:22", "id": 13, "leer": "/notificaciones/13/leer", "leido": false, "mensaje": "Tu devolucion DEV-2026-0056 fue autorizada. Pronto programaremos la recoleccion."}]}
+[E2E][web] POST /notificaciones/13/leer -> 404 <html>
+[E2E][web] POST /notificaciones/13/leer -> 302 <html>
+[E2E][web] GET /notificaciones/resumen -> 200 {"no_leidas": 0, "ultimas": [{"fecha": "21/10/2026 18:22", "id": 13, "leer": "/notificaciones/13/leer", "leido": true, "mensaje": "Tu devolucion DEV-2026-0056 fue autorizada. Pronto programaremos la recoleccion."}]}
+[E2E][web] GET /notificaciones/resumen -> 200 {"no_leidas": 1, "ultimas": [{"fecha": "21/10/2026 18:22", "id": 14, "leer": "/notificaciones/14/leer", "leido": false, "mensaje": "Autorizada DEV-2026-0056: programa la recoleccion"}, {"fecha": "21/10/2026 17:19", "id": 4, "leer": "/notificaciones/4/leer", "leido": true, "mensaje": "Autorizada DEV-...(recortado)
+[E2E][web] POST /notificaciones/14/leer -> 302 <html>
+[E2E][web] POST /logout -> 302 <html>
+[E2E][web] POST /logout -> 302 <html>
+[E2E][web] POST /logout -> 302 <html>
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_07_logistica_hasta_recepcion_y_costo [E2E] POST /api/v1/logistica/recolecciones -> 201 {"id": 24, "devolucion_id": 56, "fecha_programada": "2026-10-22", "lugar": "Tienda de prueba E2E", "estado": "programada"}
+[E2E] PATCH /api/v1/logistica/recolecciones/24/asignacion -> 200 {"id": 24, "estado": "asignada", "ruta_id": 1, "transportista_id": 1}
+[E2E] PATCH /api/v1/logistica/recolecciones/24/estado -> 200 {"id": 24, "estado": "en_transito"}
+[E2E] PATCH /api/v1/logistica/recolecciones/24/estado -> 200 {"id": 24, "estado": "completada"}
+[E2E] PATCH /api/v1/logistica/recolecciones/24/estado -> 409 {"error": {"codigo": 409, "tipo": "transicion_invalida", "mensaje": "No se puede pasar de completada a en_transito.", "detalles": null, "correlation_id": "cf26afe0ec664180"}}
+[E2E] POST /api/v1/logistica/recepciones -> 201 {"id": 19, "devolucion_id": 56, "fecha_recepcion": "2026-10-21T18:22:07.254661+00:00", "coincide_expediente": true}
+[E2E] POST /api/v1/reembolsos-costos/costos -> 201 {"id": 40, "devolucion_id": 56, "etapa": "transporte", "monto": 120.5, "fecha": "2026-10-21"}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_08_inspeccion_disposicion_y_etiqueta [E2E] POST /api/v1/inspecciones -> 201 {"id": 17, "devolucion_id": 56, "resultado_general": "apto", "mongo_doc_id": "6ad902cf80eb3c54afafbb16", "apto_para_inventario": true, "fecha_inspeccion": "2026-10-21T18:22:07.325016+00:00", "detalle": {"devolucion_id": 56, "inspector_id": 13, "fecha": "2026-10-21T18:22:07.331715+00:00", "producto":...(recortado)
+[E2E] POST /api/v1/inspecciones/56/disposicion -> 201 {"id": 13, "devolucion_id": 56, "analista_id": 16, "destino": "inventario", "justificacion": "Producto apto", "fecha_decision": "2026-10-21T18:22:07.356922+00:00"}
+[E2E] POST /api/v1/inspecciones/inventario/13/etiqueta -> 201 {"id": 3, "disposicion_id": 13, "producto_id": 1, "etiqueta_codigo": "REC-2026-0056", "fecha_ingreso": "2026-10-21T18:22:07.388887+00:00", "estado": "disponible"}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_09_reembolso_unico_con_lock [E2E] POST /api/v1/reembolsos-costos/reembolsos -> 201 {"id": 9, "devolucion_id": 56, "monto": 227.17, "metodo": "transferencia", "estado": "aprobado", "fecha_resolucion": "2026-10-21T18:22:07.439922+00:00"}
+[E2E] POST /api/v1/reembolsos-costos/reembolsos -> 409 {"error": {"codigo": 409, "tipo": "reembolso_duplicado", "mensaje": "La devolucion ya tiene un reembolso valido.", "detalles": null, "correlation_id": "ed6cf17d34d9489d"}}
+[E2E] POST /api/v1/reembolsos-costos/reembolsos -> 409 {"error": {"codigo": 409, "tipo": "reembolso_en_proceso", "mensaje": "Otro proceso esta resolviendo este reembolso.", "detalles": null, "correlation_id": "81df657514e94f88"}}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_10_analisis_sincroniza_pareto_y_cache [E2E] POST /api/v1/analisis/sincronizar -> 200 {"casos_sincronizados": 38, "version_cache": 4, "fecha": "2026-10-21T18:22:07.647724+00:00", "solo_lectura_postgresql": true}
+[E2E] GET /api/v1/analisis/pareto?dimension=motivo&medida=frecuencia -> 200 {"dimension": "motivo", "medida": "frecuencia", "total_general": 38.0, "categorias": [{"etiqueta": "Cadena de frio rota", "total": 12.0, "casos": 12, "porcentaje": 31.58, "porcentaje_acumulado": 31.58}, {"etiqueta": "Caducidad proxima", "total": 8.0, "casos": 8, "porcentaje": 21.05, "porcentaje_acum...(recortado)
+[E2E] GET /api/v1/analisis/pareto?dimension=motivo&medida=frecuencia -> 200 {"dimension": "motivo", "medida": "frecuencia", "total_general": 38.0, "categorias": [{"etiqueta": "Cadena de frio rota", "total": 12.0, "casos": 12, "porcentaje": 31.58, "porcentaje_acumulado": 31.58}, {"etiqueta": "Caducidad proxima", "total": 8.0, "casos": 8, "porcentaje": 21.05, "porcentaje_acum...(recortado)
+[E2E] GET /api/v1/analisis/alertas-fraude -> 200 {"datos": [{"cliente_id": 10, "cliente": "Ana Lopez Garcia", "devoluciones_90_dias": 13, "rechazadas": 0, "monto_reembolsado": 405.84, "razones": ["frecuencia alta en 90 dias"], "requiere_revision_humana": true}, {"cliente_id": 11, "cliente": "Miguel Ramos Soto", "devoluciones_90_dias": 13, "rechaza...(recortado)
+[E2E] GET /api/v1/analisis/eventos?correlation_id=e2e-d4498fe8e28c -> 200 {"datos": [{"id": "6ad902ce5ec5de21750c3462", "servicio": "devoluciones", "tipo": "devolucion_registrada", "usuario_id": 11, "correlation_id": "e2e-d4498fe8e28c", "fecha": "2026-10-21T18:22:06.172000+00:00"}], "paginacion": {"pagina": 1, "por_pagina": 20, "total": 1, "paginas": 1}}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_11_logout_revoca_el_token_en_todos_los_servicios [E2E] GET /api/v1/auth/sesion -> 200 {"usuario": {"id": 11, "rol": "Cliente", "nombre": "Miguel Ramos Soto"}, "sesion_id": "e66d3e0624f54c7198359bae558cbfaa", "sesion_expira_en_seg": 28798, "token_expira": "2026-10-21T18:37:06+00:00"}
+[E2E] GET /api/v1/devoluciones -> 200 {"datos": [{"id": 56, "folio_devolucion": "DEV-2026-0056", "estado": "cerrada", "fecha_solicitud": "2026-10-21T18:22:06.160373+00:00", "cantidad_devuelta": 1, "motivo": "Producto danado", "producto": "Leche entera 1 L", "clasificacion_temperatura": "refrigerado", "numero_lote": "L-2026-045", "client...(recortado)
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "fe5b7616166c4673"}}
+[E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "2dcfb422eb5a47ba"}}
+[E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "8773314b9c744c3f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[auth] [E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "63cd60fe0d574746"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "b73eef9cc1724281"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[logistica] [E2E] GET /api/v1/logistica/recolecciones -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "3a36052700204806"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[inspecciones] [E2E] GET /api/v1/inspecciones/1 -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "b54b0967bdfc4f23"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[reembolsos] [E2E] GET /api/v1/reembolsos-costos/reembolsos -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "18547d7126d849ef"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "e6c2b351d80545c3"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[evidencias] [E2E] GET /api/v1/evidencias?devolucion_id=1 -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "73e96a0f6afe43f7"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[analisis] [E2E] GET /api/v1/analisis/resumen -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "a919ff42d1a64717"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[auth] [E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "44388c9bf36e4c60"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "269d0bbb26e44878"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[logistica] [E2E] GET /api/v1/logistica/recolecciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "f1719eae52db4ffa"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[inspecciones] [E2E] GET /api/v1/inspecciones/1 -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "4b5ed2652e3e41c3"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[reembolsos] [E2E] GET /api/v1/reembolsos-costos/reembolsos -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "31d313f927e240d3"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "c8b3bae246af452a"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[evidencias] [E2E] GET /api/v1/evidencias?devolucion_id=1 -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "c887a32f2b6441ef"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[analisis] [E2E] GET /api/v1/analisis/resumen -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "7724a44c8664460a"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[auth] [E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "8df7b3dd27244629"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "38946c7bcd294b03"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[logistica] [E2E] GET /api/v1/logistica/recolecciones -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "6bbe336ec1904315"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[inspecciones] [E2E] GET /api/v1/inspecciones/1 -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "184ea89a32d64586"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[reembolsos] [E2E] GET /api/v1/reembolsos-costos/reembolsos -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "847d3bed32c34de1"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "12c914cab9e74494"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[evidencias] [E2E] GET /api/v1/evidencias?devolucion_id=1 -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "cf55a06732e540be"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[analisis] [E2E] GET /api/v1/analisis/resumen -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "07a1c0e17f454d8a"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[auth] [E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "6adffa902e6048cb"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "5bd02cd4b7434748"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[logistica] [E2E] GET /api/v1/logistica/recolecciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "92a8451821a04c75"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[inspecciones] [E2E] GET /api/v1/inspecciones/1 -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "1c6e5a0c87d74919"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[reembolsos] [E2E] GET /api/v1/reembolsos-costos/reembolsos -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "9deb3c52bcaa454c"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "e7120cb9808149f3"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[evidencias] [E2E] GET /api/v1/evidencias?devolucion_id=1 -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "d97ddef15c99409c"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[analisis] [E2E] GET /api/v1/analisis/resumen -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "44833cc451fe463f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[auth] [E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "e505207f7d7b49f9"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "938758a3a5b74480"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[logistica] [E2E] GET /api/v1/logistica/recolecciones -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "90c16de82dcb4b2e"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[inspecciones] [E2E] GET /api/v1/inspecciones/1 -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "e6e8318c76254bbc"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[reembolsos] [E2E] GET /api/v1/reembolsos-costos/reembolsos -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "40faa4213ee34eda"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "dbcbe1b352be42c7"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[evidencias] [E2E] GET /api/v1/evidencias?devolucion_id=1 -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "16a26f0b1c15442d"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[analisis] [E2E] GET /api/v1/analisis/resumen -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "5e9e822e930e4928"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_refresh_token_no_sirve_como_access [E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 11, "nombre": "Miguel Ramos Soto", "email": "miguel.cliente@demo.mx", "rol": "Cliente"}}
+[E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "Se esperaba un token de tipo 'access'.", "detalles": null, "correlation_id": "860ad743de184985"}}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_login_con_credenciales_malas_no_revela_si_existe_el_correo [E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "7ced66fdffd8494f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[auth] [E2E] DELETE /api/v1/auth/usuarios/1/sesiones -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Administrador"]}, "correlation_id": "3dbb5e726e984b08"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[devoluciones] [E2E] PATCH /api/v1/devoluciones/1/resolucion -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Analista de Devoluciones"]}, "correlation_id": "61c9f8793e234b52"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[logistica] [E2E] POST /api/v1/logistica/recolecciones -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Coordinador de Logistica"]}, "correlation_id": "c765502e6fa14b3d"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[inspecciones] [E2E] POST /api/v1/inspecciones -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Inspector"]}, "correlation_id": "6eed1e406335490b"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[reembolsos] [E2E] POST /api/v1/reembolsos-costos/reembolsos -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Encargado de Reembolsos"]}, "correlation_id": "a533ad5e03b2472a"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[ventas] [E2E] POST /api/v1/catalogos/motivos -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Administrador"]}, "correlation_id": "5d6f919864444d12"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[evidencias] [E2E] POST /api/v1/evidencias -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Analista de Devoluciones", "roles_permitidos": ["Cliente", "Inspector"]}, "correlation_id": "a3b263f74d854a63"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[analisis] [E2E] GET /api/v1/analisis/alertas-fraude -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Administrador", "Analista de Devoluciones"]}, "correlation_id": "45e3c2f725cc43e0"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_cliente_no_ve_la_devolucion_de_otro_y_queda_en_bitacora [E2E] POST /api/v1/devoluciones -> 201 {"id": 57, "folio_devolucion": "DEV-2026-0057", "estado": "solicitada", "fecha_solicitud": "2026-10-21T18:22:08.102918+00:00", "venta_detalle_id": 63, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] GET /api/v1/devoluciones/57 -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "La devolucion no pertenece a tu cuenta.", "detalles": null, "correlation_id": "a5c45b9667f44f82"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[devoluciones-0] [E2E] GET /api/v1/devoluciones?por_pagina=0 -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Parametro de paginacion invalido.", "detalles": [{"campo": "por_pagina", "problema": "debe ser un entero entre 1 y 100"}], "correlation_id": "e22f53beed9742a3"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[devoluciones-1] [E2E] POST /api/v1/devoluciones -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Datos de la devolucion incompletos.", "detalles": [{"campo": "venta_detalle_id", "problema": "es obligatorio"}, {"campo": "descripcion_problema", "problema": "minimo 10 caracteres"}], "correlation_id": "1f495494a76b41f2"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[inspecciones-2] [E2E] POST /api/v1/inspecciones/1/disposicion -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Destino invalido.", "detalles": null, "correlation_id": "f38735bcda0c4ce5"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[reembolsos-3] [E2E] POST /api/v1/reembolsos-costos/reembolsos -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "monto debe ser un monto decimal finito no negativo.", "detalles": null, "correlation_id": "8230df46daad40e8"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[ventas-4] [E2E] GET /api/v1/ventas?q=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "La busqueda no puede superar 100 caracteres.", "detalles": null, "correlation_id": "953c9eab7b4c47e0"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[evidencias-5] [E2E] GET /api/v1/evidencias -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "devolucion_id debe ser entero positivo.", "detalles": null, "correlation_id": "2262903110564a44"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[analisis-6] [E2E] GET /api/v1/analisis/pareto?dimension=inexistente -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Dimension o medida desconocida.", "detalles": null, "correlation_id": "7acfc2db3a9e4f9e"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[analisis-7] [E2E] POST /api/v1/analisis/clasificar-motivo -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "descripcion debe contener entre 10 y 2000 caracteres.", "detalles": null, "correlation_id": "84da4310fdeb4b7c"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[auth-8] [E2E] POST /api/v1/auth/login -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Datos de acceso incompletos.", "detalles": [{"campo": "email", "problema": "formato invalido"}], "correlation_id": "a1d974bfe71b4c21"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_logistica_fecha_pasada_responde_400 [E2E] POST /api/v1/devoluciones -> 201 {"id": 58, "folio_devolucion": "DEV-2026-0058", "estado": "solicitada", "fecha_solicitud": "2026-10-21T18:22:08.213650+00:00", "venta_detalle_id": 63, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] PATCH /api/v1/devoluciones/58/resolucion -> 200 {"id": 58, "folio_devolucion": "DEV-2026-0058", "estado": "autorizada", "decision": "autorizar", "analista": "Josue Berdeal", "notificacion_cliente": "Tu devolucion DEV-2026-0058 fue autorizada. Pronto programaremos la recoleccion."}
+[E2E] POST /api/v1/logistica/recolecciones -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "fecha_programada no puede estar en el pasado.", "detalles": null, "correlation_id": "84fed360907c4f9f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_json_malformado_responde_400 [E2E] POST /api/v1/devoluciones -> 400 {"error": {"codigo": 400, "tipo": "json_invalido", "mensaje": "El cuerpo no es un objeto JSON valido.", "detalles": null, "correlation_id": "d2e6953c25e04934"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_content_type_no_soportado_responde_415 [E2E] POST /api/v1/devoluciones -> 415 {"error": {"codigo": 415, "tipo": "formato_no_soportado", "mensaje": "Usa Content-Type application/json o application/xml.", "detalles": null, "correlation_id": "f9f099eec0f94764"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[devoluciones-0] [E2E] GET /api/v1/devoluciones/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "No existe la devolucion 99999999.", "detalles": null, "correlation_id": "2188511a4ea84086"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[inspecciones-1] [E2E] GET /api/v1/inspecciones/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "No existe inspeccion para la devolucion 99999999.", "detalles": null, "correlation_id": "84c5c3cc74ab4173"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[ventas-2] [E2E] GET /api/v1/ventas/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "Venta inexistente.", "detalles": null, "correlation_id": "45bce66804124f4c"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[evidencias-3] [E2E] GET /api/v1/evidencias/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "Evidencia inexistente.", "detalles": null, "correlation_id": "06bc792fde36429c"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[reembolsos-4] [E2E] GET /api/v1/reembolsos-costos/costos/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "No existe la devolucion 99999999.", "detalles": null, "correlation_id": "7a9839ea6ea9418a"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[ventas-5] [E2E] GET /api/v1/catalogos/motivos/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "Registro inexistente.", "detalles": null, "correlation_id": "805ce1d864054ae3"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_logistica_recoleccion_inexistente_responde_404 [E2E] PATCH /api/v1/logistica/recolecciones/99999999/asignacion -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "No existe la recoleccion 99999999.", "detalles": null, "correlation_id": "72472d9bfbab4535"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_error_incluye_el_correlation_id_de_la_peticion [E2E] GET /api/v1/devoluciones/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "No existe la devolucion 99999999.", "detalles": null, "correlation_id": "e2e-err-0d0d00e8"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_cantidad_excedida_responde_409 [E2E] POST /api/v1/devoluciones -> 409 {"error": {"codigo": 409, "tipo": "cantidad_excedida", "mensaje": "Solo se pueden devolver 2 articulo(s) de esta linea.", "detalles": {"disponible": 2, "solicitada": 3}, "correlation_id": "4bfa3cec8e42481b"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_reembolso_sin_autorizar_responde_409 [E2E] POST /api/v1/devoluciones -> 201 {"id": 59, "folio_devolucion": "DEV-2026-0059", "estado": "solicitada", "fecha_solicitud": "2026-10-21T18:22:08.466046+00:00", "venta_detalle_id": 63, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] POST /api/v1/reembolsos-costos/reembolsos -> 409 {"error": {"codigo": 409, "tipo": "estado_no_permite", "mensaje": "La devolucion debe estar autorizada.", "detalles": null, "correlation_id": "52a57fd258024d33"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rechazo_exige_justificacion [E2E] POST /api/v1/devoluciones -> 201 {"id": 60, "folio_devolucion": "DEV-2026-0060", "estado": "solicitada", "fecha_solicitud": "2026-10-21T18:22:08.525027+00:00", "venta_detalle_id": 63, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] PATCH /api/v1/devoluciones/60/resolucion -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Resolucion incompleta.", "detalles": [{"campo": "justificacion", "problema": "es obligatoria para rechazar"}], "correlation_id": "14ac9fd2e47d4c19"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_logistica_solo_programa_devoluciones_autorizadas_409 [E2E] POST /api/v1/devoluciones -> 201 {"id": 61, "folio_devolucion": "DEV-2026-0061", "estado": "solicitada", "fecha_solicitud": "2026-10-21T18:22:08.560886+00:00", "venta_detalle_id": 63, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] POST /api/v1/logistica/recolecciones -> 409 {"error": {"codigo": 409, "tipo": "estado_no_permite", "mensaje": "Solo se programan devoluciones autorizadas.", "detalles": {"estado_actual": "solicitada"}, "correlation_id": "5d2c4c8cd68e4d2e"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_cadena_de_frio_rota_impide_inventario_409 [E2E] POST /api/v1/devoluciones -> 201 {"id": 62, "folio_devolucion": "DEV-2026-0062", "estado": "solicitada", "fecha_solicitud": "2026-10-21T18:22:08.607995+00:00", "venta_detalle_id": 63, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] PATCH /api/v1/devoluciones/62/resolucion -> 200 {"id": 62, "folio_devolucion": "DEV-2026-0062", "estado": "autorizada", "decision": "autorizar", "analista": "Josue Berdeal", "notificacion_cliente": "Tu devolucion DEV-2026-0062 fue autorizada. Pronto programaremos la recoleccion."}
+[E2E] POST /api/v1/logistica/recolecciones -> 201 {"id": 25, "devolucion_id": 62, "fecha_programada": "2026-10-22", "lugar": "Tienda de prueba E2E", "estado": "programada"}
+[E2E] PATCH /api/v1/logistica/recolecciones/25/asignacion -> 200 {"id": 25, "estado": "asignada", "ruta_id": 1, "transportista_id": 1}
+[E2E] PATCH /api/v1/logistica/recolecciones/25/estado -> 200 {"id": 25, "estado": "en_transito"}
+[E2E] PATCH /api/v1/logistica/recolecciones/25/estado -> 200 {"id": 25, "estado": "completada"}
+[E2E] POST /api/v1/logistica/recepciones -> 201 {"id": 20, "devolucion_id": 62, "fecha_recepcion": "2026-10-21T18:22:08.746010+00:00", "coincide_expediente": true}
+[E2E] POST /api/v1/inspecciones -> 201 {"id": 18, "devolucion_id": 62, "resultado_general": "no apto: cadena de frio rota, mas de 30 minutos fu", "mongo_doc_id": "6ad902d080eb3c54afafbb17", "apto_para_inventario": false, "fecha_inspeccion": "2026-10-21T18:22:08.765112+00:00", "detalle": {"devolucion_id": 62, "inspector_id": 13, "fecha": ...(recortado)
+[E2E] POST /api/v1/inspecciones -> 409 {"error": {"codigo": 409, "tipo": "inspeccion_duplicada", "mensaje": "La devolucion ya tiene inspeccion.", "detalles": null, "correlation_id": "fc0200e815494018"}}
+[E2E] POST /api/v1/inspecciones/62/disposicion -> 409 {"error": {"codigo": 409, "tipo": "no_apto_inventario", "mensaje": "La inspeccion impide regresar el producto a inventario.", "detalles": null, "correlation_id": "c27ff353151d4308"}}
+[E2E] POST /api/v1/inspecciones/62/disposicion -> 201 {"id": 14, "devolucion_id": 62, "analista_id": 16, "destino": "desecho", "justificacion": "Cadena de frio rota", "fecha_decision": "2026-10-21T18:22:08.841665+00:00"}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_refrigerado_sin_temperatura_responde_400 [E2E] POST /api/v1/devoluciones -> 201 {"id": 63, "folio_devolucion": "DEV-2026-0063", "estado": "solicitada", "fecha_solicitud": "2026-10-21T18:22:08.878658+00:00", "venta_detalle_id": 63, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] PATCH /api/v1/devoluciones/63/resolucion -> 200 {"id": 63, "folio_devolucion": "DEV-2026-0063", "estado": "autorizada", "decision": "autorizar", "analista": "Josue Berdeal", "notificacion_cliente": "Tu devolucion DEV-2026-0063 fue autorizada. Pronto programaremos la recoleccion."}
+[E2E] POST /api/v1/logistica/recolecciones -> 201 {"id": 26, "devolucion_id": 63, "fecha_programada": "2026-10-22", "lugar": "Tienda de prueba E2E", "estado": "programada"}
+[E2E] PATCH /api/v1/logistica/recolecciones/26/asignacion -> 200 {"id": 26, "estado": "asignada", "ruta_id": 1, "transportista_id": 1}
+[E2E] PATCH /api/v1/logistica/recolecciones/26/estado -> 200 {"id": 26, "estado": "en_transito"}
+[E2E] PATCH /api/v1/logistica/recolecciones/26/estado -> 200 {"id": 26, "estado": "completada"}
+[E2E] POST /api/v1/logistica/recepciones -> 201 {"id": 21, "devolucion_id": 63, "fecha_recepcion": "2026-10-21T18:22:09.015242+00:00", "coincide_expediente": true}
+[E2E] POST /api/v1/inspecciones -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Temperatura y minutos son obligatorios para producto refrigerado.", "detalles": null, "correlation_id": "43c5e6ed59904b52"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_bitacora_no_guarda_tokens PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_busqueda_con_inyeccion_sql_no_rompe_nada [E2E] GET /api/v1/ventas?q=%27%3B%20DROP%20TABLE%20ventas%3B-- -> 200 {"datos": [], "paginacion": {"pagina": 1, "por_pagina": 20, "total": 0, "paginas": 0}}
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_login_en_xml_y_respuesta_valida_contra_tokens_xsd [E2E] POST /api/v1/auth/login -> 200 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><token_type>Bearer</token_type><access_token>***</access_token><expires_in>900</expires_in><refresh_token>***</refresh_token><refresh_expires_in>28800</refresh_expires_in><usuario><id>11</id><nombre>Miguel Ramos Soto</nombre><email>miguel.cliente@dem...(recortado)
+[E2E] GET /api/v1/auth/sesion -> 200 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><usuario><id>11</id><rol>Cliente</rol><nombre>Miguel Ramos Soto</nombre></usuario><sesion_id>fa945cd2071c4bed9e11c5967a8a752c</sesion_id><sesion_expira_en_seg>28800</sesion_expira_en_seg><token_expira>2026-10-21T18:37:09+00:00</token_expira></respues...(recortado)
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_mismo_listado_en_json_y_xml_trae_el_mismo_total [E2E] GET /api/v1/ventas?por_pagina=5 -> 200 {"datos": [{"id": 29, "folio_venta": "VTA-2026-0004", "cliente_id": 11, "fecha_venta": "2026-08-31", "cliente": "Miguel Ramos Soto", "tienda": "Tienda Valle Oriente", "lineas": 1, "total": 506.12}, {"id": 39, "folio_venta": "VTA-2026-0014", "cliente_id": 11, "fecha_venta": "2026-08-29", "cliente": "...(recortado)
+[E2E] GET /api/v1/ventas?por_pagina=5 -> 200 <?xml version='1.0' encoding='utf-8'?>
+<ventas><datos><item><id>29</id><folio_venta>VTA-2026-0004</folio_venta><cliente_id>11</cliente_id><fecha_venta>2026-08-31</fecha_venta><cliente>Miguel Ramos Soto</cliente><tienda>Tienda Valle Oriente</tienda><lineas>1</lineas><total>506.12</total></item><item>...(recortado)
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_error_en_xml_sigue_el_formato_comun [E2E] GET /api/v1/devoluciones/99999999 -> 404 <?xml version='1.0' encoding='utf-8'?>
+<error><codigo>404</codigo><tipo>no_encontrado</tipo><mensaje>No existe la devolucion 99999999.</mensaje><detalles /><correlation_id>ed67e79c70244ec2</correlation_id></error>
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_devolucion_creada_con_cuerpo_xml [E2E] POST /api/v1/devoluciones -> 201 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>64</id><folio_devolucion>DEV-2026-0064</folio_devolucion><estado>solicitada</estado><fecha_solicitud>2026-10-21T18:22:09.417161+00:00</fecha_solicitud><venta_detalle_id>63</venta_detalle_id><motivo_id>1</motivo_id><descripcion_problema>Prueba E2E...(recortado)
+[E2E] PATCH /api/v1/devoluciones/64/resolucion -> 200 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>64</id><folio_devolucion>DEV-2026-0064</folio_devolucion><estado>autorizada</estado><decision>autorizar</decision><analista>Josue Berdeal</analista><notificacion_cliente>Tu devolucion DEV-2026-0064 fue autorizada. Pronto programaremos la recolecc...(recortado)
+[E2E] POST /api/v1/logistica/recolecciones -> 201 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>27</id><devolucion_id>64</devolucion_id><fecha_programada>2026-10-22</fecha_programada><lugar>Tienda de prueba XML</lugar><estado>programada</estado></respuesta>
+[E2E] PATCH /api/v1/logistica/recolecciones/27/asignacion -> 200 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>27</id><estado>asignada</estado><ruta_id>1</ruta_id><transportista_id>1</transportista_id></respuesta>
+[E2E] PATCH /api/v1/logistica/recolecciones/27/estado -> 200 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>27</id><estado>en_transito</estado></respuesta>
+[E2E] POST /api/v1/reembolsos-costos/costos -> 201 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>42</id><devolucion_id>64</devolucion_id><etapa>transporte</etapa><monto>99.9</monto><fecha>2026-10-21</fecha></respuesta>
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_xml_que_no_cumple_el_xsd_responde_400 [E2E] POST /api/v1/devoluciones -> 400 {"error": {"codigo": 400, "tipo": "xml_no_cumple_xsd", "mensaje": "El XML no cumple el contrato del endpoint.", "detalles": [{"linea": 1, "problema": "Element 'devolucion': Missing child element(s). Expected is one of ( motivo_id, cantidad_devuelta )."}], "correlation_id": "cb62d113cffa498b"}}
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_xml_mal_formado_responde_400 [E2E] POST /api/v1/devoluciones -> 400 {"error": {"codigo": 400, "tipo": "xml_invalido", "mensaje": "El cuerpo no es un documento XML bien formado.", "detalles": ["no element found: line 1, column 15"], "correlation_id": "074541eab05043b7"}}
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_xml_no_resuelve_entidades_externas [E2E] POST /api/v1/auth/login -> 400 {"error": {"codigo": 400, "tipo": "xml_invalido", "mensaje": "El cuerpo no es un documento XML bien formado.", "detalles": ["undefined entity &x;: line 1, column 93"], "correlation_id": "0ae936c3ba8c4250"}}
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_pruebas_no_dejan_credenciales_en_el_repositorio PASSED
+tests/e2e/test_99_rate_limit.py::test_login_responde_429_al_exceder_el_limite [E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "1c8f2eed816e49e7"}}
+[E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "6c2e549752cf4a75"}}
+[E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "7cc2554a40b04b96"}}
+[E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "ed5887bec2814bfb"}}
+[E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "70bd1845947d4607"}}
+[E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "198731a49d6e4aa4"}}
+[E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "f9577309b914486c"}}
+[E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "96552ac1fdbd406e"}}
+[E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "da5ff65cf751415a"}}
+[E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "425a5d4d696a406e"}}
+[E2E] POST /api/v1/auth/login -> 429 {"error": {"codigo": 429, "tipo": "demasiadas_peticiones", "mensaje": "Limite de 10 peticiones en 60 s. Intenta de nuevo en 60 s.", "detalles": null, "correlation_id": "c6bd3744d3c9432f"}}
+[E2E] POST /api/v1/auth/login -> 429 {"error": {"codigo": 429, "tipo": "demasiadas_peticiones", "mensaje": "Limite de 10 peticiones en 60 s. Intenta de nuevo en 60 s.", "detalles": null, "correlation_id": "674006e452504885"}}
+PASSED[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+
+
+============================= 100 passed in 5.84s ==============================
+=== docker compose run --rm -e INTEGRACION=1 auth python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_postgres Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_redis Healthy 
+ Container proyecto12-auth-run-38443241e5c4 Creating 
+ Container proyecto12-auth-run-38443241e5c4 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 5 items
+
+tests/test_integracion.py::IntegracionAuth::test_admin_cierra_todas_las_sesiones_de_un_usuario PASSED [ 20%]
+tests/test_integracion.py::IntegracionAuth::test_credenciales_malas_quedan_en_el_historial_sin_revelar_nada PASSED [ 40%]
+tests/test_integracion.py::IntegracionAuth::test_login_crea_sesion_en_redis_historial_y_bitacora PASSED [ 60%]
+tests/test_integracion.py::IntegracionAuth::test_logout_revoca_el_token_y_borra_la_sesion PASSED [ 80%]
+tests/test_integracion.py::IntegracionAuth::test_refresh_emite_un_access_nuevo_de_la_misma_sesion PASSED [100%]
+
+============================== 5 passed in 1.46s ===============================
+=== docker compose run --rm -e INTEGRACION=1 ventas-catalogos python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_postgres Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_redis Healthy 
+ Container proyecto12-ventas-catalogos-run-8e3457f6fcb0 Creating 
+ Container proyecto12-ventas-catalogos-run-8e3457f6fcb0 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 4 items
+
+tests/test_integracion.py::IntegracionVentasCatalogos::test_alta_edicion_y_baja_logica_de_catalogo PASSED [ 25%]
+tests/test_integracion.py::IntegracionVentasCatalogos::test_catalogo_inexistente_y_rol_sin_permiso PASSED [ 50%]
+tests/test_integracion.py::IntegracionVentasCatalogos::test_cliente_no_abre_la_venta_de_otro PASSED [ 75%]
+tests/test_integracion.py::IntegracionVentasCatalogos::test_cliente_solo_ve_sus_ventas_con_paginacion PASSED [100%]
+
+============================== 4 passed in 0.71s ===============================
+=== docker compose run --rm -e INTEGRACION=1 devoluciones python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_postgres Running 
+ Container devoluciones_mongo Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_mongo Waiting 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_mongo Healthy 
+ Container devoluciones_redis Healthy 
+ Container proyecto12-devoluciones-run-4d807d791ddd Creating 
+ Container proyecto12-devoluciones-run-4d807d791ddd Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 4 items
+
+tests/test_integracion.py::PruebaIntegracion::test_1_flujo_registro_revision_y_autorizacion FAILED [ 25%]
+tests/test_integracion.py::PruebaIntegracion::test_2_cancelacion_logica PASSED [ 50%]
+tests/test_integracion.py::PruebaIntegracion::test_3_listado_del_cliente_solo_trae_lo_suyo PASSED [ 75%]
+tests/test_integracion.py::PruebaIntegracion::test_4_logout_en_auth_revoca_el_token_en_devoluciones PASSED [100%]
+
+=================================== FAILURES ===================================
+_______ PruebaIntegracion.test_1_flujo_registro_revision_y_autorizacion ________
+
+self = <tests.test_integracion.PruebaIntegracion testMethod=test_1_flujo_registro_revision_y_autorizacion>
+
+    def test_1_flujo_registro_revision_y_autorizacion(self):
+        dueno, analista = self.linea["email"], ANALISTA
+    
+        # 1. El cliente registra: 201, fila en PostgreSQL y evento en MongoDB.
+        resp = self.registrar()
+        self.assertEqual(resp.status_code, 201, resp.get_json())
+        dev = resp.get_json()
+        self.assertEqual(resp.headers["Location"], f"/api/v1/devoluciones/{dev['id']}")
+        fila = _sql("SELECT estado FROM devoluciones WHERE id = %s", (dev["id"],), uno=True)
+        self.assertEqual(fila["estado"], "solicitada")
+        evento = mongo.get_mongo().eventos.find_one(
+            {"datos.devolucion_id": dev["id"], "tipo": "devolucion_registrada"})
+        self.assertIsNotNone(evento)
+        self.assertEqual(evento["servicio"], "devoluciones")
+    
+        # 2. Otro cliente no puede verla y queda constancia en la bitacora.
+        resp = self.cliente.get(f"/api/v1/devoluciones/{dev['id']}",
+                                headers=self.h(self.otro_cliente))
+        self.assertEqual(resp.status_code, 403)
+        self.assertTrue(_sql("SELECT 1 FROM bitacora WHERE accion = 'acceso_denegado' "
+                             "AND entidad_id = %s", (dev["id"],), uno=True))
+    
+        # 3. Regla de negocio: no se puede devolver mas de lo comprado.
+        resp = self.registrar(cantidad=self.linea["disponible"] + 5)
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.get_json()["error"]["tipo"], "cantidad_excedida")
+    
+        # 4. El analista pide informacion y el cliente corrige con PUT.
+        resp = self.cliente.patch(f"/api/v1/devoluciones/{dev['id']}/resolucion",
+                                  headers=self.h(analista),
+                                  json={"decision": "informacion",
+                                        "justificacion": "Describe el sello."})
+        self.assertEqual(resp.get_json()["estado"], "en_revision")
+        resp = self.cliente.put(f"/api/v1/devoluciones/{dev['id']}", headers=self.h(dueno),
+                                json={"motivo_id": self.motivo, "cantidad_devuelta": 1,
+                                      "descripcion_problema": DESCRIPCION + " Sello abierto."})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.get_json()["descripcion_problema"].endswith("Sello abierto."))
+    
+        # 5. Ya revisada, el cliente no puede cancelarla.
+        resp = self.cliente.delete(f"/api/v1/devoluciones/{dev['id']}", headers=self.h(dueno))
+        self.assertEqual(resp.status_code, 409)
+    
+        # 6. El analista autoriza: estado, notificacion al cliente (RF-29).
+        resp = self.cliente.patch(f"/api/v1/devoluciones/{dev['id']}/resolucion",
+                                  headers=self.h(analista), json={"decision": "autorizar"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.get_json()["estado"], "autorizada")
+        notas = _sql("SELECT tipo FROM notificaciones WHERE devolucion_id = %s ORDER BY id",
+                     (dev["id"],))
+>       self.assertEqual([n["tipo"] for n in notas], ["solicitud_informacion", "autorizacion"])
+E       AssertionError: Lists differ: ['solicitud_informacion', 'autorizacion', 'autorizacion_logistica'] != ['solicitud_informacion', 'autorizacion']
+E       
+E       First list contains 1 additional elements.
+E       First extra element 2:
+E       'autorizacion_logistica'
+E       
+E       - ['solicitud_informacion', 'autorizacion', 'autorizacion_logistica']
+E       ?                                         --------------------------
+E       
+E       + ['solicitud_informacion', 'autorizacion']
+
+tests/test_integracion.py:173: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_integracion.py::PruebaIntegracion::test_1_flujo_registro_revision_y_autorizacion
+========================= 1 failed, 3 passed in 1.36s ==========================
+
+=== docker compose run --rm -e INTEGRACION=1 evidencias python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_postgres Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_mongo Running 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_mongo Waiting 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_mongo Healthy 
+ Container devoluciones_redis Healthy 
+ Container proyecto12-evidencias-run-b6056cb47667 Creating 
+ Container proyecto12-evidencias-run-b6056cb47667 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 4 items
+
+tests/test_integracion.py::IntegracionEvidencias::test_archivo_sin_firma_ni_token_no_se_descarga PASSED [ 25%]
+tests/test_integracion.py::IntegracionEvidencias::test_comentario_json_y_archivo_png PASSED [ 50%]
+tests/test_integracion.py::IntegracionEvidencias::test_otro_rol_no_adjunta PASSED [ 75%]
+tests/test_integracion.py::IntegracionEvidencias::test_un_archivo_que_no_es_imagen_ni_pdf_se_rechaza PASSED [100%]
+
+============================== 4 passed in 0.80s ===============================
+=== docker compose run --rm -e INTEGRACION=1 logistica python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_redis Running 
+ Container devoluciones_postgres Running 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_redis Healthy 
+ Container proyecto12-logistica-run-fe91d225c27f Creating 
+ Container proyecto12-logistica-run-fe91d225c27f Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 3 items
+
+tests/test_integracion.py::IntegracionLogistica::test_el_cliente_no_puede_programar PASSED [ 33%]
+tests/test_integracion.py::IntegracionLogistica::test_no_se_programa_una_devolucion_sin_autorizar PASSED [ 66%]
+tests/test_integracion.py::IntegracionLogistica::test_programar_asignar_transitar_completar_y_recibir PASSED [100%]
+
+============================== 3 passed in 0.98s ===============================
+=== docker compose run --rm -e INTEGRACION=1 inspecciones python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_redis Running 
+ Container devoluciones_postgres Running 
+ Container devoluciones_mongo Running 
+ Container devoluciones_mongo Waiting 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_redis Healthy 
+ Container devoluciones_mongo Healthy 
+ Container devoluciones_postgres Healthy 
+ Container proyecto12-inspecciones-run-866d26443c81 Creating 
+ Container proyecto12-inspecciones-run-866d26443c81 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 5 items
+
+tests/test_integracion.py::IntegracionInspecciones::test_el_cliente_no_inspecciona PASSED [ 20%]
+tests/test_integracion.py::IntegracionInspecciones::test_inspeccion_apta_va_a_mongo_y_postgres_y_se_etiqueta PASSED [ 40%]
+tests/test_integracion.py::IntegracionInspecciones::test_refrigerado_con_cadena_rota_no_vuelve_a_inventario PASSED [ 60%]
+tests/test_integracion.py::IntegracionInspecciones::test_refrigerado_exige_temperatura_y_tiempo PASSED [ 80%]
+tests/test_integracion.py::IntegracionInspecciones::test_solo_se_inspecciona_lo_recibido PASSED [100%]
+
+============================== 5 passed in 1.32s ===============================
+=== docker compose run --rm -e INTEGRACION=1 reembolsos-costos python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_postgres Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_redis Healthy 
+ Container proyecto12-reembolsos-costos-run-5e69806b2463 Creating 
+ Container proyecto12-reembolsos-costos-run-5e69806b2463 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 5 items
+
+tests/test_integracion.py::IntegracionReembolsos::test_costos_por_etapa_y_total PASSED [ 20%]
+tests/test_integracion.py::IntegracionReembolsos::test_el_cliente_no_reembolsa PASSED [ 40%]
+tests/test_integracion.py::IntegracionReembolsos::test_lock_de_redis_bloquea_la_resolucion_concurrente PASSED [ 60%]
+tests/test_integracion.py::IntegracionReembolsos::test_no_reembolsa_si_no_esta_autorizada_ni_mas_del_valor PASSED [ 80%]
+tests/test_integracion.py::IntegracionReembolsos::test_un_solo_reembolso_por_devolucion PASSED [100%]
+
+============================== 5 passed in 1.43s ===============================
+=== docker compose run --rm -e INTEGRACION=1 analisis-auditoria python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_mongo Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_postgres Running 
+ Container devoluciones_mongo Waiting 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_mongo Healthy 
+ Container devoluciones_redis Healthy 
+ Container proyecto12-analisis-auditoria-run-67d2ec6d5bc7 Creating 
+ Container proyecto12-analisis-auditoria-run-67d2ec6d5bc7 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 4 items
+
+tests/test_integracion.py::IntegracionAnalisis::test_auditoria_y_eventos_solo_para_analista_o_admin PASSED [ 25%]
+tests/test_integracion.py::IntegracionAnalisis::test_clasificar_motivo_solo_sugiere PASSED [ 50%]
+tests/test_integracion.py::IntegracionAnalisis::test_pareto_primero_calcula_y_luego_sale_del_cache_con_ttl PASSED [ 75%]
+tests/test_integracion.py::IntegracionAnalisis::test_sincronizar_proyecta_postgres_en_mongo_sin_modificar_postgres PASSED [100%]
+
+============================== 4 passed in 0.93s ===============================
