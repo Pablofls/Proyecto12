@@ -103,8 +103,8 @@ la regla se cumple sin importar quien escriba.
 |---|---|---|
 | PostgreSQL | Expediente completo: ventas, devoluciones, inspecciones, reembolsos, costos, bitacora | Datos relacionales con reglas de integridad y consultas de agregacion |
 | Redis | Sesiones, conteo de intentos fallidos, bloqueo temporal | Datos efimeros con expiracion automatica, escritos en cada peticion |
-| MongoDB | Detalle extenso de la inspeccion | Estructura variable segun el tipo de producto. **No se usa todavia**: `inspecciones_ref.mongo_doc_id` existe y queda en NULL |
-| Google Cloud Storage | Fotografias y documentos de evidencia | Archivos binarios que no deben vivir en la base. **No se usa todavia** |
+| MongoDB | Detalle de la inspeccion, metadatos de evidencias, eventos y resultados de analisis | Estructura variable. **En uso desde el segundo parcial** (`inspecciones`, `evidencias`, `devoluciones`, `analisis-auditoria`); `inspecciones_ref.mongo_doc_id` apunta al documento |
+| Volumen `evidencias_data` | Fotografias y documentos de evidencia | Archivos binarios que no deben vivir en la base; enlaces firmados de 15 min. Google Cloud Storage queda para el tercer parcial |
 
 El bloqueo de cuenta se escribe en **los dos** motores a proposito: Redis lleva
 el conteo vivo con expiracion automatica, y PostgreSQL conserva el bloqueo si
@@ -144,3 +144,22 @@ distribuida, para no tener que reconstruir despues:
 - **`evidencias`** guarda bucket y objeto, nunca una URL publica, para que el
   enlace firmado se genere al consultar (RNF-15).
 - **Configuracion por variables de entorno**, sin ningun valor en el codigo.
+
+## Diagramas y documento tecnico (segundo parcial)
+
+Los diagramas viven como Mermaid en `docs/diagramas/` y renderizan en GitHub:
+
+| Diagrama | Archivo |
+|---|---|
+| Componentes | [docs/diagramas/componentes.md](diagramas/componentes.md) |
+| Despliegue | [docs/diagramas/despliegue.md](diagramas/despliegue.md) |
+| Secuencia: login, JWT y revocacion | [docs/diagramas/secuencia_login_jwt.md](diagramas/secuencia_login_jwt.md) |
+| Secuencia: proceso completo | [docs/diagramas/secuencia_proceso_completo.md](diagramas/secuencia_proceso_completo.md) |
+| Comunicacion web-servicios | [docs/diagramas/comunicacion_web_servicios.md](diagramas/comunicacion_web_servicios.md) |
+| Datos PostgreSQL (logico y fisico) | [docs/diagramas/datos_postgresql.md](diagramas/datos_postgresql.md) |
+| Datos MongoDB | [docs/diagramas/datos_mongodb.md](diagramas/datos_mongodb.md) |
+| Claves de Redis | [docs/diagramas/redis_claves.md](diagramas/redis_claves.md) |
+
+El documento tecnico integral, que los reune con el diseno de cada servicio, los
+contratos, la seguridad y las evidencias pendientes, es
+[docs/DOCUMENTO_TECNICO.md](DOCUMENTO_TECNICO.md).
