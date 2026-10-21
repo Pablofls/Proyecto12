@@ -70,7 +70,7 @@ class PruebaIntegracion(unittest.TestCase):
               FROM venta_detalle vd
               JOIN ventas v   ON v.id = vd.venta_id
               JOIN usuarios u ON u.id = v.cliente_id
-             WHERE v.eliminado_en IS NULL
+             WHERE v.eliminado_en IS NULL AND RIGHT(u.email, 8) = '@demo.mx'
              ORDER BY disponible DESC, vd.id
              LIMIT 1
             """, uno=True)
@@ -80,6 +80,8 @@ class PruebaIntegracion(unittest.TestCase):
             """
             SELECT u.email FROM usuarios u JOIN roles r ON r.id = u.rol_id
              WHERE r.nombre = 'Cliente' AND u.email <> %s AND u.eliminado_en IS NULL
+               AND RIGHT(u.email, 8) = '@demo.mx'
+             ORDER BY u.id
              LIMIT 1
             """, (cls.linea["email"],), uno=True)["email"]
         cls.motivo = _sql("SELECT id FROM motivos WHERE activo ORDER BY id LIMIT 1",
