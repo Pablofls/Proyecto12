@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titulo %}Notificaciones{% endblock %}
+{% block contenido %}
+<h1>Notificaciones</h1>
+<p class="sub">Avisos del flujo de devoluciones dirigidos a tu perfil.</p>
+
+<div class="filtros">
+  <a class="boton {{ '' if filtro == 'todas' else 'secundario' }} pequeno"
+     href="{{ url_for('notificaciones.listar') }}">Todas</a>
+  <a class="boton {{ '' if filtro == 'no_leidas' else 'secundario' }} pequeno"
+     href="{{ url_for('notificaciones.listar', filtro='no_leidas') }}">No leidas</a>
+  <form method="post" action="{{ url_for('notificaciones.leer_todas') }}">
+    <button class="boton secundario pequeno" type="submit">Marcar todas como leidas</button>
+  </form>
+</div>
+
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr><th>Aviso</th><th>Devolucion</th><th>Fecha</th><th></th></tr></thead>
+    <tbody>
+    {% for n in notificaciones %}
+      <tr class="{{ '' if n.leido else 'fila-no-leida' }}">
+        <td>{{ n.mensaje }}</td>
+        <td>{{ n.folio_devolucion or '' }}</td>
+        <td>{{ n.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td>
+          <form method="post" action="{{ url_for('notificaciones.leer', notificacion_id=n.id) }}">
+            <button class="boton pequeno" type="submit">Abrir</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" class="vacio">No tienes notificaciones{{ ' sin leer' if filtro == 'no_leidas' else '' }}.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if paginas > 1 %}
+<div class="acciones">
+  {% if pagina > 1 %}
+    <a class="boton secundario pequeno" href="{{ url_for('notificaciones.listar', filtro=filtro, pagina=pagina - 1) }}">Anterior</a>
+  {% endif %}
+  <span class="nota">Pagina {{ pagina }} de {{ paginas }} ({{ total }} avisos)</span>
+  {% if pagina < paginas %}
+    <a class="boton secundario pequeno" href="{{ url_for('notificaciones.listar', filtro=filtro, pagina=pagina + 1) }}">Siguiente</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

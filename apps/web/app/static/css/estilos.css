@@ -111,3 +111,40 @@ dl.datos dd { margin: 0; font-weight: 500; }
 }
 .linea-tiempo .cuando { color: var(--gris); font-size: 12px; }
 .nota { color: var(--gris); font-size: 13px; }
+
+/* Campanita de notificaciones (RF-29, UC-25) */
+.campanita { position: relative; }
+.campanita-boton {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%; color: #fff; text-decoration: none;
+}
+.campanita-boton:hover, .campanita-boton:focus-visible { background: rgba(255,255,255,.18); }
+.campanita-insignia {
+  position: absolute; top: -2px; right: -4px; min-width: 18px; padding: 0 5px;
+  background: var(--rojo); color: #fff; border-radius: 999px;
+  font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+}
+.campanita-panel {
+  position: absolute; right: 0; top: 42px; z-index: 20; width: 340px; max-width: 92vw;
+  background: #fff; color: var(--texto); border: 1px solid var(--borde);
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+.campanita-lista { list-style: none; margin: 0; padding: 0; max-height: 380px; overflow-y: auto; }
+.campanita-lista li { border-bottom: 1px solid var(--borde); }
+.campanita-lista form { margin: 0; }
+.campanita-lista button {
+  display: block; width: 100%; text-align: left; background: none; border: 0;
+  padding: 10px 12px; cursor: pointer; font: inherit; color: var(--texto);
+}
+.campanita-lista button:hover { background: var(--gris-claro); }
+.campanita-lista li.no-leida button { background: var(--verde-claro); font-weight: 600; }
+.campanita-lista .cuando { display: block; color: var(--gris); font-size: 12px; font-weight: 400; }
+.campanita-lista .vacio { padding: 16px; }
+.campanita-pie { padding: 8px 12px; text-align: center; }
+tr.fila-no-leida td { background: var(--verde-claro); font-weight: 600; }
+
+@media (max-width: 640px) {
+  header.barra { flex-wrap: wrap; padding: 0 12px; }
+  header.barra .sesion { flex-wrap: wrap; gap: 8px; }
+  .campanita-panel { position: fixed; left: 8px; right: 8px; top: 56px; width: auto; max-width: none; }
+}
