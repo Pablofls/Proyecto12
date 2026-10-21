@@ -75,6 +75,7 @@ la capa de acceso.
 | `logistica` | `/logistica` | Recoleccion y recepcion |
 | `inspecciones` | `/inspecciones` | Inspeccion, disposicion e inventario recuperado |
 | `reembolsos` | `/reembolsos` | Gestion del reembolso |
+| `notificaciones` | `/notificaciones` | Campanita y bandeja por usuario (RF-29); `app/notificaciones.py` decide los destinatarios |
 
 Cada blueprint corresponde a un microservicio del catalogo declarado en el
 documento. La correspondencia es intencional: al partir el monolito, cada uno se

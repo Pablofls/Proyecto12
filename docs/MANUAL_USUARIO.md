@@ -232,3 +232,39 @@ inspecciona y no aprueba reembolsos.
 
 En cualquier punto, el analista puede rechazar la solicitud o pedir informacion
 adicional, y cada movimiento queda en el historial del caso.
+
+---
+
+## Notificaciones (campanita)
+
+Todos los perfiles ven una campanita arriba a la derecha, junto a su nombre. La
+insignia roja indica cuantas notificaciones tiene sin leer y se actualiza sola
+cada 30 segundos, sin recargar la pagina.
+
+- **Abrirla.** Al hacer clic aparecen las ultimas ocho; las no leidas van
+  resaltadas. Cada aviso es un enlace: al hacer clic se marca como leido y la
+  plataforma abre la pantalla donde corresponde actuar (por ejemplo, el analista
+  cae en el expediente para autorizar o rechazar; el coordinador, en la pantalla
+  de programar la recoleccion).
+- **Bandeja completa.** "Ver todas" abre `/notificaciones`, con filtro
+  *Todas / No leidas*, paginacion y el boton *Marcar todas como leidas*.
+- **Privacidad.** Cada persona ve solo sus avisos; no existe forma de abrir o
+  marcar los de otra (el sistema responde 404).
+
+Quien recibe que, segun el paso del proceso:
+
+| Cuando ocurre | Recibe aviso |
+|---|---|
+| El cliente registra la solicitud o agrega evidencia | Analista |
+| El analista autoriza | Cliente y Coordinador de logistica |
+| El analista rechaza o pide informacion | Cliente |
+| Se programa la recoleccion | Cliente |
+| La recoleccion va en transito o se completa | Cliente y Encargado del centro |
+| Se confirma la recepcion | Inspector y Cliente |
+| Se registra la inspeccion | Analista |
+| Se define el destino | Encargado de reembolsos (y Encargado del centro si regresa a inventario) |
+| Se aprueba o rechaza el reembolso | Cliente y Analista |
+| El caso se cierra | Cliente |
+
+Quien ejecuta la accion no recibe aviso de su propia accion. El Administrador no
+recibe avisos del flujo.

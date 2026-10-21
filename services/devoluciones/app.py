@@ -30,7 +30,7 @@ from shared.infra import (cerrar_conexion, consultar, ejecutar, limitar,
                           registrar_bitacora, salud_postgres, salud_redis)
 from shared.paginacion import leer_paginacion, paginar
 from shared.respuestas import ErrorApi, leer_cuerpo, responder
-from shared.seguridad import ANALISTA, CLIENTE, requiere_jwt
+from shared.seguridad import ANALISTA, CLIENTE, COORDINADOR, requiere_jwt
 
 import reglas
 
@@ -140,15 +140,31 @@ def _exigir_motivo(motivo_id):
                        [{"campo": "motivo_id", "problema": "no existe o esta inactivo"}])
 
 
-def _notificar(usuario_id, devolucion_id, tipo, mensaje):
-    """Notificacion interna al cliente (RF-29); la web la muestra en su panel."""
+def _notificar(usuario_id, devolucion_id, tipo, mensaje, url=None):
+    """Notificacion interna (RF-29); la campanita de la web la muestra.
+
+    `url` es la ruta de la web a la que lleva la notificacion (migracion 013).
+    """
     ejecutar(
         """
-        INSERT INTO notificaciones (usuario_id, devolucion_id, tipo, mensaje)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO notificaciones (usuario_id, devolucion_id, tipo, mensaje, url)
+        VALUES (%s, %s, %s, %s, %s)
         """,
-        (usuario_id, devolucion_id, tipo, mensaje[:500]),
+        (usuario_id, devolucion_id, tipo, mensaje[:500], url),
     )
+
+
+def _notificar_rol(rol, devolucion_id, tipo, mensaje, url=None):
+    """Avisa a todos los usuarios activos de un rol. Sin usuarios no falla: el
+    flujo de la devolucion no debe depender de que haya alguien en el rol."""
+    for fila in consultar(
+        """
+        SELECT u.id FROM usuarios u JOIN roles r ON r.id = u.rol_id
+         WHERE r.nombre = %s AND u.estado = 'activo' AND u.eliminado_en IS NULL
+        """,
+        (rol,),
+    ):
+        _notificar(fila["id"], devolucion_id, tipo, mensaje, url)
 
 
 def _evento(tipo, exp, **extra):
@@ -376,7 +392,14 @@ def resolver(devolucion_id):
 
     registrar_bitacora(accion, "devoluciones", devolucion_id,
                        f"Decision '{decision}' por API. {nota}".strip())
-    _notificar(exp["cliente_id"], devolucion_id, accion, mensaje)
+    # Mismos tipos, textos y destinos que apps/web/app/notificaciones.py.
+    _notificar(exp["cliente_id"], devolucion_id, accion, mensaje,
+               f"/devoluciones/{devolucion_id}")
+    if decision == "autorizar":
+        _notificar_rol(
+            COORDINADOR, devolucion_id, "autorizacion_logistica",
+            f"Autorizada {folio}: programa la recoleccion",
+            f"/logistica/recolecciones/{devolucion_id}/programar")
     _evento(f"devolucion_{accion}", exp, decision=decision, analista_id=analista)
     actualizado = _expediente(devolucion_id)
     return responder({"id": devolucion_id, "folio_devolucion": folio,
