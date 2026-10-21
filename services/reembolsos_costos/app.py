@@ -49,7 +49,9 @@ def registrar_reembolso():
     try:
         dev=_devolucion(dev_id,True)
         if dev["estado"] in ("solicitada","en_revision","rechazada"): raise ErrorApi(409,"estado_no_permite","La devolucion debe estar autorizada.")
-        if monto>float(dev["valor_devuelto"]): raise ErrorApi(409,"monto_excedido","El reembolso excede el valor devuelto.",{"maximo":float(dev["valor_devuelto"])})
+        # Decimal contra Decimal: contra un float, 227.17 > float(227.17) es True y rechazaba el maximo exacto.
+        maximo=Decimal(dev["valor_devuelto"]).quantize(Decimal("0.01"))
+        if monto>maximo: raise ErrorApi(409,"monto_excedido","El reembolso excede el valor devuelto.",{"maximo":float(maximo)})
         if consultar("SELECT id FROM reembolsos WHERE devolucion_id=%s AND eliminado_en IS NULL",(dev_id,),uno=True): raise ErrorApi(409,"reembolso_duplicado","La devolucion ya tiene un reembolso valido.")
         nuevo=ejecutar("""INSERT INTO reembolsos(devolucion_id,encargado_id,monto,metodo,estado,fecha_resolucion)
           VALUES(%s,%s,%s,%s,%s,CURRENT_TIMESTAMP) RETURNING id,devolucion_id,monto,metodo,estado,fecha_resolucion""",(dev_id,g.usuario["id"],monto,metodo,decision),devolver=True)
