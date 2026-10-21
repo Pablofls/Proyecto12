@@ -63,8 +63,10 @@ def ctx():
          WHERE v.eliminado_en IS NULL AND p.clasificacion_temperatura = 'refrigerado'
          ORDER BY disponible DESC, vd.id
          LIMIT 1""", uno=True)
-    if not x.linea or x.linea["disponible"] < 2:
-        pytest.skip("No hay una linea de venta refrigerada con al menos 2 unidades disponibles")
+    if not x.linea or x.linea["disponible"] < 3:
+        # 1 la retiene el proceso completo hasta el final y las pruebas de error
+        # usan 1 a la vez (se liberan al terminar cada una), con una de margen.
+        pytest.skip("No hay una linea de venta refrigerada con al menos 3 unidades disponibles")
     x.motivo = c.sql("SELECT id FROM motivos WHERE activo ORDER BY id LIMIT 1",
                      uno=True)["id"]
 
@@ -88,3 +90,19 @@ def ctx():
         except Exception:  # noqa: BLE001 - puede estar cerrada por una prueba
             pass
     c.borrar_devoluciones(x.creadas)
+
+
+@pytest.fixture(autouse=True)
+def _libera_unidades(request, ctx):
+    """Cada registro de la suite consume 1 unidad de la misma linea de venta; sin
+    liberarlas, tras unas pocas pruebas todo responde 409 sin_disponible. Al terminar
+    cada prueba de error se marcan sus devoluciones como rechazadas (el calculo de
+    `disponible` las excluye) y el borrado final las elimina. El proceso completo
+    (test_01) conserva las suyas porque sus pasos se encadenan."""
+    antes = len(ctx.creadas)
+    yield
+    if "test_01_proceso_completo" in request.node.nodeid:
+        return
+    nuevas = ctx.creadas[antes:]
+    if nuevas:
+        c.sql("UPDATE devoluciones SET estado = 'rechazada' WHERE id IN %s", (tuple(nuevas),))
