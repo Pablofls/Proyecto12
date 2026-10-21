@@ -24,7 +24,7 @@ en `/contratos/<archivo>.xsd`, Dockerfile propio y `/health`.
 | Proposito | Registrar, consultar, corregir, resolver y cancelar solicitudes ligadas a una linea de venta. |
 | Justificacion | RF-06 a RF-11, RF-29, RN-01, RN-02, RN-12. |
 | Persistencia | Expediente PostgreSQL, eventos MongoDB y seguridad/rate limit Redis. |
-| Endpoints | `POST/GET /devoluciones`, `GET/PUT/DELETE /devoluciones/{id}`, `GET /{id}/historial`, `PATCH /{id}/resolucion`. |
+| Endpoints | `POST/GET /devoluciones`, `GET/PUT/DELETE /devoluciones/{id}` (el `GET` incluye `historial` y `eventos`), `PATCH /{id}/resolucion`. |
 | Reglas | Propiedad del cliente, cantidad disponible, estado valido, folio unico, eliminacion logica y autorizacion por rol. |
 | Despliegue/pruebas | `services/devoluciones/Dockerfile`, Compose `devoluciones`; 24 pruebas aprobadas y 4 integraciones condicionadas a la VM. |
 
@@ -62,7 +62,7 @@ en `/contratos/<archivo>.xsd`, Dockerfile propio y `/health`.
 | Endpoints | `POST/GET /reembolsos`, `POST /costos`, `GET /costos/{devolucion_id}`. |
 | Reglas | Monto decimal finito, metodo permitido, caso autorizado, monto no mayor al vendido y cierre del expediente. |
 | Roles | Encargado de Reembolsos resuelve; Encargado y Analista consultan/registran costos. |
-| Despliegue/pruebas | Dockerfile y Compose propios; 5 pruebas, incluida regresion NaN/Infinity. |
+| Despliegue/pruebas | Dockerfile y Compose propios; 6 pruebas, incluida regresion NaN/Infinity. |
 
 ## 6. ventas-catalogos — puerto 8006
 
