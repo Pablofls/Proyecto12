@@ -13,6 +13,7 @@
 <header class="barra">
   <div class="marca">DEVOLUCIONES &middot; LOGISTICA INVERSA</div>
   <div class="sesion">
+    {% if modo_distribuido %}<span class="estado estado-cerrada">API distribuida</span>{% endif %}
     <span>{{ usuario_actual.nombre }} &mdash; {{ rol_actual }}</span>
     <form method="post" action="{{ url_for('auth.logout') }}">
       <button class="salir" type="submit">Cerrar sesion</button>
@@ -40,6 +41,7 @@
   {{ enlace('catalogos.indice', 'Catalogos', ['Administrador', 'Analista de Devoluciones']) }}
   {{ enlace('usuarios.listar', 'Usuarios', ['Administrador', 'Analista de Devoluciones']) }}
   {{ enlace('panel.bitacora', 'Bitacora', ['Administrador', 'Analista de Devoluciones']) }}
+  {{ enlace('integracion.servicios', 'Servicios', ['Administrador']) }}
 </nav>
 {% endif %}
 

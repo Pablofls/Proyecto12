@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato XML de la peticion POST /api/v1/auth/refresh.
+
+  Ejemplo:
+    <refresh><refresh_token>eyJhbGciOi...</refresh_token></refresh>
+
+  Trazabilidad: RNF-07, RNF-08.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="refresh">
+    <xs:complexType>
+      <xs:all>
+        <!-- Un JWT: tres segmentos base64url separados por punto. -->
+        <xs:element name="refresh_token">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

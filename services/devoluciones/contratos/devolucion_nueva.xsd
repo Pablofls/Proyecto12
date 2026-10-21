@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato XML de la peticion POST /api/v1/devoluciones
+  (Content-Type: application/xml). Si no cumple: 400 xml_no_cumple_xsd.
+
+  Ejemplo:
+    <devolucion>
+      <venta_detalle_id>12</venta_detalle_id>
+      <motivo_id>3</motivo_id>
+      <descripcion_problema>El empaque llego roto y el producto derramado.</descripcion_problema>
+      <cantidad_devuelta>1</cantidad_devuelta>
+    </devolucion>
+
+  Trazabilidad: RF-07, RN-01.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:simpleType name="Descripcion">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="10"/>
+      <xs:maxLength value="2000"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="devolucion">
+    <xs:complexType>
+      <xs:all>
+        <!-- Linea de venta que se devuelve (RN-01). -->
+        <xs:element name="venta_detalle_id" type="xs:positiveInteger"/>
+        <xs:element name="motivo_id" type="xs:positiveInteger"/>
+        <xs:element name="descripcion_problema" type="Descripcion"/>
+        <!-- Opcional: 1 si no se envia. No puede superar lo que queda por devolver. -->
+        <xs:element name="cantidad_devuelta" type="xs:positiveInteger" minOccurs="0"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

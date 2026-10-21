@@ -183,17 +183,18 @@ sistema se divida.
 
 **Cubre:** operacion de catalogos, registro de auditoria.
 
-## 7. Cierre (1 min)
+## 7. Cierre del segundo parcial (1 min)
 
-Di con claridad que es lo que **no** esta construido y por que: microservicios,
-aplicacion movil, aplicacion de escritorio, JWT, XML, MongoDB en operacion y
-Cloud Storage corresponden al segundo y tercer parcial. Explica que el monolito
-se diseno para poder partirse: cada modulo del codigo corresponde a un
-microservicio del catalogo, las capas estan separadas, y ya existen el health
-check y el identificador de correlacion, que solo tienen sentido en la
-arquitectura distribuida.
+Muestra **Servicios** en el web y confirma los ocho health checks. Resume el
+flujo real: ventas-catalogos, devoluciones, logistica, inspecciones,
+reembolsos-costos y analisis-auditoria, con auth y evidencias como servicios de
+apoyo. Abre Swagger y ejecuta al menos una peticion JSON y una XML, incluyendo
+un 401/403 y una validacion 400. Termina mostrando PostgreSQL, un documento de
+MongoDB, claves Redis con TTL y `docker compose ps`.
 
-Reconocer el alcance real da mas credibilidad que aparentar que todo esta hecho.
+No presentes como evidencia una captura preparada: cada resultado debe
+corresponder al despliegue de la VM y quedar registrado en la matriz de
+evidencias de `docs/AUDITORIA_SEGUNDO_PARCIAL.md`.
 
 ## Preguntas probables
 

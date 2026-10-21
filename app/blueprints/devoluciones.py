@@ -6,8 +6,11 @@ Es el modulo central del sistema. Toda devolucion nace de una linea de venta
 Trazabilidad: RF-06 a RF-11, RF-21, RF-27, RN-01, RN-02, RN-12,
               HU-06 a HU-11, UC-06, UC-07, UC-08, UC-09, UC-23
 """
+from datetime import datetime
+
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
+from app import api_client
 from app.db import consultar, ejecutar
 from app.security import (
     ADMINISTRADOR, ANALISTA, CLIENTE, INSPECTOR, TODOS_LOS_ROLES,
@@ -80,6 +83,25 @@ def listar():
     usuario = usuario_actual()
     estado = (request.args.get("estado") or "").strip()
     busqueda = (request.args.get("q") or "").strip()
+
+    if api_client.habilitados():
+        try:
+            respuesta = api_client.solicitar(
+                "devoluciones", "GET", "/api/v1/devoluciones",
+                parametros={"estado": estado, "q": busqueda,
+                            "pagina": 1, "limite": 100},
+            )
+        except api_client.ErrorServicio as exc:
+            return render_template("error.html", codigo=exc.codigo,
+                                   mensaje=exc.mensaje), exc.codigo
+        devoluciones = respuesta["datos"]
+        for devolucion in devoluciones:
+            devolucion["fecha_solicitud"] = datetime.fromisoformat(
+                devolucion["fecha_solicitud"]
+            )
+        return render_template("devoluciones/listar.html",
+                               devoluciones=devoluciones, estado=estado,
+                               busqueda=busqueda)
 
     condiciones = ["d.eliminado_en IS NULL"]
     parametros = []
@@ -173,7 +195,23 @@ def nueva():
             return render_template("devoluciones/nueva.html", linea=linea,
                                    motivos=motivos, disponible=disponible), 400
 
-        fila = ejecutar(
+        if api_client.habilitados():
+            try:
+                fila = api_client.solicitar(
+                    "devoluciones", "POST", "/api/v1/devoluciones",
+                    datos={
+                        "venta_detalle_id": venta_detalle_id,
+                        "motivo_id": motivo_id,
+                        "descripcion_problema": descripcion,
+                        "cantidad_devuelta": cantidad,
+                    },
+                )
+            except api_client.ErrorServicio as exc:
+                flash(exc.mensaje, "error")
+                return render_template("devoluciones/nueva.html", linea=linea,
+                                       motivos=motivos, disponible=disponible), exc.codigo
+        else:
+            fila = ejecutar(
             """
             INSERT INTO devoluciones (venta_detalle_id, motivo_id, descripcion_problema,
                                       cantidad_devuelta, estado)
@@ -183,9 +221,10 @@ def nueva():
             (venta_detalle_id, motivo_id, descripcion, cantidad),
             devolver=True,
         )
-        registrar_bitacora("alta_devolucion", "devoluciones", fila["id"],
-                           f"Se registro la devolucion {fila['folio_devolucion']} "
-                           f"sobre la venta {linea['folio_venta']}")
+            if not api_client.habilitados():
+                registrar_bitacora("alta_devolucion", "devoluciones", fila["id"],
+                                   f"Se registro la devolucion {fila['folio_devolucion']} "
+                                   f"sobre la venta {linea['folio_venta']}")
         flash(f"Devolucion registrada con folio {fila['folio_devolucion']}.", "ok")
         return redirect(url_for("devoluciones.detalle", devolucion_id=fila["id"]))
 
@@ -308,7 +347,18 @@ def agregar_evidencia(devolucion_id):
         flash("Indica el nombre del archivo de evidencia.", "error")
         return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
-    ejecutar(
+    if api_client.habilitados() and tipo == "comentario":
+        try:
+            api_client.solicitar(
+                "evidencias", "POST", "/api/v1/evidencias",
+                datos={"devolucion_id": devolucion_id, "tipo": "comentario",
+                       "etapa": etapa, "comentario": comentario},
+            )
+        except api_client.ErrorServicio as exc:
+            flash(exc.mensaje, "error")
+            return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
+    else:
+        ejecutar(
         """
         INSERT INTO evidencias (devolucion_id, usuario_id, tipo, etapa, comentario,
                                 bucket, objeto, nombre_original)
@@ -322,8 +372,8 @@ def agregar_evidencia(devolucion_id):
             nombre_archivo or None,
         ),
     )
-    registrar_bitacora("alta_evidencia", "devoluciones", devolucion_id,
-                       f"Se agrego una evidencia de tipo {tipo}")
+        registrar_bitacora("alta_evidencia", "devoluciones", devolucion_id,
+                           f"Se agrego una evidencia de tipo {tipo}")
     flash("Evidencia registrada.", "ok")
     return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
@@ -343,6 +393,24 @@ def resolver(devolucion_id):
     decision = request.form.get("decision")
     justificacion = (request.form.get("justificacion") or "").strip()
     usuario = usuario_actual()
+
+    if api_client.habilitados():
+        if decision == "rechazar" and not justificacion:
+            flash("Indica el motivo del rechazo.", "error")
+            return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
+        if decision not in ("autorizar", "rechazar", "informacion"):
+            abort(400)
+        try:
+            resultado = api_client.solicitar(
+                "devoluciones", "PATCH",
+                f"/api/v1/devoluciones/{devolucion_id}/resolucion",
+                datos={"decision": decision, "justificacion": justificacion},
+            )
+        except api_client.ErrorServicio as exc:
+            flash(exc.mensaje, "error")
+        else:
+            flash(f"Resolucion registrada mediante microservicio: {resultado['estado']}.", "ok")
+        return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
     if decision == "autorizar":
         ejecutar(
@@ -411,11 +479,21 @@ def agregar_costo(devolucion_id):
         flash("Captura un monto valido.", "error")
         return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
-    ejecutar(
-        "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'otros', %s)",
-        (devolucion_id, monto),
-    )
-    registrar_bitacora("costo_manual", "devoluciones", devolucion_id,
-                       f"Costo 'otros' registrado por {monto}. {nota}".strip())
+    if api_client.habilitados():
+        try:
+            api_client.solicitar(
+                "reembolsos", "POST", "/api/v1/reembolsos-costos/costos",
+                datos={"devolucion_id": devolucion_id, "etapa": "otros", "monto": monto},
+            )
+        except api_client.ErrorServicio as exc:
+            flash(exc.mensaje, "error")
+            return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
+    else:
+        ejecutar(
+            "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'otros', %s)",
+            (devolucion_id, monto),
+        )
+        registrar_bitacora("costo_manual", "devoluciones", devolucion_id,
+                           f"Costo 'otros' registrado por {monto}. {nota}".strip())
     flash("Costo registrado.", "ok")
     return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))

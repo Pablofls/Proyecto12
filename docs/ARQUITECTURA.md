@@ -1,5 +1,32 @@
 # Arquitectura del monolito
 
+## Ampliacion distribuida del segundo parcial
+
+| Puerto | Servicio | Responsabilidad | Persistencia |
+|---:|---|---|---|
+| 8001 | auth | JWT, sesiones y revocacion | PostgreSQL + Redis |
+| 8002 | devoluciones | Registro y autorizacion | PostgreSQL + MongoDB + Redis |
+| 8003 | logistica | Recoleccion y recepcion | PostgreSQL + Redis |
+| 8004 | inspecciones | Inspeccion, disposicion e inventario | PostgreSQL + MongoDB + Redis |
+| 8005 | reembolsos-costos | Reembolso unico y costos | PostgreSQL + Redis |
+| 8006 | ventas-catalogos | Ventas, productos, lotes y catalogos | PostgreSQL + Redis |
+| 8007 | evidencias | Archivos privados y metadatos | PostgreSQL + MongoDB + volumen |
+| 8008 | analisis-auditoria | Pareto, snapshots y auditoria | PostgreSQL + MongoDB + Redis |
+
+El flujo implementado es `ventas-catalogos -> devoluciones -> logistica ->
+inspecciones -> reembolsos-costos -> analisis-auditoria`, con `evidencias`
+disponible durante solicitud e inspeccion. Todos validan el mismo JWT y comprueban en Redis que la
+sesion siga activa y que el token no haya sido revocado. La ficha individual y
+el guion de evidencias estan en `docs/MICROSERVICIOS_AVANCE_ROBERTO.md`.
+
+El web conserva un modo de contingencia independiente y expone
+`/integracion/servicios` para que un administrador consulte los ocho health
+checks. En la rama `roberto/integracion-web-microservicios`, el login, las
+consultas de ventas/devoluciones y las mutaciones del proceso completo se
+ejecutan por HTTP contra las API. El cliente comun (`app/api_client.py`) conserva
+JWT en la sesion Redis, renueva access tokens y propaga correlation ids. La
+matriz exacta esta en `docs/INTEGRACION_WEB_MICROSERVICIOS.md`.
+
 ## Por que un monolito ahora
 
 El primer parcial pide un sistema web ejecutable, no una arquitectura

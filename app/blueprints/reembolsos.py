@@ -5,6 +5,7 @@ Trazabilidad: RF-20, RF-21, RN-03, RN-04, HU-18, UC-17
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 import psycopg2
 
+from app import api_client
 from app.db import consultar, ejecutar, get_conn
 from app.security import (
     ANALISTA, ENCARGADO_REEMBOLSOS, registrar_bitacora, roles_required, usuario_actual,
@@ -101,6 +102,21 @@ def registrar(devolucion_id):
                                        metodos=METODOS), 400
         else:
             monto, metodo = 0, None
+
+        if api_client.habilitados():
+            try:
+                api_client.solicitar(
+                    "reembolsos", "POST",
+                    "/api/v1/reembolsos-costos/reembolsos",
+                    datos={"devolucion_id": devolucion_id, "monto": monto,
+                           "metodo": metodo, "estado": decision},
+                )
+            except api_client.ErrorServicio as exc:
+                flash(exc.mensaje, "error")
+                return render_template("reembolsos/registrar.html", d=expediente,
+                                       metodos=METODOS), exc.codigo
+            flash("Reembolso registrado mediante microservicio.", "ok")
+            return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
         try:
             ejecutar(

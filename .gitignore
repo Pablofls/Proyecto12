@@ -5,6 +5,7 @@
 
 # Python
 __pycache__/
+.testdeps/
 *.py[cod]
 .venv/
 venv/

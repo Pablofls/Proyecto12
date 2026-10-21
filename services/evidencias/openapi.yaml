@@ -1,0 +1,243 @@
+openapi: 3.0.3
+info:
+  title: Orvia - evidencias
+  version: 1.0.0
+  description: API del proyecto integrador, respuestas JSON y XML.
+servers:
+- url: /
+paths:
+  /health:
+    get:
+      summary: Estado PostgreSQL, Redis, MongoDB y volumen
+      responses:
+        '200':
+          description: Estado PostgreSQL, Redis, MongoDB y volumen
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': &id001
+          description: Parámetros inválidos
+        '401': &id002
+          description: Token inválido
+        '403': &id003
+          description: Sin permisos
+        '404': &id004
+          description: No encontrado
+        '409': &id005
+          description: Conflicto de negocio
+        '415': &id006
+          description: Formato no permitido
+        '500': &id007
+          description: Error interno
+        '503': &id008
+          description: Dependencia no disponible
+  /api/v1/evidencias:
+    get:
+      summary: Lista las evidencias visibles del expediente
+      responses:
+        '200':
+          description: Lista las evidencias visibles del expediente
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters:
+      - name: devolucion_id
+        in: query
+        required: false
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+    post:
+      summary: Adjunta archivo privado o comentario
+      responses:
+        '201':
+          description: Adjunta archivo privado o comentario
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+                devolucion_id:
+                  type: integer
+                etapa:
+                  type: string
+                comentario:
+                  type: string
+              required:
+              - archivo
+              - devolucion_id
+          application/json:
+            schema:
+              type: object
+              properties:
+                devolucion_id:
+                  type: integer
+                tipo:
+                  type: string
+                  enum:
+                  - comentario
+                comentario:
+                  type: string
+                etapa:
+                  type: string
+          application/xml:
+            schema:
+              type: object
+              xml:
+                name: evidencia
+      security:
+      - bearerAuth: []
+  /api/v1/evidencias/{evidencia_id}:
+    get:
+      summary: Metadatos protegidos
+      responses:
+        '200':
+          description: Metadatos protegidos
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters: &id009
+      - &id010
+        name: evidencia_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+    delete:
+      summary: Eliminación lógica autorizada
+      responses:
+        '200':
+          description: Eliminación lógica autorizada
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters: *id009
+      security:
+      - bearerAuth: []
+  /api/v1/evidencias/{evidencia_id}/enlace:
+    get:
+      summary: Genera enlace temporal privado de 15 minutos
+      responses:
+        '200':
+          description: Genera enlace temporal privado de 15 minutos
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters: *id009
+      security:
+      - bearerAuth: []
+  /api/v1/evidencias/{evidencia_id}/archivo:
+    get:
+      summary: Descarga binaria con firma temporal o JWT
+      responses:
+        '200':
+          description: Descarga binaria con firma temporal o JWT
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters:
+      - *id010
+      - name: exp
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: firma
+        in: query
+        required: false
+        schema:
+          type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

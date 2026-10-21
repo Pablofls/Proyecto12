@@ -1,0 +1,6 @@
+# Lo que no debe viajar al construir imagenes (el contexto es la raiz).
+.git
+.env
+*.pdf
+**/__pycache__
+db/data

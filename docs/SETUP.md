@@ -1,11 +1,51 @@
 # Guia de arranque
 
+## Microservicios del segundo parcial
+
+Despues de aplicar migraciones y cargar los datos de demostracion:
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+En la rama de integracion, confirma en `.env`:
+
+```dotenv
+USE_MICROSERVICES=true
+MICROSERVICE_TIMEOUT=5
+```
+
+Con `true`, la barra superior muestra **API distribuida** y las operaciones
+criticas pasan por los servicios. `false` habilita el modo de contingencia del
+monolito. La matriz de llamadas esta en
+`docs/INTEGRACION_WEB_MICROSERVICIOS.md`.
+
+| Servicio | API | Swagger | Salud |
+|---|---|---|---|
+| auth | `http://HOST:8001/api/v1/auth` | `http://HOST:8001/docs` | `:8001/health` |
+| devoluciones | `http://HOST:8002/api/v1/devoluciones` | `http://HOST:8002/docs` | `:8002/health` |
+| logistica | `http://HOST:8003/api/v1/logistica` | `http://HOST:8003/docs` | `:8003/health` |
+| inspecciones | `http://HOST:8004/api/v1/inspecciones` | `http://HOST:8004/docs` | `:8004/health` |
+| reembolsos-costos | `http://HOST:8005/api/v1/reembolsos-costos` | `http://HOST:8005/docs` | `:8005/health` |
+| ventas-catalogos | `http://HOST:8006/api/v1/ventas` y `/catalogos` | `http://HOST:8006/docs` | `:8006/health` |
+| evidencias | `http://HOST:8007/api/v1/evidencias` | `http://HOST:8007/docs` | `:8007/health` |
+| analisis-auditoria | `http://HOST:8008/api/v1/analisis` y `/auditoria` | `http://HOST:8008/docs` | `:8008/health` |
+
+`HOST` es la IP o dominio de la VM. Los ocho servicios comparten
+`JWT_SECRET`; no debe publicarse ni quedar escrito en el repositorio.
+
+Para validar Compose sin crear un archivo con secretos puede usarse
+`APP_ENV_FILE=.env.example docker compose --env-file .env.example config`.
+Para desplegar, copie `.env.example` a `.env`, reemplace todos los valores de
+ejemplo y no agregue `.env` a Git.
+
 ## Donde se ejecuta cada cosa
 
 | Tarea | Donde |
 |---|---|
 | Escribir codigo, plantillas y documentacion | Tu laptop |
-| Levantar PostgreSQL y Redis | **Solo en la VM de GCP** |
+| Levantar PostgreSQL, Redis y MongoDB | **Solo en la VM de GCP** |
 | Correr migraciones y seeds | **Solo en la VM de GCP** |
 | Probar la aplicacion con datos | **Solo en la VM de GCP** |
 
@@ -20,7 +60,7 @@ base, la de la VM, para que todos vean el mismo estado.
 cd ~/Proyecto12
 git pull origin main
 cp .env.example .env
-nano .env          # completar POSTGRES_PASSWORD y FLASK_SECRET_KEY
+nano .env          # completar POSTGRES_PASSWORD, FLASK_SECRET_KEY y las MONGO_*_PASSWORD
 ```
 
 Para generar una clave secreta larga:
@@ -127,6 +167,13 @@ docker compose exec postgres psql -U devoluciones_app -d devoluciones
 # Consola de Redis
 docker compose exec redis redis-cli
 
+# Consola de MongoDB (con el usuario de la aplicacion). Toma las credenciales
+# de las variables del contenedor, asi no hay que teclear la contrasena.
+docker compose exec mongo sh -c 'mongosh -u "$MONGO_APP_USER" -p "$MONGO_APP_PASSWORD" --authenticationDatabase "$MONGO_DB" "$MONGO_DB"'
+
+# Comprobar que MongoDB creo las colecciones e indices de la seccion 5.4
+docker compose exec mongo sh -c 'mongosh --quiet -u "$MONGO_APP_USER" -p "$MONGO_APP_PASSWORD" --authenticationDatabase "$MONGO_DB" "$MONGO_DB" --eval "db.getCollectionNames().forEach(c => printjson({coleccion: c, indices: db[c].getIndexes().map(i => i.name)}))"'
+
 # Reiniciar solo la aplicacion tras un cambio de codigo Python
 # (las plantillas se recargan solas cuando FLASK_ENV=development)
 docker compose restart app
@@ -137,6 +184,25 @@ docker compose up -d app
 
 # Ver los ultimos errores
 docker compose logs --tail=100 app
+```
+
+### Microservicio auth (segundo parcial)
+
+```bash
+# Construir y levantar (tras cualquier cambio en services/auth o shared/)
+docker compose up -d --build auth
+
+# Salud del servicio
+curl -s localhost:8001/health
+
+# Pruebas unitarias dentro del contenedor
+docker compose run --rm --no-deps auth python -m pytest -v
+
+# Swagger UI: http://<IP-de-la-VM>:8001/docs  (abrir el puerto 8001 en GCP)
+
+# Claves que crea en Redis
+docker compose exec redis redis-cli --scan --pattern 'devoluciones:sesion_api:*'
+docker compose exec redis redis-cli --scan --pattern 'devoluciones:jwt_revocado:*'
 ```
 
 ### Empezar la base desde cero

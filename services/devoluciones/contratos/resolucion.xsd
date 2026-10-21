@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato XML de la peticion PATCH /api/v1/devoluciones/{id}/resolucion.
+  La justificacion es obligatoria para rechazar (lo valida el servicio,
+  porque depende del valor de decision).
+
+  Ejemplo:
+    <resolucion>
+      <decision>rechazar</decision>
+      <justificacion>El producto tiene mas de 30 dias de uso.</justificacion>
+    </resolucion>
+
+  Trazabilidad: RF-10, UC-09, RN-12.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="resolucion">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="decision">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="autorizar"/>
+              <xs:enumeration value="rechazar"/>
+              <xs:enumeration value="informacion"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+        <xs:element name="justificacion" minOccurs="0">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:maxLength value="500"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

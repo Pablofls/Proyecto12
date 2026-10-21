@@ -1,0 +1,285 @@
+openapi: 3.0.3
+info:
+  title: Servicio de autenticacion - Plataforma de devoluciones
+  version: "1.0.0"
+  description: |
+    Emite y revoca los JWT que usan todos los microservicios.
+
+    **Como probar en esta pagina:**
+    1. Ejecuta `POST /api/v1/auth/login` con una cuenta de demostracion.
+    2. Copia el `access_token` de la respuesta.
+    3. Presiona **Authorize** (arriba a la derecha) y pegalo.
+
+    Todos los endpoints responden en JSON por defecto, o en XML si se envia
+    `Accept: application/xml`. Los cuerpos pueden enviarse en cualquiera de
+    los dos formatos indicando `Content-Type`.
+
+    **Contratos XML (XSD).** Todo cuerpo XML se valida contra su esquema; si
+    no cumple, la respuesta es `400 xml_no_cumple_xsd` con la linea y el
+    problema detectado.
+    - Peticion de login: [login.xsd](contratos/login.xsd)
+    - Peticion de refresh: [refresh.xsd](contratos/refresh.xsd)
+    - Respuesta de login y refresh: [tokens.xsd](contratos/tokens.xsd)
+    - Respuesta de sesion: [sesion.xsd](contratos/sesion.xsd)
+    - Error estandar (todos los servicios): [error.xsd](contratos/error.xsd)
+
+    Trazabilidad: RF-01, RF-04, RNF-07, RNF-08, RNF-09, RNF-12, RNF-13, RF-30.
+servers:
+  - url: /
+tags:
+  - name: Autenticacion
+  - name: Sesiones
+  - name: Salud
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Login:
+      type: object
+      xml: {name: login}
+      required: [email, password]
+      properties:
+        email: {type: string, format: email, maxLength: 150}
+        password: {type: string, format: password}
+    Refresh:
+      type: object
+      xml: {name: refresh}
+      required: [refresh_token]
+      properties:
+        refresh_token: {type: string}
+    Usuario:
+      type: object
+      properties:
+        id: {type: integer}
+        nombre: {type: string}
+        email: {type: string}
+        rol:
+          type: string
+          enum: [Cliente, Inspector, "Encargado del Centro de Devoluciones",
+                 "Coordinador de Logistica", "Analista de Devoluciones",
+                 "Encargado de Reembolsos", Administrador]
+    Tokens:
+      type: object
+      xml: {name: respuesta}
+      properties:
+        token_type: {type: string, example: Bearer}
+        access_token: {type: string, description: "JWT de acceso, vigencia corta"}
+        expires_in: {type: integer, description: "Segundos de vigencia", example: 900}
+        refresh_token: {type: string, description: "JWT para renovar el acceso"}
+        refresh_expires_in: {type: integer, example: 28800}
+        usuario: {$ref: "#/components/schemas/Usuario"}
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          required: [codigo, tipo, mensaje]
+          properties:
+            codigo: {type: integer, example: 401}
+            tipo: {type: string, example: token_revocado}
+            mensaje: {type: string}
+            detalles: {nullable: true}
+            correlation_id: {type: string}
+
+  responses:
+    E400:
+      description: Datos invalidos
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example:
+            error: {codigo: 400, tipo: validacion, mensaje: "Datos de acceso incompletos.",
+                    detalles: [{campo: email, problema: formato invalido}],
+                    correlation_id: 3f2a9c1e0b7d4a55}
+        application/xml:
+          example: |
+            <?xml version='1.0' encoding='utf-8'?>
+            <error><codigo>400</codigo><tipo>validacion</tipo><mensaje>Datos de acceso incompletos.</mensaje><detalles><item><campo>email</campo><problema>formato invalido</problema></item></detalles><correlation_id>3f2a9c1e0b7d4a55</correlation_id></error>
+    E401:
+      description: Sin token, token invalido, expirado, revocado o sesion inactiva
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example:
+            error: {codigo: 401, tipo: token_revocado,
+                    mensaje: "El token fue revocado. Inicia sesion de nuevo.",
+                    detalles: null, correlation_id: 3f2a9c1e0b7d4a55}
+    E403:
+      description: El rol no tiene permiso
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example:
+            error: {codigo: 403, tipo: sin_permiso,
+                    mensaje: "Tu rol no tiene permiso para esta operacion.",
+                    detalles: {rol: Inspector, roles_permitidos: [Administrador]},
+                    correlation_id: 3f2a9c1e0b7d4a55}
+    E415:
+      description: Content-Type distinto de JSON o XML
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    E429:
+      description: Se supero el limite de peticiones (Redis)
+      headers:
+        Retry-After: {schema: {type: integer}}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [Autenticacion]
+      summary: Iniciar sesion y obtener tokens
+      description: |
+        Valida credenciales, crea la sesion en Redis
+        (`devoluciones:sesion_api:<sid>`) y emite access y refresh token.
+        Tras 5 intentos fallidos la cuenta se bloquea 15 minutos (RNF-12).
+        Limite: 10 intentos por minuto por IP (RNF-13).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/Login"}
+            example: {email: josue.analista@demo.mx, password: "tu-contrasena"}
+          application/xml:
+            schema: {$ref: "#/components/schemas/Login"}
+            example: |
+              <login><email>josue.analista@demo.mx</email><password>tu-contrasena</password></login>
+      responses:
+        "200":
+          description: Sesion iniciada
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Tokens"}
+            application/xml:
+              schema: {$ref: "#/components/schemas/Tokens"}
+        "400": {$ref: "#/components/responses/E400"}
+        "401":
+          description: Correo o contrasena incorrectos (mensaje generico)
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+              example:
+                error: {codigo: 401, tipo: credenciales_invalidas,
+                        mensaje: "Correo o contrasena incorrectos.",
+                        detalles: null, correlation_id: 3f2a9c1e0b7d4a55}
+        "415": {$ref: "#/components/responses/E415"}
+        "423":
+          description: Cuenta bloqueada temporalmente por intentos fallidos
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "429": {$ref: "#/components/responses/E429"}
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Autenticacion]
+      summary: Obtener un nuevo access token
+      description: Requiere un refresh token vigente cuya sesion siga activa.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/Refresh"}
+          application/xml:
+            schema: {$ref: "#/components/schemas/Refresh"}
+            example: <refresh><refresh_token>eyJhbGciOi...</refresh_token></refresh>
+      responses:
+        "200":
+          description: Nuevo access token
+          content:
+            application/json:
+              example: {token_type: Bearer, access_token: "eyJhbGciOi...", expires_in: 900}
+        "400": {$ref: "#/components/responses/E400"}
+        "401": {$ref: "#/components/responses/E401"}
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Sesiones]
+      summary: Cerrar sesion
+      description: |
+        Agrega el token a `devoluciones:jwt_revocado:<jti>` (con TTL igual a su
+        vigencia restante) y elimina la sesion, lo que invalida tambien el
+        refresh token. Repetir cualquier peticion con el mismo token devuelve 401.
+      security: [{bearerAuth: []}]
+      responses:
+        "200":
+          description: Sesion cerrada
+          content:
+            application/json:
+              example: {mensaje: "Sesion cerrada. El token ya no es valido."}
+            application/xml:
+              example: |
+                <?xml version='1.0' encoding='utf-8'?>
+                <respuesta><mensaje>Sesion cerrada. El token ya no es valido.</mensaje></respuesta>
+        "401": {$ref: "#/components/responses/E401"}
+
+  /api/v1/auth/sesion:
+    get:
+      tags: [Sesiones]
+      summary: Consultar la sesion actual
+      security: [{bearerAuth: []}]
+      responses:
+        "200":
+          description: Datos del usuario y vigencia de la sesion
+          content:
+            application/json:
+              example:
+                usuario: {id: 3, rol: "Analista de Devoluciones", nombre: "Josue Berdeal"}
+                sesion_id: 9b1f0c2d4e5a6b7c8d9e0f1a2b3c4d5e
+                sesion_expira_en_seg: 28512
+                token_expira: "2026-10-18T20:15:00+00:00"
+        "401": {$ref: "#/components/responses/E401"}
+
+  /api/v1/auth/usuarios/{usuario_id}/sesiones:
+    delete:
+      tags: [Sesiones]
+      summary: Cerrar todas las sesiones de un usuario (Administrador)
+      description: |
+        Para cuando un usuario cambia su contrasena o pierde permisos (RNF-08):
+        sus tokens dejan de ser aceptados de inmediato en todos los servicios.
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: usuario_id
+          in: path
+          required: true
+          schema: {type: integer, minimum: 1}
+      responses:
+        "200":
+          description: Sesiones cerradas
+          content:
+            application/json:
+              example: {usuario_id: 7, sesiones_cerradas: 2}
+        "401": {$ref: "#/components/responses/E401"}
+        "403": {$ref: "#/components/responses/E403"}
+        "404":
+          description: El usuario no existe
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+
+  /health:
+    get:
+      tags: [Salud]
+      summary: Estado del servicio y sus dependencias
+      responses:
+        "200":
+          description: Todo funciona
+          content:
+            application/json:
+              example:
+                servicio: auth
+                version: v1
+                estado: ok
+                dependencias:
+                  postgresql: {ok: true, error: null}
+                  redis: {ok: true, error: null}
+        "503":
+          description: Alguna dependencia no responde

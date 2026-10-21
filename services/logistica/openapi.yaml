@@ -1,0 +1,20 @@
+openapi: 3.0.3
+info: {title: Servicio de logistica inversa, version: 1.0.0, description: "Programa y sigue recolecciones y confirma la recepcion. JSON/XML, JWT y PostgreSQL. RF-12 a RF-15."}
+servers: [{url: /}]
+security: [{bearerAuth: []}]
+components:
+  securitySchemes: {bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}}
+  schemas:
+    Recoleccion: {type: object, required: [devolucion_id, fecha_programada, lugar], properties: {devolucion_id: {type: integer, minimum: 1}, fecha_programada: {type: string, format: date}, lugar: {type: string}}}
+    Asignacion: {type: object, required: [ruta_id, transportista_id], properties: {ruta_id: {type: integer}, transportista_id: {type: integer}}}
+paths:
+  /api/v1/logistica/recolecciones:
+    post: {summary: Programar recoleccion, requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Recoleccion'}}, application/xml: {schema: {$ref: '#/components/schemas/Recoleccion'}}}}, responses: {'201': {description: Creada}, '400': {description: Datos invalidos}, '401': {description: No autenticado}, '403': {description: Rol incorrecto}, '409': {description: Estado o duplicado}}}
+    get: {summary: Listar recolecciones, parameters: [{name: estado, in: query, schema: {type: string}}], responses: {'200': {description: Lista}, '401': {description: No autenticado}}}
+  /api/v1/logistica/recolecciones/{recoleccion_id}/asignacion:
+    patch: {summary: Asignar ruta y transportista, parameters: [{name: recoleccion_id, in: path, required: true, schema: {type: integer}}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Asignacion'}}, application/xml: {schema: {$ref: '#/components/schemas/Asignacion'}}}}, responses: {'200': {description: Asignada}, '409': {description: Transicion invalida}}}
+  /api/v1/logistica/recolecciones/{recoleccion_id}/estado:
+    patch: {summary: Avanzar estado de recoleccion, parameters: [{name: recoleccion_id, in: path, required: true, schema: {type: integer}}], requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {estado: {type: string, enum: [en_transito, completada, fallida]}}}}, application/xml: {schema: {type: object}}}}, responses: {'200': {description: Actualizada}, '409': {description: Transicion invalida}}}
+  /api/v1/logistica/recepciones:
+    post: {summary: Confirmar recepcion, requestBody: {required: true, content: {application/json: {schema: {type: object, required: [devolucion_id], properties: {devolucion_id: {type: integer}, coincide_expediente: {type: boolean}}}}, application/xml: {schema: {type: object}}}}, responses: {'201': {description: Recibida}, '409': {description: Recoleccion no completada}}}
+  /health: {get: {security: [], summary: Salud de PostgreSQL y Redis, responses: {'200': {description: OK}, '503': {description: Degradado}}}}

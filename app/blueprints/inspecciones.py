@@ -11,6 +11,7 @@ Trazabilidad: RF-16, RF-17, RF-18, RF-19, RF-27, RN-05, RN-06, RN-07,
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 import psycopg2
 
+from app import api_client
 from app.db import consultar, ejecutar, get_conn
 from app.security import (
     ANALISTA, ENCARGADO_CENTRO, INSPECTOR, registrar_bitacora, roles_required, usuario_actual,
@@ -156,6 +157,38 @@ def registrar(devolucion_id):
                                         cadena_frio_rota, minutos_fuera)
         resultado = "apto para inventario" if apto else "no apto: " + "; ".join(motivos)
 
+        if api_client.habilitados():
+            try:
+                respuesta = api_client.solicitar(
+                    "inspecciones", "POST", "/api/v1/inspecciones",
+                    datos={
+                        "devolucion_id": devolucion_id,
+                        "estado_empaque": estado_empaque,
+                        "danos": danos,
+                        "caducidad_vencida": caducidad_vencida,
+                        "cadena_frio_rota": cadena_frio_rota,
+                        "minutos_fuera_refrigeracion": minutos_fuera,
+                        "temperatura_recepcion": temperatura,
+                        "observaciones": observaciones,
+                    },
+                )
+                apto = respuesta["apto_para_inventario"]
+                resultado = respuesta["resultado_general"]
+                if costo_inspeccion is not None and costo_inspeccion > 0:
+                    api_client.solicitar(
+                        "reembolsos", "POST", "/api/v1/reembolsos-costos/costos",
+                        datos={"devolucion_id": devolucion_id,
+                               "etapa": "inspeccion", "monto": costo_inspeccion},
+                    )
+            except api_client.ErrorServicio as exc:
+                flash(exc.mensaje, "error")
+                return render_template("inspecciones/registrar.html", d=expediente,
+                                       refrigerado=refrigerado), exc.codigo
+
+            flash(f"Inspeccion registrada por microservicio. Resultado: {resultado}.",
+                  "ok" if apto else "aviso")
+            return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
+
         # El detalle extenso de la inspeccion vivira en MongoDB (4.4). Mientras
         # esa coleccion no se habilita, se conserva en el resumen y en la
         # evidencia asociada, y mongo_doc_id queda en NULL.
@@ -231,6 +264,27 @@ def disposicion(devolucion_id):
         costo_disposicion = request.form.get("costo_disposicion", type=float)
         if destino not in dict(DESTINOS):
             abort(400)
+
+        if api_client.habilitados():
+            try:
+                api_client.solicitar(
+                    "inspecciones", "POST",
+                    f"/api/v1/inspecciones/{devolucion_id}/disposicion",
+                    datos={"destino": destino, "justificacion": justificacion},
+                )
+                etapa_costo = ETAPA_COSTO_POR_DESTINO.get(destino)
+                if etapa_costo and costo_disposicion is not None and costo_disposicion > 0:
+                    api_client.solicitar(
+                        "reembolsos", "POST", "/api/v1/reembolsos-costos/costos",
+                        datos={"devolucion_id": devolucion_id,
+                               "etapa": etapa_costo, "monto": costo_disposicion},
+                    )
+            except api_client.ErrorServicio as exc:
+                flash(exc.mensaje, "error")
+                return render_template("inspecciones/disposicion.html", d=expediente,
+                                       inspeccion=inspeccion, destinos=DESTINOS), exc.codigo
+            flash("Disposicion registrada mediante microservicio.", "ok")
+            return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
         try:
             ejecutar(
@@ -318,6 +372,19 @@ def etiquetar(disposicion_id):
         abort(404)
     if disposicion["destino"] != "inventario":
         flash("Solo se etiquetan los productos cuyo destino es el inventario.", "error")
+        return redirect(url_for("inspecciones.inventario"))
+
+    if api_client.habilitados():
+        try:
+            resultado = api_client.solicitar(
+                "inspecciones", "POST",
+                f"/api/v1/inspecciones/inventario/{disposicion_id}/etiqueta",
+                datos={},
+            )
+        except api_client.ErrorServicio as exc:
+            flash(exc.mensaje, "error")
+            return redirect(url_for("inspecciones.inventario"))
+        flash(f"Articulo etiquetado como {resultado['etiqueta_codigo']}.", "ok")
         return redirect(url_for("inspecciones.inventario"))
 
     etiqueta = f"REC-{disposicion['folio_devolucion'].replace('DEV-', '')}"

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato XML de la respuesta 200 de GET /api/v1/auth/sesion
+  (Accept: application/xml).
+
+  Trazabilidad: RNF-08 (sesion verificada en Redis).
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="respuesta">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="usuario">
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="id" type="xs:positiveInteger"/>
+              <xs:element name="rol" type="xs:string"/>
+              <xs:element name="nombre" type="xs:string"/>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+        <!-- Identificador de la sesion: devoluciones:sesion_api:<sesion_id> en Redis. -->
+        <xs:element name="sesion_id">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="[0-9a-f]{32}"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+        <!-- TTL restante de la clave de sesion en Redis, en segundos. -->
+        <xs:element name="sesion_expira_en_seg" type="xs:integer"/>
+        <xs:element name="token_expira" type="xs:dateTime"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

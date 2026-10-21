@@ -1,0 +1,252 @@
+openapi: 3.0.3
+info:
+  title: Orvia - analisis auditoria
+  version: 1.0.0
+  description: API del proyecto integrador, respuestas JSON y XML.
+servers:
+- url: /
+paths:
+  /health:
+    get:
+      summary: Estado PostgreSQL MongoDB Redis
+      responses:
+        '200':
+          description: Estado PostgreSQL MongoDB Redis
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': &id001
+          description: Parámetros inválidos
+        '401': &id002
+          description: Token inválido
+        '403': &id003
+          description: Sin permisos
+        '404': &id004
+          description: No encontrado
+        '409': &id005
+          description: Conflicto de negocio
+        '415': &id006
+          description: Formato no permitido
+        '500': &id007
+          description: Error interno
+        '503': &id008
+          description: Dependencia no disponible
+  /api/v1/analisis/sincronizar:
+    post:
+      summary: Actualiza MongoDB desde PostgreSQL sin modificar transacciones
+      responses:
+        '200':
+          description: Actualiza MongoDB desde PostgreSQL sin modificar transacciones
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      security:
+      - bearerAuth: []
+  /api/v1/analisis/pareto:
+    get:
+      summary: Pareto MongoDB mediante pipeline; Redis TTL 600s
+      responses:
+        '200':
+          description: Pareto MongoDB mediante pipeline; Redis TTL 600s
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters:
+      - name: dimension
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: medida
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: desde
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: hasta
+        in: query
+        required: false
+        schema:
+          type: string
+      security:
+      - bearerAuth: []
+  /api/v1/analisis/resumen:
+    get:
+      summary: Resumen de analítica guardada en MongoDB
+      responses:
+        '200':
+          description: Resumen de analítica guardada en MongoDB
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      security:
+      - bearerAuth: []
+  /api/v1/analisis/clasificar-motivo:
+    post:
+      summary: Sugiere motivos de forma explicable; requiere confirmacion humana
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [descripcion]
+              properties:
+                descripcion: {type: string, minLength: 10, maxLength: 2000}
+            example: {descripcion: "El producto llego caliente y descongelado"}
+          application/xml:
+            schema: {type: object}
+            example: "<clasificacion><descripcion>El producto llego caliente y descongelado</descripcion></clasificacion>"
+      responses:
+        '200':
+          description: Ranking de sugerencias
+          content:
+            application/json: {schema: {type: object}}
+            application/xml: {schema: {type: object}}
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      security:
+      - bearerAuth: []
+  /api/v1/analisis/alertas-fraude:
+    get:
+      summary: Detecta indicadores preventivos para revision humana
+      responses:
+        '200':
+          description: Alertas por frecuencia, rechazos o monto
+          content:
+            application/json: {schema: {type: object}}
+            application/xml: {schema: {type: object}}
+        '401': *id002
+        '403': *id003
+        '500': *id007
+        '503': *id008
+      security:
+      - bearerAuth: []
+  /api/v1/analisis/eventos:
+    get:
+      summary: Consulta eventos de auditoría MongoDB
+      responses:
+        '200':
+          description: Consulta eventos de auditoría MongoDB
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters:
+      - name: correlation_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: servicio
+        in: query
+        required: false
+        schema:
+          type: string
+      security:
+      - bearerAuth: []
+  /api/v1/auditoria:
+    get:
+      summary: Consulta bitácora transaccional PostgreSQL
+      responses:
+        '200':
+          description: Consulta bitácora transaccional PostgreSQL
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters:
+      - name: accion
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: entidad
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: correlation_id
+        in: query
+        required: false
+        schema:
+          type: string
+      security:
+      - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

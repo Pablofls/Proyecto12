@@ -1,5 +1,5 @@
 # Plataforma de devoluciones -- entorno de la VM de GCP.
-# Las tres piezas viven UNICAMENTE en la maquina virtual. Nadie levanta este
+# Todas las piezas viven UNICAMENTE en la maquina virtual. Nadie levanta este
 # compose en su laptop: desde casa se escribe codigo y se sube por git.
 
 services:
@@ -41,13 +41,44 @@ services:
       timeout: 5s
       retries: 5
 
+  mongo:
+    # Segundo parcial: detalle de inspecciones, metadatos de evidencias, eventos
+    # entre servicios y resultados del analisis de causa raiz (seccion 5.4,
+    # RNF-06). El enlace con PostgreSQL es inspecciones_ref.mongo_doc_id.
+    image: mongo:7
+    container_name: devoluciones_mongo
+    restart: unless-stopped
+    environment:
+      # Usuario administrador del motor. Solo se usa para crear la base y el
+      # usuario de la aplicacion la primera vez; los servicios no lo usan.
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+      # Los lee db/mongo/init.js para crear el usuario de la aplicacion.
+      MONGO_DB: ${MONGO_DB}
+      MONGO_APP_USER: ${MONGO_APP_USER}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+      # Los scripts de esta carpeta solo se ejecutan cuando el volumen esta
+      # vacio, es decir, la primera vez que se levanta el contenedor.
+      - ./db/mongo:/docker-entrypoint-initdb.d:ro,z
+    ports:
+      # Mismo criterio que Postgres y Redis: solo accesible desde la propia VM.
+      - "127.0.0.1:57017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   app:
     build:
       context: .
       dockerfile: docker/Dockerfile
     container_name: devoluciones_app
     restart: unless-stopped
-    env_file: .env
+    env_file: ${APP_ENV_FILE:-.env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,6 +92,150 @@ services:
       # codigo montado.
       - ./:/srv/app:z
 
+  # ------------------------------------------------------------------------ #
+  # Microservicios (segundo parcial). Se construyen desde la raiz para poder
+  # copiar shared/. Exponen el puerto 8000 interno en 8001, 8002, ...
+  # ------------------------------------------------------------------------ #
+  auth:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    container_name: devoluciones_auth
+    restart: unless-stopped
+    env_file: ${APP_ENV_FILE:-.env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "0.0.0.0:8001:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  logistica:
+    build:
+      context: .
+      dockerfile: services/logistica/Dockerfile
+    container_name: devoluciones_logistica
+    restart: unless-stopped
+    env_file: ${APP_ENV_FILE:-.env}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    ports: ["0.0.0.0:8003:8000"]
+
+  inspecciones:
+    build:
+      context: .
+      dockerfile: services/inspecciones/Dockerfile
+    container_name: devoluciones_inspecciones
+    restart: unless-stopped
+    env_file: ${APP_ENV_FILE:-.env}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      mongo: {condition: service_healthy}
+    ports: ["0.0.0.0:8004:8000"]
+
+  reembolsos-costos:
+    build:
+      context: .
+      dockerfile: services/reembolsos_costos/Dockerfile
+    container_name: devoluciones_reembolsos_costos
+    restart: unless-stopped
+    env_file: ${APP_ENV_FILE:-.env}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    ports: ["0.0.0.0:8005:8000"]
+
+  ventas-catalogos:
+    build:
+      context: .
+      dockerfile: services/ventas_catalogos/Dockerfile
+    container_name: devoluciones_ventas_catalogos
+    restart: unless-stopped
+    env_file: ${APP_ENV_FILE:-.env}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    ports: ["0.0.0.0:8006:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  evidencias:
+    build:
+      context: .
+      dockerfile: services/evidencias/Dockerfile
+    container_name: devoluciones_evidencias
+    restart: unless-stopped
+    env_file: ${APP_ENV_FILE:-.env}
+    environment:
+      EVIDENCIAS_DIR: /srv/evidencias_privadas
+    volumes:
+      - evidencias_data:/srv/evidencias_privadas
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      mongo: {condition: service_healthy}
+    ports: ["0.0.0.0:8007:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  analisis-auditoria:
+    build:
+      context: .
+      dockerfile: services/analisis_auditoria/Dockerfile
+    container_name: devoluciones_analisis_auditoria
+    restart: unless-stopped
+    env_file: ${APP_ENV_FILE:-.env}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      mongo: {condition: service_healthy}
+    ports: ["0.0.0.0:8008:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  devoluciones:
+    # Registro y resolucion de devoluciones (RF-07, RF-10). Usa las tres bases:
+    # PostgreSQL (expediente), MongoDB (eventos) y Redis (sesion JWT, limites).
+    build:
+      context: .
+      dockerfile: services/devoluciones/Dockerfile
+    container_name: devoluciones_devoluciones
+    restart: unless-stopped
+    env_file: ${APP_ENV_FILE:-.env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    ports:
+      - "0.0.0.0:8002:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
 volumes:
   postgres_data:
   redis_data:
+  mongo_data:
+  evidencias_data:

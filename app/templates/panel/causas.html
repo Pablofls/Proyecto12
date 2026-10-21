@@ -11,6 +11,25 @@
   forma automatica (RN-09).
 </p>
 
+{% if modo_distribuido %}
+<div class="tarjeta">
+  <h2>Analisis distribuido</h2>
+  {% if error_analisis %}
+    <p class="aviso-msg error">{{ error_analisis }}</p>
+  {% elif analisis_distribuido %}
+    <p>Snapshots vigentes en MongoDB: <strong>{{ analisis_distribuido.casos_sincronizados }}</strong>.
+       Reportes Pareto conservados: <strong>{{ analisis_distribuido.reportes_pareto }}</strong>.</p>
+    {% if pareto_distribuido %}
+      <p>Ultimo Pareto servido por la API: cache <strong>{{ pareto_distribuido.cache }}</strong>,
+         version <strong>{{ pareto_distribuido.version_datos }}</strong>.</p>
+    {% endif %}
+  {% endif %}
+  <form method="post" action="{{ url_for('panel.sincronizar_causas') }}">
+    <button class="boton" type="submit">Sincronizar PostgreSQL → MongoDB</button>
+  </form>
+</div>
+{% endif %}
+
 <form method="get" class="filtros">
   <div>
     <label for="fecha_inicio">Desde</label>

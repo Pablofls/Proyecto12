@@ -224,3 +224,172 @@ llena directamente en la misma sentencia.
 rechazada en la primera revision (el camino mas comun de rechazo) habria
 quedado con `fecha_cierre` en NULL para siempre, y el KPI de tiempo de
 resolucion la habria ignorado silenciosamente sin que nadie lo notara.
+
+---
+
+## 2026-10-17 — MongoDB entra al entorno (segundo parcial)
+
+**Contexto.** La entrada del 2026-09-06 dejo MongoDB declarado pero sin uso.
+El segundo parcial exige operaciones reales sobre Mongo (insercion, consulta,
+actualizacion, agregaciones e indices) y que todo se levante con Docker Compose.
+
+**Decision.** Se agrega el contenedor `mongo` (imagen `mongo:7`) al compose,
+con volumen `mongo_data`, healthcheck y puerto `127.0.0.1:57017`. El script
+`db/mongo/init.js` crea la base, un usuario de aplicacion con permiso
+`readWrite` solo sobre ella, las cuatro colecciones de la seccion 5.4 y sus
+indices.
+
+**Por que.**
+- El puerto sigue el mismo criterio que Postgres (55432) y Redis (56379):
+  solo accesible desde la VM y con prefijo 5 para no chocar con servicios
+  nativos.
+- Los servicios no usan el usuario administrador del motor: si una credencial
+  se filtra, solo compromete la base del proyecto (RNF-14).
+- Las colecciones e indices se crean por script para que el entorno sea
+  reproducible sin pasos manuales (RNF-27).
+- La app del monolito no declara `depends_on: mongo` porque todavia no lo usa;
+  asi una falla de Mongo no impide arrancar el sistema web.
+
+**Cuidado.** `init.js` solo corre cuando el volumen esta vacio. Si se modifica
+despues, hay que aplicar el cambio a mano o recrear el volumen con
+`docker compose down` y `docker volume rm proyecto12_mongo_data` (se pierden los
+datos de Mongo).
+
+---
+
+## 2026-10-17 — El seed de demostracion usaba una etapa de costo eliminada
+
+**Contexto.** La migracion 009 renombro la etapa de costo `recoleccion` a
+`transporte` y cambio el CHECK de `costos.etapa`. `scripts/seed_demo.py`
+siguio insertando `'recoleccion'`. En la VM del equipo no se noto porque el
+seed se habia corrido antes de la 009 y el `UPDATE` de esa migracion
+reclasifico los datos. En una base nueva, el seed fallaba con
+`costos_etapa_check`.
+
+**Decision.** El seed inserta `'transporte'`.
+
+**Por que.** El entorno debe poder levantarse desde cero siguiendo
+`docs/SETUP.md` (RNF-27); con el error, nadie podia reconstruir los datos de
+demostracion en una base limpia.
+
+---
+
+## 2026-10-17 — Servicio auth y carpeta shared/ comun a los microservicios
+
+**Decision.** Se crea `services/auth` (Flask, puerto 8001) y la carpeta
+`shared/`, que cada microservicio copia en su imagen. `shared/` concentra lo
+que todos deben hacer igual: formato JSON/XML segun `Accept`, formato de error,
+correlation id, registro de actividad, validacion de JWT y rate limiting.
+
+**Por que Flask y no otro framework.** Mantiene el stack fijo del proyecto y
+permite reutilizar el codigo del monolito (consultas SQL, bloqueo por intentos).
+Swagger UI se sirve desde CDN sobre un `openapi.yaml` escrito a mano, asi que
+la unica dependencia nueva es PyJWT (mas PyYAML para leer el contrato).
+
+**Sesion ademas del JWT.** Cada login crea `devoluciones:sesion_api:<sid>` en
+Redis y el `sid` viaja dentro del token. Los servicios aceptan un token solo si
+su sesion existe y su `jti` no esta en `devoluciones:jwt_revocado:`. Asi:
+- logout revoca el token actual y borra la sesion (mata tambien el refresh);
+- el administrador puede cerrar todas las sesiones de un usuario (RNF-08);
+- si Redis no responde, se niega el acceso (falla cerrada).
+
+**423 para cuenta bloqueada.** Se distingue del 401 de credenciales y del 429
+de rate limiting para que el cliente sepa que esperar no es lo mismo que
+reintentar.
+
+---
+
+## 2026-10-18 — Correcciones de shared/ y modulos comunes de MongoDB y paginacion
+
+**Correcciones.**
+- `ip_origen()` ya no lee `X-Forwarded-For`. No hay proxy delante de los
+  servicios, asi que ese header lo escribe el cliente: mandando un valor
+  distinto en cada peticion se evitaba el rate limit (RNF-13). Verificado en la
+  VM: con 12 IPs falsas, la peticion 11 recibe 429.
+- Un error 500 ya no confirma la transaccion. El manejador de errores atrapa la
+  excepcion, por lo que el teardown la recibia como `exc=None` y hacia commit
+  de cambios a medias. Ahora `respuestas.py` marca `g.error_interno` y
+  `cerrar_conexion` hace rollback.
+- `/health` ya no devuelve el texto de la excepcion (host, usuario de la base);
+  el detalle va al log del contenedor (RNF-16).
+
+**Modulos nuevos.**
+- `shared/mongo.py`: conexion con el usuario de minimo privilegio, conversion
+  de documentos a JSON/XML, `registrar_evento()` sobre la coleccion `eventos`
+  con correlation_id (RNF-23) y `salud_mongo()`. Va en archivo aparte para que
+  los servicios sin MongoDB no instalen `pymongo`.
+- `shared/paginacion.py`: contrato unico `?pagina=&por_pagina=` y bloque
+  `paginacion` en la respuesta, igual en JSON y XML.
+
+**Dependencia nueva.** `pymongo==4.8.0`, solo en los servicios que usan
+MongoDB. Es el driver oficial; sin el no hay forma de cumplir la seccion 7 del
+segundo parcial (uso real de MongoDB).
+
+---
+
+## 2026-10-18 — Contratos XSD y validacion de los cuerpos XML
+
+**Decision.** Cada servicio guarda sus esquemas en `services/<servicio>/contratos/`
+y el del error estandar vive en `shared/contratos/error.xsd`. Los cuerpos XML
+se validan con `leer_cuerpo(xsd=...)` antes de procesarse; si no cumplen, la
+respuesta es `400 xml_no_cumple_xsd` con la linea y el problema. Cada servicio
+publica sus esquemas en `GET /contratos/<nombre>.xsd` y Swagger los enlaza.
+
+**Por que.** La seccion 6 del parcial pide esquemas XSD y demostrar la
+recepcion de XML; un XSD que nadie usa no demuestra nada. Las pruebas de auth
+validan tambien las respuestas generadas contra su esquema.
+
+**Detalles.**
+- Se usa `xs:all`: los campos pueden llegar en cualquier orden.
+- Sin espacio de nombres: los documentos son autocontenidos y el elemento raiz
+  identifica el mensaje.
+- Dependencia nueva `lxml==5.3.0`, solo en los servicios con contratos XSD: la
+  biblioteca estandar no valida esquemas. El parser no resuelve entidades ni
+  accede a la red (proteccion contra XXE).
+
+---
+
+## 2026-10-18 — Microservicio de devoluciones
+
+**Decision.** `services/devoluciones` (puerto 8002) expone el registro y la
+resolucion de devoluciones con las mismas reglas del monolito: POST para
+registrar, GET para listar (filtros y paginacion) y consultar, PUT para que el
+cliente corrija cuando le piden informacion, PATCH para la resolucion del
+analista y DELETE para cancelar.
+
+**Por que estas reglas.**
+- La linea de venta y la devolucion se bloquean con `SELECT ... FOR UPDATE`:
+  sin eso, dos solicitudes simultaneas podian devolver mas de lo comprado, o
+  dos analistas resolver la misma devolucion.
+- Un cliente que pide una devolucion ajena recibe 403 y queda en la bitacora
+  (`acceso_denegado`), igual que en la web.
+- DELETE es eliminacion logica (`eliminado_en`, RNF-30) y solo procede si
+  ningun analista la ha revisado.
+- Al resolver se inserta en `notificaciones` (RF-29), tabla que existia sin uso.
+- Cada operacion publica un evento en MongoDB (`eventos`). El servicio crea el
+  indice `idx_devolucion_fecha` (create_index es idempotente) porque init.js
+  solo indexa correlation_id y fecha.
+
+**Fechas en las respuestas.** `shared/respuestas.py` convierte fechas a ISO 8601
+y NUMERIC a numero antes de responder; jsonify usaba el formato RFC 822.
+
+**Pruebas.** Unitarias (reglas y API con Redis en memoria) y de integracion
+(`tests/test_integracion.py`): obtienen el token del contenedor auth por HTTP,
+operan contra PostgreSQL, MongoDB y Redis reales, y comprueban que un logout en
+auth revoca el token en devoluciones. Borran lo que crean al terminar.
+
+## Integracion de ramas a main (21 de octubre de 2026)
+
+**Orden.** Las ramas `david/base-microservicios`, `david/servicio-devoluciones`
+y `roberto/integracion-web-microservicios` estaban apiladas (cada una contiene
+a la anterior), asi que entran a `main` con un solo Pull Request y merge commit,
+sin squash: el historial conserva la autoria de cada integrante (evidencia del
+parcial).
+
+**Estructura.** Se mantiene `app/` en la raiz durante la integracion para no
+mezclar un movimiento de carpetas con el primer despliegue conjunto en la VM.
+La reorganizacion del monorepo (`apps/web`, `docs/enunciado`, `docs/postman`)
+va en un PR posterior, una vez validado el despliegue.
+
+**Contingencia.** `USE_MICROSERVICES=false` devuelve el web al modo monolito sin
+tocar codigo.

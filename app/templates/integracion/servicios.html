@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titulo %}Integracion de servicios{% endblock %}
+{% block contenido %}
+<h1>Arquitectura distribuida</h1>
+<p class="sub">Estado en tiempo real: {{ disponibles }} de {{ estados|length }} microservicios disponibles.</p>
+
+<div class="tabla-contenedor">
+  <table>
+    <thead><tr><th>Servicio</th><th>Estado</th><th>HTTP</th><th>Latencia</th><th>Dependencias</th></tr></thead>
+    <tbody>
+    {% for servicio in estados %}
+      <tr>
+        <td><strong>{{ servicio.nombre }}</strong><br><small>{{ servicio.url }}</small></td>
+        <td><span class="estado estado-{{ 'cerrada' if servicio.disponible else 'rechazada' }}">{{ servicio.estado }}</span></td>
+        <td>{{ servicio.codigo_http or '—' }}</td>
+        <td>{{ servicio.latencia_ms }} ms</td>
+        <td>
+          {% if servicio.dependencias %}
+            {% for nombre, dependencia in servicio.dependencias.items() %}
+              {{ nombre }}: {{ 'OK' if dependencia.ok else 'ERROR' }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          {% else %}{{ servicio.error or '—' }}{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

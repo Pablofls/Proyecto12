@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato XML de la peticion POST /api/v1/auth/login
+  (Content-Type: application/xml). El servicio valida cada cuerpo XML contra
+  este esquema antes de procesarlo; si no cumple, responde 400 xml_no_cumple_xsd.
+
+  Ejemplo:
+    <login>
+      <email>josue.analista@demo.mx</email>
+      <password>tu-contrasena</password>
+    </login>
+
+  Trazabilidad: RF-01, HU-01, UC-01.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="login">
+    <xs:complexType>
+      <!-- xs:all: los dos campos son obligatorios y pueden venir en cualquier orden. -->
+      <xs:all>
+        <xs:element name="email">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:maxLength value="150"/>
+              <xs:pattern value="[^@\s]+@[^@\s]+\.[^@\s]+"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+        <xs:element name="password">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:minLength value="1"/>
+              <xs:maxLength value="128"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

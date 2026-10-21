@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<xs:element name="evidencia"><xs:complexType><xs:sequence>
+ <xs:element name="devolucion_id" type="xs:positiveInteger"/>
+ <xs:element name="tipo"><xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="comentario"/></xs:restriction></xs:simpleType></xs:element>
+ <xs:element name="etapa" type="xs:string" minOccurs="0"/>
+ <xs:element name="comentario" type="xs:string"/>
+</xs:sequence></xs:complexType></xs:element>
+</xs:schema>
+

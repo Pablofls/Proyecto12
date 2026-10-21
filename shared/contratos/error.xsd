@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato XML del error estandar, comun a TODOS los microservicios.
+  Lo genera shared/respuestas.py (responder_error) cuando el cliente envia
+  Accept: application/xml. Equivale al JSON {"error": {...}}.
+
+  Sin espacio de nombres: los documentos son autocontenidos y el elemento
+  raiz identifica el mensaje. Codificacion UTF-8.
+
+  Trazabilidad: RNF-16 (errores sin trazas internas), RNF-23 (correlation_id).
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="error">
+    <xs:complexType>
+      <xs:all>
+        <!-- Codigo HTTP de la respuesta: 400, 401, 403, 404, 409, 415, 423, 429, 500, 503 -->
+        <xs:element name="codigo">
+          <xs:simpleType>
+            <xs:restriction base="xs:int">
+              <xs:minInclusive value="400"/>
+              <xs:maxInclusive value="599"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+        <!-- Identificador estable para el cliente: validacion, token_revocado, sin_permiso... -->
+        <xs:element name="tipo">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="[a-z_]+"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+        <xs:element name="mensaje" type="xs:string"/>
+        <!-- Vacio, o una lista de <item> (p. ej. campo/problema), o un objeto. -->
+        <xs:element name="detalles">
+          <xs:complexType mixed="true">
+            <xs:sequence>
+              <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="correlation_id" type="xs:string"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato XML de la respuesta 200 de POST /login y POST /refresh
+  (Accept: application/xml).
+
+  /login devuelve todos los campos. /refresh solo devuelve token_type,
+  access_token y expires_in: por eso los demas son opcionales.
+
+  Trazabilidad: RF-01, RNF-07.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:simpleType name="Jwt">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Mismo catalogo que la tabla roles (migracion 001). -->
+  <xs:simpleType name="Rol">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Cliente"/>
+      <xs:enumeration value="Inspector"/>
+      <xs:enumeration value="Encargado del Centro de Devoluciones"/>
+      <xs:enumeration value="Coordinador de Logistica"/>
+      <xs:enumeration value="Analista de Devoluciones"/>
+      <xs:enumeration value="Encargado de Reembolsos"/>
+      <xs:enumeration value="Administrador"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="respuesta">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="token_type" type="xs:string" fixed="Bearer"/>
+        <xs:element name="access_token" type="Jwt"/>
+        <!-- Segundos de vigencia del access token. -->
+        <xs:element name="expires_in" type="xs:positiveInteger"/>
+        <xs:element name="refresh_token" type="Jwt" minOccurs="0"/>
+        <xs:element name="refresh_expires_in" type="xs:positiveInteger" minOccurs="0"/>
+        <xs:element name="usuario" minOccurs="0">
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="id" type="xs:positiveInteger"/>
+              <xs:element name="nombre" type="xs:string"/>
+              <xs:element name="email" type="xs:string"/>
+              <xs:element name="rol" type="Rol"/>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

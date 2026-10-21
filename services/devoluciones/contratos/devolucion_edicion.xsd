@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato XML de la peticion PUT /api/v1/devoluciones/{id}.
+  PUT reemplaza los datos editables: los tres campos son obligatorios.
+  La linea de venta no se puede cambiar.
+
+  Trazabilidad: RF-10 (respuesta del cliente a una solicitud de informacion).
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="devolucion">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="motivo_id" type="xs:positiveInteger"/>
+        <xs:element name="descripcion_problema">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:minLength value="10"/>
+              <xs:maxLength value="2000"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+        <xs:element name="cantidad_devuelta" type="xs:positiveInteger"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

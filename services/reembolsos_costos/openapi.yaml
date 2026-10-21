@@ -1,0 +1,18 @@
+openapi: 3.0.3
+info: {title: Servicio de reembolsos y costos, version: 1.0.0, description: "Reembolso unico protegido con lock Redis y restriccion PostgreSQL; costos por etapa. RF-20 RF-21 RF-27 RN-03 RN-04."}
+servers: [{url: /}]
+security: [{bearerAuth: []}]
+components:
+  securitySchemes: {bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}}
+  schemas:
+    Reembolso: {type: object, required: [devolucion_id, monto, estado], properties: {devolucion_id: {type: integer}, monto: {type: number, minimum: 0}, metodo: {type: string, enum: [transferencia, tarjeta, efectivo, vale]}, estado: {type: string, enum: [aprobado, rechazado]}}}
+    Costo: {type: object, required: [devolucion_id, etapa, monto], properties: {devolucion_id: {type: integer}, etapa: {type: string, enum: [transporte, inspeccion, almacenamiento, reacondicionamiento, destruccion, reembolso, otros]}, monto: {type: number, minimum: 0}}}
+paths:
+  /api/v1/reembolsos-costos/reembolsos:
+    post: {summary: Resolver reembolso con exclusion mutua Redis, requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Reembolso'}}, application/xml: {schema: {$ref: '#/components/schemas/Reembolso'}}}}, responses: {'201': {description: Reembolso creado}, '400': {description: Validacion}, '401': {description: No autenticado}, '403': {description: Solo Encargado de Reembolsos}, '409': {description: Duplicado estado monto o lock}}}
+    get: {summary: Listar reembolsos, responses: {'200': {description: Lista}, '401': {description: No autenticado}}}
+  /api/v1/reembolsos-costos/costos:
+    post: {summary: Registrar costo por etapa, requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Costo'}}, application/xml: {schema: {$ref: '#/components/schemas/Costo'}}}}, responses: {'201': {description: Costo creado}, '400': {description: Validacion}}}
+  /api/v1/reembolsos-costos/costos/{devolucion_id}:
+    get: {summary: Desglose y total de costos, parameters: [{name: devolucion_id, in: path, required: true, schema: {type: integer}}], responses: {'200': {description: Resumen}, '404': {description: No encontrada}}}
+  /health: {get: {security: [], summary: Salud de PostgreSQL y Redis, responses: {'200': {description: OK}, '503': {description: Degradado}}}}

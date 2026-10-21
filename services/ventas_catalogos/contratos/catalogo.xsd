@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+ <xs:element name="catalogo"><xs:complexType><xs:all>
+  <xs:element name="sku" type="xs:string" minOccurs="0"/>
+  <xs:element name="nombre" type="xs:string" minOccurs="0"/>
+  <xs:element name="contacto" type="xs:string" minOccurs="0"/>
+  <xs:element name="clasificacion_temperatura" type="xs:string" minOccurs="0"/>
+  <xs:element name="proveedor_id" type="xs:positiveInteger" minOccurs="0"/>
+  <xs:element name="producto_id" type="xs:positiveInteger" minOccurs="0"/>
+  <xs:element name="numero_lote" type="xs:string" minOccurs="0"/>
+  <xs:element name="fecha_fabricacion" type="xs:date" minOccurs="0"/>
+  <xs:element name="fecha_caducidad" type="xs:date" minOccurs="0"/>
+  <xs:element name="direccion" type="xs:string" minOccurs="0"/>
+  <xs:element name="origen" type="xs:string" minOccurs="0"/>
+  <xs:element name="destino" type="xs:string" minOccurs="0"/>
+  <xs:element name="empresa" type="xs:string" minOccurs="0"/>
+  <xs:element name="descripcion" type="xs:string" minOccurs="0"/>
+ </xs:all></xs:complexType></xs:element>
+</xs:schema>
+

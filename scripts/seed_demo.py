@@ -203,7 +203,7 @@ def crear_devoluciones(cur, detalles, usuarios):
                  "completada" if estado != "en_recoleccion" else "en_transito"),
             )
             cur.execute(
-                "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'recoleccion', %s)",
+                "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'transporte', %s)",
                 (devolucion_id, round(random.uniform(60, 180), 2)),
             )
 

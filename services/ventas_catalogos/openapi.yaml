@@ -1,0 +1,330 @@
+openapi: 3.0.3
+info:
+  title: Orvia - ventas catalogos
+  version: 1.0.0
+  description: API del proyecto integrador, respuestas JSON y XML.
+servers:
+- url: /
+paths:
+  /health:
+    get:
+      summary: Estado del servicio
+      responses:
+        '200':
+          description: Estado del servicio
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': &id001
+          description: Parámetros inválidos
+        '401': &id002
+          description: Token inválido
+        '403': &id003
+          description: Sin permisos
+        '404': &id004
+          description: No encontrado
+        '409': &id005
+          description: Conflicto de negocio
+        '415': &id006
+          description: Formato no permitido
+        '500': &id007
+          description: Error interno
+        '503': &id008
+          description: Dependencia no disponible
+  /api/v1/ventas:
+    get:
+      summary: Listar ventas, solo las propias para cliente
+      responses:
+        '200':
+          description: Listar ventas, solo las propias para cliente
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: pagina
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: por_pagina
+        in: query
+        required: false
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+  /api/v1/ventas/{id}:
+    get:
+      summary: Consulta una venta y las líneas con cantidad disponible
+      responses:
+        '200':
+          description: Consulta una venta y las líneas con cantidad disponible
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters:
+      - &id010
+        name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+  /api/v1/catalogos:
+    get:
+      summary: Tipos de catálogos disponibles
+      responses:
+        '200':
+          description: Tipos de catálogos disponibles
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      security:
+      - bearerAuth: []
+  /api/v1/catalogos/{nombre}:
+    get:
+      summary: Listar registros (el cliente solo ve motivos activos)
+      responses:
+        '200':
+          description: Listar registros (el cliente solo ve motivos activos)
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters:
+      - &id009
+        name: nombre
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: pagina
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: por_pagina
+        in: query
+        required: false
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+    post:
+      summary: Crear catálogo; administrador
+      responses:
+        '201':
+          description: Crear catálogo; administrador
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      requestBody:
+        required: true
+        content: &id011
+          application/json:
+            schema:
+              type: object
+          application/xml:
+            schema:
+              type: object
+              xml:
+                name: registro
+      parameters:
+      - *id009
+      security:
+      - bearerAuth: []
+  /api/v1/catalogos/{nombre}/{id}:
+    get:
+      summary: Detalle de un registro
+      responses:
+        '200':
+          description: Detalle de un registro
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters:
+      - *id009
+      - *id010
+      security:
+      - bearerAuth: []
+    put:
+      summary: Reemplazar campos permitidos del registro; administrador
+      responses:
+        '200':
+          description: Reemplazar campos permitidos del registro; administrador
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      requestBody:
+        required: true
+        content: *id011
+      parameters:
+      - *id009
+      - *id010
+      security:
+      - bearerAuth: []
+    delete:
+      summary: Desactivar sin borrar historia
+      responses:
+        '200':
+          description: Desactivar sin borrar historia
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      parameters:
+      - *id009
+      - *id010
+      security:
+      - bearerAuth: []
+  /api/v1/catalogos/{nombre}/{id}/estado:
+    patch:
+      summary: Establecer estado booleano activo
+      responses:
+        '200':
+          description: Establecer estado booleano activo
+          content:
+            application/json:
+              schema:
+                type: object
+            application/xml:
+              schema:
+                type: object
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '409': *id005
+        '415': *id006
+        '500': *id007
+        '503': *id008
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                activo:
+                  type: boolean
+          application/xml:
+            schema:
+              type: object
+              xml:
+                name: estado
+      parameters:
+      - *id009
+      - *id010
+      security:
+      - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

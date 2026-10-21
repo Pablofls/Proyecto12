@@ -26,6 +26,7 @@ def create_app():
     from app.blueprints.catalogos import bp as catalogos_bp
     from app.blueprints.devoluciones import bp as devoluciones_bp
     from app.blueprints.inspecciones import bp as inspecciones_bp
+    from app.blueprints.integracion import bp as integracion_bp
     from app.blueprints.logistica import bp as logistica_bp
     from app.blueprints.panel import bp as panel_bp
     from app.blueprints.reembolsos import bp as reembolsos_bp
@@ -40,6 +41,7 @@ def create_app():
     app.register_blueprint(devoluciones_bp)
     app.register_blueprint(logistica_bp)
     app.register_blueprint(inspecciones_bp)
+    app.register_blueprint(integracion_bp)
     app.register_blueprint(reembolsos_bp)
 
     @app.get("/health")
@@ -75,6 +77,7 @@ def create_app():
             "usuario_actual": usuario_actual(),
             "rol_actual": rol_actual(),
             "TODOS": list(TODOS_LOS_ROLES),
+            "modo_distribuido": app.config["USE_MICROSERVICES"],
         }
 
     return app

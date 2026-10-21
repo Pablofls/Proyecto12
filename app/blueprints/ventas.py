@@ -2,8 +2,11 @@
 
 Trazabilidad: RF-06, RN-01, HU-06, UC-06
 """
+from datetime import date
+
 from flask import Blueprint, abort, render_template, request
 
+from app import api_client
 from app.db import consultar
 from app.security import CLIENTE, TODOS_LOS_ROLES, login_required, roles_required, usuario_actual
 
@@ -16,6 +19,20 @@ def listar():
     """El cliente ve unicamente sus compras; el personal interno ve todas."""
     usuario = usuario_actual()
     busqueda = (request.args.get("q") or "").strip()
+
+    if api_client.habilitados():
+        try:
+            respuesta = api_client.solicitar(
+                "ventas", "GET", "/api/v1/ventas",
+                parametros={"q": busqueda, "pagina": 1, "limite": 100},
+            )
+        except api_client.ErrorServicio as exc:
+            return render_template("error.html", codigo=exc.codigo,
+                                   mensaje=exc.mensaje), exc.codigo
+        ventas = respuesta["datos"]
+        for venta in ventas:
+            venta["fecha_venta"] = date.fromisoformat(venta["fecha_venta"])
+        return render_template("ventas/listar.html", ventas=ventas, busqueda=busqueda)
 
     condiciones = ["v.eliminado_en IS NULL"]
     parametros = []
@@ -52,6 +69,21 @@ def listar():
 @roles_required(*TODOS_LOS_ROLES)
 def detalle(venta_id):
     usuario = usuario_actual()
+    if api_client.habilitados():
+        try:
+            venta = api_client.solicitar(
+                "ventas", "GET", f"/api/v1/ventas/{venta_id}",
+            )
+        except api_client.ErrorServicio as exc:
+            return render_template("error.html", codigo=exc.codigo,
+                                   mensaje=exc.mensaje), exc.codigo
+        venta["fecha_venta"] = date.fromisoformat(venta["fecha_venta"])
+        for linea in venta["lineas"]:
+            if linea.get("fecha_caducidad"):
+                linea["fecha_caducidad"] = date.fromisoformat(linea["fecha_caducidad"])
+        return render_template("ventas/detalle.html", venta=venta,
+                               lineas=venta["lineas"])
+
     venta = consultar(
         """
         SELECT v.id, v.folio_venta, v.fecha_venta, v.cliente_id,

@@ -1,0 +1,42 @@
+{
+  "info": {
+    "name": "Proyecto 12 - Logistica, Inspecciones y Reembolsos",
+    "description": "Evidencias JSON/XML de la rama roberto/tres-microservicios. Definir token e ids con datos reales de la VM.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "host", "value": "http://localhost"},
+    {"key": "token", "value": "PEGAR_JWT"},
+    {"key": "devolucion_id", "value": "1"},
+    {"key": "recoleccion_id", "value": "1"},
+    {"key": "ruta_id", "value": "1"},
+    {"key": "transportista_id", "value": "1"}
+  ],
+  "item": [
+    {
+      "name": "Logistica",
+      "item": [
+        {"name": "Programar recoleccion JSON", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"fecha_programada\": \"2026-10-21\",\n  \"lugar\": \"Sucursal Centro\"\n}"}, "url": "{{host}}:8003/api/v1/logistica/recolecciones"}},
+        {"name": "Asignar ruta XML", "request": {"method": "PATCH", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/xml"}, {"key": "Accept", "value": "application/xml"}], "body": {"mode": "raw", "raw": "<asignacion><ruta_id>{{ruta_id}}</ruta_id><transportista_id>{{transportista_id}}</transportista_id></asignacion>"}, "url": "{{host}}:8003/api/v1/logistica/recolecciones/{{recoleccion_id}}/asignacion"}},
+        {"name": "Error XML controlado", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/xml"}, {"key": "Accept", "value": "application/xml"}], "body": {"mode": "raw", "raw": "<recoleccion><devolucion_id>0</devolucion_id></recoleccion>"}, "url": "{{host}}:8003/api/v1/logistica/recolecciones"}}
+      ]
+    },
+    {
+      "name": "Inspecciones",
+      "item": [
+        {"name": "Registrar inspeccion JSON", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"estado_empaque\": \"Sello roto\",\n  \"danos\": true,\n  \"caducidad_vencida\": false,\n  \"cadena_frio_rota\": false,\n  \"minutos_fuera_refrigeracion\": 10,\n  \"temperatura_recepcion\": 6.5,\n  \"observaciones\": \"Golpe visible en costado\"\n}"}, "url": "{{host}}:8004/api/v1/inspecciones"}},
+        {"name": "Consultar inspeccion XML", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Accept", "value": "application/xml"}], "url": "{{host}}:8004/api/v1/inspecciones/{{devolucion_id}}"}},
+        {"name": "Disposicion JSON", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"destino\": \"desecho\",\n  \"justificacion\": \"Producto danado no recuperable\"\n}"}, "url": "{{host}}:8004/api/v1/inspecciones/{{devolucion_id}}/disposicion"}}
+      ]
+    },
+    {
+      "name": "Reembolsos y costos",
+      "item": [
+        {"name": "Aprobar reembolso JSON", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"monto\": 100.00,\n  \"metodo\": \"tarjeta\",\n  \"estado\": \"aprobado\"\n}"}, "url": "{{host}}:8005/api/v1/reembolsos-costos/reembolsos"}},
+        {"name": "Registrar costo XML", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/xml"}, {"key": "Accept", "value": "application/xml"}], "body": {"mode": "raw", "raw": "<costo><devolucion_id>{{devolucion_id}}</devolucion_id><etapa>transporte</etapa><monto>75.50</monto></costo>"}, "url": "{{host}}:8005/api/v1/reembolsos-costos/costos"}},
+        {"name": "Consultar total de costos", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{host}}:8005/api/v1/reembolsos-costos/costos/{{devolucion_id}}"}},
+        {"name": "Error monto negativo", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"monto\": -1,\n  \"metodo\": \"tarjeta\",\n  \"estado\": \"aprobado\"\n}"}, "url": "{{host}}:8005/api/v1/reembolsos-costos/reembolsos"}}
+      ]
+    }
+  ]
+}

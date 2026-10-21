@@ -11,7 +11,7 @@ refrigerados y no refrigerados mediante logistica inversa y analisis de causa
 raiz. Proyecto 12, Equipo 02, materia Integracion de Aplicaciones
 Computacionales, UDEM.
 
-Entrega actual: **primer parcial — monolito web funcional**.
+Entrega actual: **segundo parcial — monolito web ampliado y ocho microservicios**.
 
 ## Restricciones que no se negocian
 
@@ -87,15 +87,11 @@ En particular: **no hay ORM**. Las consultas son SQL con `psycopg2` y parametros
 ligados, por RNF-11 (proteccion contra inyeccion SQL). Nunca se concatena
 entrada del usuario dentro de una sentencia.
 
-## Que NO es parte de esta entrega
+## Alcance de esta entrega
 
-Microservicios, aplicacion movil, aplicacion de escritorio, JWT, respuestas XML,
-Locust, Google Cloud Storage y despliegue automatizado. Todo eso corresponde al
-segundo y tercer parcial. El monolito se diseno para poder partirse despues
-(capas separadas, health check, correlation id), pero **no se parte ahora**.
-
-MongoDB esta contemplado en el diseno (`inspecciones_ref.mongo_doc_id` existe y
-queda en NULL) pero no se usa en esta entrega.
+Incluye el web ampliado, ocho microservicios, JWT, JSON/XML, PostgreSQL,
+MongoDB, Redis, Swagger y Docker Compose. No incluye aplicaciones Android ni
+de escritorio. Los contratos para esos clientes si deben quedar implementados.
 
 ## Estructura del repositorio
 
@@ -115,10 +111,22 @@ db/
 scripts/
   migrate.py          Aplica las migraciones pendientes
   seed_demo.py        Carga usuarios, ventas y devoluciones de demostracion
-docker/Dockerfile     Imagen de la aplicacion
+  mongo/init.js       Usuario y colecciones de MongoDB (solo con volumen vacio)
+services/             Un microservicio por carpeta (auth, devoluciones, logistica,
+                      inspecciones, reembolsos_costos, ventas_catalogos,
+                      evidencias, analisis_auditoria). Cada uno trae Dockerfile,
+                      app.py, openapi.yaml, contratos/ (XSD) y tests/
+shared/               Libreria comun de los microservicios (JWT, respuestas
+                      JSON/XML, paginacion, Mongo, XSD). Se copia en cada imagen
+postman/              Colecciones de Postman
+docker/Dockerfile     Imagen del monolito web
 docker-compose.yml    Entorno completo (solo se ejecuta en la VM)
 docs/                 Documentacion tecnica del equipo
 ```
+
+Los puertos de la VM son: 8000 web, 8001 a 8008 los microservicios (ver
+`docs/SETUP.md`). El contexto de build de cada servicio es la raiz del
+repositorio para poder copiar `shared/`.
 
 ## Migraciones: la regla mas importante
 
@@ -127,7 +135,7 @@ creas una migracion nueva con el siguiente numero. `scripts/migrate.py` guarda
 un checksum de cada archivo y avisa si alguien rompio esta regla, porque en ese
 momento la base de la VM y el repositorio dejan de coincidir.
 
-Numeracion actual: 001 a 008. La siguiente que crees es `009_...sql`.
+Numeracion actual: 001 a 012. La siguiente que crees es `013_...sql`.
 
 ## Convenciones de codigo
 

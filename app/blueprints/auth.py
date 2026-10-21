@@ -7,11 +7,26 @@ from datetime import datetime, timedelta, timezone
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
+from app import api_client
 from app.cache import limpiar_intentos, registrar_intento_fallido, segundos_bloqueo_restantes
 from app.db import consultar, ejecutar
 from app.security import login_required, registrar_bitacora, usuario_actual
 
 bp = Blueprint("auth", __name__)
+
+
+def _abrir_sesion_distribuida(email, password):
+    """Autentica contra auth y conserva los JWT en la sesion server-side."""
+    respuesta = api_client.solicitar(
+        "auth", "POST", "/api/v1/auth/login",
+        datos={"email": email, "password": password}, autenticado=False,
+    )
+    session.clear()
+    session["usuario"] = respuesta["usuario"]
+    session["access_token"] = respuesta["access_token"]
+    session["refresh_token"] = respuesta["refresh_token"]
+    session["token_expires_in"] = respuesta.get("expires_in")
+    session.modified = True
 
 
 def _registrar_intento(email, usuario_id, exitoso):
@@ -63,6 +78,19 @@ def login():
         if not email or not password:
             flash("Captura tu correo y tu contrasena.", "error")
             return render_template("auth/login.html"), 400
+
+        if api_client.habilitados():
+            try:
+                _abrir_sesion_distribuida(email, password)
+            except api_client.ErrorServicio as exc:
+                flash(exc.mensaje, "error")
+                # Un servicio caido no se presenta como credencial incorrecta.
+                return render_template("auth/login.html"), exc.codigo
+
+            siguiente = request.args.get("siguiente")
+            if siguiente and siguiente.startswith("/"):
+                return redirect(siguiente)
+            return redirect(url_for("panel.principal"))
 
         usuario = consultar(
             """
@@ -133,7 +161,15 @@ def login():
 @bp.post("/logout")
 @login_required
 def logout():
-    registrar_bitacora("logout", "usuarios", usuario_actual()["id"], "Cierre de sesion")
+    if api_client.habilitados():
+        try:
+            api_client.solicitar("auth", "POST", "/api/v1/auth/logout")
+        except api_client.ErrorServicio:
+            # El cierre local siempre se completa. Si auth no responde, el
+            # access token expira en pocos minutos y nunca queda en el cliente.
+            pass
+    else:
+        registrar_bitacora("logout", "usuarios", usuario_actual()["id"], "Cierre de sesion")
     session.clear()
     flash("Sesion cerrada.", "ok")
     return redirect(url_for("auth.login"))

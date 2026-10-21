@@ -4,6 +4,7 @@ Trazabilidad: RF-12, RF-13, RF-15, RF-27, RN-08, HU-12, HU-13, UC-10, UC-11, UC-
 """
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
+from app import api_client
 from app.db import consultar, ejecutar
 from app.security import (
     COORDINADOR, ENCARGADO_CENTRO, registrar_bitacora, roles_required, usuario_actual,
@@ -84,7 +85,26 @@ def programar(devolucion_id):
             return render_template("logistica/programar.html", d=expediente, rutas=rutas,
                                    transportistas=transportistas), 400
 
-        ejecutar(
+        if api_client.habilitados():
+            try:
+                nueva = api_client.solicitar(
+                    "logistica", "POST", "/api/v1/logistica/recolecciones",
+                    datos={"devolucion_id": devolucion_id,
+                           "fecha_programada": fecha, "lugar": lugar},
+                )
+                if ruta_id and transportista_id:
+                    api_client.solicitar(
+                        "logistica", "PATCH",
+                        f"/api/v1/logistica/recolecciones/{nueva['id']}/asignacion",
+                        datos={"ruta_id": ruta_id,
+                               "transportista_id": transportista_id},
+                    )
+            except api_client.ErrorServicio as exc:
+                flash(exc.mensaje, "error")
+                return render_template("logistica/programar.html", d=expediente,
+                                       rutas=rutas, transportistas=transportistas), exc.codigo
+        else:
+            ejecutar(
             """
             INSERT INTO recolecciones (devolucion_id, fecha_programada, lugar, ruta_id,
                                        transportista_id, coordinador_id, estado)
@@ -94,8 +114,8 @@ def programar(devolucion_id):
              usuario_actual()["id"],
              "asignada" if (ruta_id and transportista_id) else "programada"),
         )
-        cambiar_estado(devolucion_id, "en_recoleccion",
-                       f"Recoleccion programada para el {fecha} en {lugar}")
+            cambiar_estado(devolucion_id, "en_recoleccion",
+                           f"Recoleccion programada para el {fecha} en {lugar}")
         flash("Recoleccion programada.", "ok")
         return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
@@ -132,22 +152,53 @@ def actualizar_estado(recoleccion_id):
         return redirect(url_for("devoluciones.detalle",
                                 devolucion_id=recoleccion["devolucion_id"]))
 
-    ejecutar(
-        "UPDATE recolecciones SET estado = %s, ruta_id = %s, transportista_id = %s WHERE id = %s",
-        (nuevo, ruta_final, transportista_final, recoleccion_id),
-    )
-    registrar_bitacora("estado_recoleccion", "devoluciones", recoleccion["devolucion_id"],
-                       f"La recoleccion paso al estado '{nuevo}'")
+    if api_client.habilitados():
+        try:
+            if (ruta_id or transportista_id) and recoleccion["estado"] in ("programada", "asignada"):
+                api_client.solicitar(
+                    "logistica", "PATCH",
+                    f"/api/v1/logistica/recolecciones/{recoleccion_id}/asignacion",
+                    datos={"ruta_id": ruta_final,
+                           "transportista_id": transportista_final},
+                )
+            if nuevo not in ("programada", "asignada"):
+                api_client.solicitar(
+                    "logistica", "PATCH",
+                    f"/api/v1/logistica/recolecciones/{recoleccion_id}/estado",
+                    datos={"estado": nuevo},
+                )
+        except api_client.ErrorServicio as exc:
+            flash(exc.mensaje, "error")
+            return redirect(url_for("devoluciones.detalle",
+                                    devolucion_id=recoleccion["devolucion_id"]))
+    else:
+        ejecutar(
+            "UPDATE recolecciones SET estado = %s, ruta_id = %s, transportista_id = %s WHERE id = %s",
+            (nuevo, ruta_final, transportista_final, recoleccion_id),
+        )
+        registrar_bitacora("estado_recoleccion", "devoluciones", recoleccion["devolucion_id"],
+                           f"La recoleccion paso al estado '{nuevo}'")
 
     # El costo de transporte se conoce hasta que el coordinador cierra la
     # recoleccion (RF-27): antes puede cambiar de ruta o transportista.
     if nuevo == "completada" and costo_transporte is not None and costo_transporte > 0:
-        ejecutar(
-            "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'transporte', %s)",
-            (recoleccion["devolucion_id"], costo_transporte),
-        )
-        registrar_bitacora("costo_transporte", "devoluciones", recoleccion["devolucion_id"],
-                           f"Costo de transporte registrado: {costo_transporte}")
+        if api_client.habilitados():
+            try:
+                api_client.solicitar(
+                    "reembolsos", "POST", "/api/v1/reembolsos-costos/costos",
+                    datos={"devolucion_id": recoleccion["devolucion_id"],
+                           "etapa": "transporte", "monto": costo_transporte},
+                )
+            except api_client.ErrorServicio as exc:
+                flash(f"La recoleccion avanzo, pero el costo no se registro: {exc.mensaje}",
+                      "aviso")
+        else:
+            ejecutar(
+                "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'transporte', %s)",
+                (recoleccion["devolucion_id"], costo_transporte),
+            )
+            registrar_bitacora("costo_transporte", "devoluciones", recoleccion["devolucion_id"],
+                               f"Costo de transporte registrado: {costo_transporte}")
 
     flash("Recoleccion actualizada.", "ok")
     return redirect(url_for("devoluciones.detalle", devolucion_id=recoleccion["devolucion_id"]))
@@ -167,7 +218,18 @@ def registrar_recepcion(devolucion_id):
     coincide = request.form.get("coincide_expediente") == "si"
     costo_almacenamiento = request.form.get("costo_almacenamiento", type=float)
 
-    ejecutar(
+    if api_client.habilitados():
+        try:
+            api_client.solicitar(
+                "logistica", "POST", "/api/v1/logistica/recepciones",
+                datos={"devolucion_id": devolucion_id,
+                       "coincide_expediente": coincide},
+            )
+        except api_client.ErrorServicio as exc:
+            flash(exc.mensaje, "error")
+            return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
+    else:
+        ejecutar(
         """
         INSERT INTO recepciones (devolucion_id, encargado_id, coincide_expediente)
         VALUES (%s, %s, %s)
@@ -175,22 +237,32 @@ def registrar_recepcion(devolucion_id):
         """,
         (devolucion_id, usuario_actual()["id"], coincide),
     )
-    ejecutar("UPDATE recolecciones SET estado = 'completada' WHERE devolucion_id = %s",
-             (devolucion_id,))
-    cambiar_estado(
-        devolucion_id, "recibida",
-        "Producto recibido en el centro de devoluciones. "
-        + ("Coincide con el expediente." if coincide else "NO coincide con el expediente."),
-    )
+        ejecutar("UPDATE recolecciones SET estado = 'completada' WHERE devolucion_id = %s",
+                 (devolucion_id,))
+        cambiar_estado(
+            devolucion_id, "recibida",
+            "Producto recibido en el centro de devoluciones. "
+            + ("Coincide con el expediente." if coincide else "NO coincide con el expediente."),
+        )
 
     # Costo estimado de almacenamiento mientras el producto espera inspeccion
     # y disposicion (RF-27). Es una estimacion del encargado, no un calculo
     # automatico: el tiempo real de estancia no se conoce todavia en este punto.
     if costo_almacenamiento is not None and costo_almacenamiento > 0:
-        ejecutar(
-            "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'almacenamiento', %s)",
-            (devolucion_id, costo_almacenamiento),
-        )
+        if api_client.habilitados():
+            try:
+                api_client.solicitar(
+                    "reembolsos", "POST", "/api/v1/reembolsos-costos/costos",
+                    datos={"devolucion_id": devolucion_id,
+                           "etapa": "almacenamiento", "monto": costo_almacenamiento},
+                )
+            except api_client.ErrorServicio as exc:
+                flash(f"La recepcion se registro, pero el costo fallo: {exc.mensaje}", "aviso")
+        else:
+            ejecutar(
+                "INSERT INTO costos (devolucion_id, etapa, monto) VALUES (%s, 'almacenamiento', %s)",
+                (devolucion_id, costo_almacenamiento),
+            )
 
     flash("Recepcion registrada.", "ok")
     return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))

@@ -1,5 +1,23 @@
 # Matriz de trazabilidad
 
+## Ampliacion del segundo parcial
+
+| Requerimiento | Implementacion distribuida | Evidencia automatizada |
+|---|---|---|
+| RF-12 a RF-15 | `services/logistica/app.py`: programacion, asignacion, estados y recepcion | `services/logistica/tests/test_api.py` |
+| RF-16, RF-17; RN-05 a RN-07 | `services/inspecciones/app.py`: documento MongoDB, referencia PostgreSQL y calculo de aptitud | `services/inspecciones/tests/test_reglas.py` |
+| RF-18, RF-19 | `services/inspecciones/app.py`: disposicion validada y etiqueta de inventario | Swagger y prueba integrada en VM |
+| RF-20, RF-21; RN-03, RN-04 | `services/reembolsos_costos/app.py`: reembolso unico con lock Redis | `services/reembolsos_costos/tests/test_api.py` |
+| RF-27 | `services/reembolsos_costos/app.py`: costo y desglose por etapa | Swagger y prueba integrada en VM |
+| RNF-08, RNF-09, RNF-13 | `shared/seguridad.py` usado por los tres servicios | casos 401 y 403 de cada suite |
+| RNF-16, RNF-23 | errores uniformes y `X-Correlation-ID` de `shared/respuestas.py` | pruebas de error JSON/XML |
+| RNF-27 | Dockerfile independiente y entradas nuevas de `docker-compose.yml` | `docker compose config` y despliegue VM |
+| RF-05, RF-06 | `services/ventas_catalogos`: ventas y siete catalogos con listas blancas | `services/ventas_catalogos/tests/test_reglas.py` |
+| RF-09 | `services/evidencias`: comentario JSON/XML y archivos privados con metadatos MongoDB | `services/evidencias/tests/test_seguridad_archivos.py` |
+| RF-23, RF-26, RF-30 | `services/analisis_auditoria`: snapshot, Pareto MongoDB, cache Redis y consulta de bitacora | `services/analisis_auditoria/tests/test_pareto.py` |
+| RF-32 | `app/microservicios.py` y `/integracion/servicios` consultan los ocho health checks | `app/tests/test_microservicios.py` |
+| Integracion web/API | `app/api_client.py` y blueprints web: JWT/refresh y flujo funcional por HTTP | `app/tests/test_api_client.py` y prueba E2E en VM |
+
 Relaciona los identificadores del documento con el lugar del repositorio donde
 quedan implementados. **Actualiza esta tabla en el mismo commit en el que
 implementas un requerimiento.**
@@ -11,17 +29,17 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 
 | ID | Requerimiento | Implementacion | Estado |
 |---|---|---|---|
-| RF-01 | Inicio y cierre de sesion | `app/blueprints/auth.py` | implementado |
+| RF-01 | Inicio y cierre de sesion | `app/blueprints/auth.py`; API: `services/auth` (`POST /api/v1/auth/login`, `/logout`) | implementado |
 | RF-02 | Recuperacion de contrasena | — | pendiente |
 | RF-03 | Administrar usuarios | `app/blueprints/usuarios.py` | implementado |
 | RF-04 | Roles y permisos | `app/security.py`, `db/migrations/008_roles_base.sql` | implementado |
 | RF-05 | Administrar catalogos | `app/blueprints/catalogos.py` | implementado |
 | RF-06 | Devolucion ligada a venta y producto | `db/migrations/002_venta_detalle.sql`, `app/blueprints/devoluciones.py` | implementado |
-| RF-07 | Registrar solicitud con motivo | `devoluciones.nueva` | implementado |
+| RF-07 | Registrar solicitud con motivo | `devoluciones.nueva`; API: `POST /api/v1/devoluciones` (`services/devoluciones`) | implementado |
 | RF-08 | Folio unico de devolucion | `db/migrations/007_folio_devolucion.sql` | implementado |
-| RF-09 | Evidencias (fotos, documentos, comentarios) | `db/migrations/003_evidencias.sql`, `devoluciones.agregar_evidencia` | parcial (falta la carga a GCS) |
-| RF-10 | Autorizar, rechazar o pedir informacion | `devoluciones.resolver` | implementado |
-| RF-11 | Consulta del estado por el cliente | `devoluciones.detalle`, `panel/cliente.html` | implementado |
+| RF-09 | Evidencias (fotos, documentos, comentarios) | `services/evidencias`: volumen privado, referencia PostgreSQL y metadatos MongoDB | implementado para esta entrega |
+| RF-10 | Autorizar, rechazar o pedir informacion | `devoluciones.resolver`; API: `PATCH /api/v1/devoluciones/{id}/resolucion`, correccion con `PUT /api/v1/devoluciones/{id}` | implementado |
+| RF-11 | Consulta del estado por el cliente | `devoluciones.detalle`, `panel/cliente.html`; API: `GET /api/v1/devoluciones` y `/{id}` | implementado |
 | RF-12 | Programar fecha y lugar de recoleccion | `logistica.programar` | implementado |
 | RF-13 | Asignar ruta, transportista y estado | `logistica.actualizar_estado` | implementado |
 | RF-14 | Escaneo de codigos QR o de barras | — | pendiente (aplicacion movil) |
@@ -32,30 +50,30 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-19 | Etiquetas e inventario recuperable | `inspecciones.inventario`, `inspecciones.etiquetar` | parcial (falta impresion) |
 | RF-20 | Aprobar o rechazar el reembolso | `app/blueprints/reembolsos.py` | implementado |
 | RF-21 | Un solo reembolso valido por devolucion | `UNIQUE devolucion_id` + validacion en `reembolsos.registrar` | implementado |
-| RF-22 | Sugerencia automatica del motivo | — | pendiente (microservicio de clasificacion) |
+| RF-22 | Sugerencia automatica del motivo | `POST /api/v1/analisis/clasificar-motivo`; ranking explicable y confirmacion humana | implementado |
 | RF-23 | Agrupar devoluciones por caracteristicas y tasas de devolucion | `panel.causas`: agrupacion por motivo/producto/lote/proveedor/tienda/ruta, tasas contra unidades vendidas, lotes y tiendas atipicos | implementado |
 | RF-24 | Ranking de causas probables | `panel.causas`: cruce producto-lote-proveedor-ruta-tienda con `% del lote`, rutas relacionadas con dano | implementado (se adelanto al monolito por la retroalimentacion del profesor; ver `docs/BITACORA.md`) |
-| RF-25 | Senalar posible fraude | `db/migrations/006_validaciones_reembolso.sql` (monto excesivo) | parcial |
+| RF-25 | Senalar posible fraude | `GET /api/v1/analisis/alertas-fraude`; frecuencia, rechazos y monto con revision humana | implementado |
 | RF-26 | Panel de causas, Pareto y KPIs ejecutivos | `panel.causas`: Pareto de motivos, costo por causa via `vista_costo_devolucion`, tendencia mensual y KPIs (devoluciones, tasa, monto reembolsado, costo logistico, tiempo promedio de resolucion via `devoluciones.fecha_cierre` en `db/migrations/012_fecha_cierre_devolucion.sql`, % recuperado) | implementado |
 | RF-27 | Consulta de costos y costo total por devolucion | `panel.costos`, captura de costo en `logistica.py`, `inspecciones.py`, `devoluciones.agregar_costo`; `db/migrations/009_ampliar_tipos_costo.sql`, `010_vista_costo_devolucion.sql` | implementado |
 | RF-28 | Generar y exportar reportes | — | pendiente |
-| RF-29 | Notificaciones automaticas | tabla `notificaciones` creada, sin uso | pendiente |
+| RF-29 | Notificaciones automaticas | `services/devoluciones` inserta en `notificaciones` al resolver; falta mostrarlas en la web | parcial |
 | RF-30 | Bitacora de operaciones | `app/security.py:registrar_bitacora`, `panel.bitacora` | implementado |
-| RF-31 | JSON para movil y XML para escritorio | — | pendiente (microservicios) |
-| RF-32 | Monitoreo del estado de los servicios | `/health` | parcial |
+| RF-31 | JSON para movil y XML para escritorio | `shared/respuestas.py`, contratos XSD y OpenAPI de los ocho servicios | implementado |
+| RF-32 | Monitoreo del estado de los servicios | `/health` en cada contenedor y `/integracion/servicios` en el web | implementado |
 
 ## Requerimientos no funcionales
 
 | ID | Requerimiento | Implementacion | Estado |
 |---|---|---|---|
 | RNF-01 | El sistema web funciona de forma independiente | El monolito no depende de otros componentes | implementado |
-| RNF-02 | Cada servicio en su contenedor | `docker-compose.yml` | parcial |
+| RNF-02 | Cada servicio en su contenedor | ocho Dockerfile y `docker-compose.yml` | implementado |
 | RNF-03 | Los clientes no acceden directo a las bases | Postgres y Redis publicados solo en `127.0.0.1` | implementado |
-| RNF-04 | Movil consume JSON, escritorio XML | — | pendiente |
-| RNF-05 | Versionamiento y Swagger | — | pendiente |
-| RNF-06 | Distribucion entre Postgres, Mongo, Redis y bucket | Postgres y Redis en uso. Mongo y GCS estan disenados (secciones 4.4 y 4.6) pero NO implementados: no hay servicio de Mongo en el compose y `inspecciones_ref.mongo_doc_id` queda en NULL | parcial |
+| RNF-04 | Movil consume JSON, escritorio XML | negociacion `Accept`, cuerpos JSON/XML y 21 XSD | implementado |
+| RNF-05 | Versionamiento y Swagger | `/api/v1`, `/docs` y `openapi.yaml` en los ocho servicios | implementado |
+| RNF-06 | Distribucion entre Postgres, Mongo, Redis y almacenamiento | Compose integra las tres bases; inspecciones, evidencias y analisis usan Mongo; evidencias usa volumen privado | implementado |
 | RNF-07 | Hash seguro de contrasenas | `werkzeug.security` en `auth.py` y `usuarios.py` | implementado |
-| RNF-08 | JWT corto y token de renovacion | Sesion en Redis; JWT queda para el segundo parcial | parcial |
+| RNF-08 | JWT corto y token de renovacion | `services/auth` emite access/refresh y todos verifican sesion/revocacion Redis | implementado |
 | RNF-09 | Verificar rol y permisos antes de cada operacion | `roles_required`, `exigir_devolucion_visible` | implementado |
 | RNF-10 | Validar los datos antes de almacenarlos | Validacion en navegador y servidor en cada blueprint | implementado |
 | RNF-11 | Proteccion contra inyeccion SQL y XXE | Parametros ligados en `app/db.py`; lista blanca en `catalogos.py` | implementado (XXE no aplica aun) |
@@ -77,13 +95,13 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-27 | Docker y Google Compute Engine | `docker-compose.yml`, VM del equipo | implementado |
 | RNF-28 | Pruebas | — | pendiente |
 | RNF-29 | Locust con distintos perfiles | — | pendiente |
-| RNF-30 | Retencion y eliminacion logica | `db/migrations/005_eliminacion_logica.sql` | implementado |
+| RNF-30 | Retencion y eliminacion logica | `db/migrations/005_eliminacion_logica.sql`; `DELETE /api/v1/devoluciones/{id}` marca `eliminado_en` | implementado |
 
 ## Reglas de negocio
 
 | ID | Regla | Donde se hace cumplir |
 |---|---|---|
-| RN-01 | Toda devolucion vinculada a una venta y un producto | `devoluciones.venta_detalle_id NOT NULL`; el formulario solo se abre desde la linea de venta |
+| RN-01 | Toda devolucion vinculada a una venta y un producto | `devoluciones.venta_detalle_id NOT NULL`; el formulario solo se abre desde la linea de venta; la API bloquea la linea y responde 409 `cantidad_excedida` |
 | RN-02 | Folio unico e irrepetible | `seq_folio_devolucion` + `UNIQUE` (migracion 007) |
 | RN-03 | Un solo reembolso valido por devolucion | `UNIQUE (devolucion_id)` en `reembolsos` |
 | RN-04 | El reembolso requiere devolucion autorizada | `fn_validar_reembolso` (migracion 006) + `reembolsos.registrar` |
@@ -93,7 +111,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RN-08 | Recoleccion completada requiere datos completos | `logistica.actualizar_estado` |
 | RN-09 | El analisis es apoyo, no determinacion automatica | El panel de causas solo agrupa; no asigna responsabilidad |
 | RN-10 | Agrupacion por atributos definidos por el negocio | `panel.causas` agrupa y filtra por motivo, producto, lote, proveedor, tienda, ruta y estado |
-| RN-11 | La clasificacion automatica es sugerencia | Sin clasificacion automatica todavia; el motivo lo elige el usuario |
+| RN-11 | La clasificacion automatica es sugerencia | `clasificar-motivo` devuelve `requiere_confirmacion=true`; no modifica la devolucion |
 | RN-12 | Toda decision queda registrada con usuario y fecha | `registrar_bitacora` en cada operacion |
 | RN-13 | Cada usuario solo ejecuta lo de su rol | `roles_required` en todas las vistas |
 | RN-14 | Evidencias privadas por enlaces temporales | Pendiente: requiere GCS |

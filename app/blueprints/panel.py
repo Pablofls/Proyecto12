@@ -3,8 +3,9 @@
 Trazabilidad: RF-23, RF-24, RF-26, RF-27, RF-30, RN-09, RN-10,
               HU-27, UC-22, UC-23, UC-26
 """
-from flask import Blueprint, render_template, request
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 
+from app import api_client
 from app.db import consultar
 from app.security import (
     ADMINISTRADOR, ANALISTA, CLIENTE, ENCARGADO_REEMBOLSOS, TODOS_LOS_ROLES,
@@ -160,6 +161,23 @@ def causas():
     panel es apoyo para el analista, no asigna responsabilidad automaticamente.
     """
     valores = _leer_filtros(request.args)
+    analisis_distribuido = None
+    pareto_distribuido = None
+    error_analisis = None
+    if api_client.habilitados():
+        try:
+            analisis_distribuido = api_client.solicitar(
+                "analisis", "GET", "/api/v1/analisis/resumen"
+            )
+            if analisis_distribuido.get("casos_sincronizados", 0):
+                pareto_distribuido = api_client.solicitar(
+                    "analisis", "GET", "/api/v1/analisis/pareto",
+                    parametros={"dimension": "motivo", "medida": "frecuencia",
+                                "desde": valores.get("fecha_inicio"),
+                                "hasta": valores.get("fecha_fin")},
+                )
+        except api_client.ErrorServicio as exc:
+            error_analisis = exc.mensaje
     cond_dev, param_dev = _condiciones(valores, "devolucion")
     cond_venta, param_venta = _condiciones(valores, "venta")
     where_dev = " AND ".join(["d.eliminado_en IS NULL"] + cond_dev)
@@ -445,7 +463,30 @@ def causas():
         rutas_dano=rutas_dano, costo_por_causa=costo_por_causa,
         productos=productos, proveedores=proveedores, tiendas=tiendas,
         rutas=rutas, motivos=motivos,
+        analisis_distribuido=analisis_distribuido,
+        pareto_distribuido=pareto_distribuido,
+        error_analisis=error_analisis,
     )
+
+
+@bp.post("/panel/causas/sincronizar")
+@roles_required(ANALISTA, ADMINISTRADOR)
+def sincronizar_causas():
+    if not api_client.habilitados():
+        flash("La sincronizacion distribuida requiere USE_MICROSERVICES=true.", "aviso")
+        return redirect(url_for("panel.causas"))
+    try:
+        resultado = api_client.solicitar(
+            "analisis", "POST", "/api/v1/analisis/sincronizar", datos={}
+        )
+    except api_client.ErrorServicio as exc:
+        flash(exc.mensaje, "error")
+    else:
+        flash(
+            f"Analisis sincronizado: {resultado['casos_sincronizados']} casos; "
+            f"version de cache {resultado['version_cache']}.", "ok"
+        )
+    return redirect(url_for("panel.causas"))
 
 
 @bp.get("/panel/costos")

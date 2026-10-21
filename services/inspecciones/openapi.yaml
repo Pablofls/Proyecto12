@@ -1,0 +1,20 @@
+openapi: 3.0.3
+info: {title: Servicio de inspecciones y disposicion, version: 1.0.0, description: "Inspeccion semiestructurada en MongoDB, referencia transaccional en PostgreSQL y disposicion. RF-16 a RF-19; RN-05 a RN-07."}
+servers: [{url: /}]
+security: [{bearerAuth: []}]
+components:
+  securitySchemes: {bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}}
+  schemas:
+    Inspeccion: {type: object, required: [devolucion_id, estado_empaque, danos, caducidad_vencida], properties: {devolucion_id: {type: integer}, estado_empaque: {type: string}, danos: {type: boolean}, caducidad_vencida: {type: boolean}, cadena_frio_rota: {type: boolean}, minutos_fuera_refrigeracion: {type: integer}, temperatura_recepcion: {type: number}, observaciones: {type: string}}}
+    Disposicion: {type: object, required: [destino], properties: {destino: {type: string, enum: [inventario, reparacion, reacondicionamiento, reciclaje, devolucion_proveedor, desecho, donacion]}, justificacion: {type: string}}}
+paths:
+  /api/v1/inspecciones:
+    post: {summary: Registrar inspeccion en PostgreSQL y MongoDB, requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Inspeccion'}}, application/xml: {schema: {$ref: '#/components/schemas/Inspeccion'}}}}, responses: {'201': {description: Inspeccion registrada}, '400': {description: Validacion}, '401': {description: No autenticado}, '403': {description: Solo Inspector}, '409': {description: Estado o duplicado}}}
+  /api/v1/inspecciones/{devolucion_id}:
+    get: {summary: Consultar referencia y documento MongoDB, parameters: [{name: devolucion_id, in: path, required: true, schema: {type: integer}}], responses: {'200': {description: Inspeccion}, '404': {description: No encontrada}}}
+    patch: {summary: Actualizar detalle semiestructurado, parameters: [{name: devolucion_id, in: path, required: true, schema: {type: integer}}], requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {estado_empaque: {type: string}, observaciones: {type: string}}}}, application/xml: {schema: {type: object}}}}, responses: {'200': {description: Actualizada}, '400': {description: Sin cambios}}}
+  /api/v1/inspecciones/{devolucion_id}/disposicion:
+    post: {summary: Determinar destino del producto, parameters: [{name: devolucion_id, in: path, required: true, schema: {type: integer}}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Disposicion'}}, application/xml: {schema: {$ref: '#/components/schemas/Disposicion'}}}}, responses: {'201': {description: Disposicion creada}, '409': {description: Sin inspeccion, duplicada o no apto}}}
+  /api/v1/inspecciones/inventario/{disposicion_id}/etiqueta:
+    post: {summary: Etiquetar producto recuperable, parameters: [{name: disposicion_id, in: path, required: true, schema: {type: integer}}], responses: {'201': {description: Etiqueta creada}, '409': {description: Destino no inventario}}}
+  /health: {get: {security: [], summary: Salud de PostgreSQL Redis y MongoDB, responses: {'200': {description: OK}, '503': {description: Degradado}}}}

@@ -32,6 +32,24 @@ class Config:
 
     GCS_BUCKET = os.environ.get("GCS_BUCKET", "")
 
+    # En esta rama el web actua como cliente de las API. El interruptor permite
+    # volver temporalmente al monolito durante una contingencia sin tocar el
+    # codigo ni perder la version estable que vive en otra rama.
+    USE_MICROSERVICES = os.environ.get("USE_MICROSERVICES", "true").lower() in (
+        "1", "true", "yes", "si",
+    )
+    MICROSERVICE_TIMEOUT = float(os.environ.get("MICROSERVICE_TIMEOUT", "5"))
+    SERVICE_URLS = {
+        "auth": os.environ.get("AUTH_SERVICE_URL", "http://auth:8000"),
+        "devoluciones": os.environ.get("DEVOLUCIONES_SERVICE_URL", "http://devoluciones:8000"),
+        "logistica": os.environ.get("LOGISTICA_SERVICE_URL", "http://logistica:8000"),
+        "inspecciones": os.environ.get("INSPECCIONES_SERVICE_URL", "http://inspecciones:8000"),
+        "reembolsos": os.environ.get("REEMBOLSOS_SERVICE_URL", "http://reembolsos-costos:8000"),
+        "ventas": os.environ.get("VENTAS_SERVICE_URL", "http://ventas-catalogos:8000"),
+        "evidencias": os.environ.get("EVIDENCIAS_SERVICE_URL", "http://evidencias:8000"),
+        "analisis": os.environ.get("ANALISIS_SERVICE_URL", "http://analisis-auditoria:8000"),
+    }
+
     # Jinja compila las plantillas una vez y las guarda en memoria. Bajo gunicorn
     # eso significa que editar una plantilla no surte efecto hasta reiniciar el
     # contenedor, lo cual confunde durante el desarrollo. Con FLASK_ENV=development
