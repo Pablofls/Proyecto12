@@ -1,0 +1,459 @@
+=== docker compose run --rm -e INTEGRACION=1 auth python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_postgres Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_redis Healthy 
+ Container devoluciones_postgres Healthy 
+ Container proyecto12-auth-run-2177b47d4f8d Creating 
+ Container proyecto12-auth-run-2177b47d4f8d Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 5 items
+
+tests/test_integracion.py::IntegracionAuth::test_admin_cierra_todas_las_sesiones_de_un_usuario PASSED [ 20%]
+tests/test_integracion.py::IntegracionAuth::test_credenciales_malas_quedan_en_el_historial_sin_revelar_nada PASSED [ 40%]
+tests/test_integracion.py::IntegracionAuth::test_login_crea_sesion_en_redis_historial_y_bitacora PASSED [ 60%]
+tests/test_integracion.py::IntegracionAuth::test_logout_revoca_el_token_y_borra_la_sesion PASSED [ 80%]
+tests/test_integracion.py::IntegracionAuth::test_refresh_emite_un_access_nuevo_de_la_misma_sesion PASSED [100%]
+
+============================== 5 passed in 1.65s ===============================
+=== docker compose run --rm -e INTEGRACION=1 ventas-catalogos python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_postgres Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_redis Healthy 
+ Container proyecto12-ventas-catalogos-run-8ee2d4fc0b95 Creating 
+ Container proyecto12-ventas-catalogos-run-8ee2d4fc0b95 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 4 items
+
+tests/test_integracion.py::IntegracionVentasCatalogos::test_alta_edicion_y_baja_logica_de_catalogo PASSED [ 25%]
+tests/test_integracion.py::IntegracionVentasCatalogos::test_catalogo_inexistente_y_rol_sin_permiso PASSED [ 50%]
+tests/test_integracion.py::IntegracionVentasCatalogos::test_cliente_no_abre_la_venta_de_otro PASSED [ 75%]
+tests/test_integracion.py::IntegracionVentasCatalogos::test_cliente_solo_ve_sus_ventas_con_paginacion PASSED [100%]
+
+============================== 4 passed in 0.89s ===============================
+=== docker compose run --rm -e INTEGRACION=1 devoluciones python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_redis Running 
+ Container devoluciones_mongo Running 
+ Container devoluciones_postgres Running 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_mongo Waiting 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_redis Healthy 
+ Container devoluciones_mongo Healthy 
+ Container proyecto12-devoluciones-run-3c327f2e9af7 Creating 
+ Container proyecto12-devoluciones-run-3c327f2e9af7 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 4 items
+
+tests/test_integracion.py::PruebaIntegracion::test_1_flujo_registro_revision_y_autorizacion ERROR [ 25%]
+tests/test_integracion.py::PruebaIntegracion::test_2_cancelacion_logica ERROR [ 50%]
+tests/test_integracion.py::PruebaIntegracion::test_3_listado_del_cliente_solo_trae_lo_suyo ERROR [ 75%]
+tests/test_integracion.py::PruebaIntegracion::test_4_logout_en_auth_revoca_el_token_en_devoluciones ERROR [100%]
+
+==================================== ERRORS ====================================
+_ ERROR at setup of PruebaIntegracion.test_1_flujo_registro_revision_y_autorizacion _
+
+cls = <class 'tests.test_integracion.PruebaIntegracion'>
+
+    @classmethod
+    def setUpClass(cls):
+        # Una linea de venta con algo por devolver y su dueno.
+        cls.linea = _sql(
+            """
+            SELECT vd.id, u.email,
+                   vd.cantidad - COALESCE((
+                       SELECT SUM(d.cantidad_devuelta) FROM devoluciones d
+                        WHERE d.venta_detalle_id = vd.id AND d.eliminado_en IS NULL
+                          AND d.estado <> 'rechazada'), 0) AS disponible
+              FROM venta_detalle vd
+              JOIN ventas v   ON v.id = vd.venta_id
+              JOIN usuarios u ON u.id = v.cliente_id
+             WHERE v.eliminado_en IS NULL
+             ORDER BY disponible DESC, vd.id
+             LIMIT 1
+            """, uno=True)
+        if not cls.linea or cls.linea["disponible"] < 2:
+            raise unittest.SkipTest("No hay lineas de venta con al menos 2 unidades disponibles")
+        cls.otro_cliente = _sql(
+            """
+            SELECT u.email FROM usuarios u JOIN roles r ON r.id = u.rol_id
+             WHERE r.nombre = 'Cliente' AND u.email <> %s AND u.eliminado_en IS NULL
+             LIMIT 1
+            """, (cls.linea["email"],), uno=True)["email"]
+        cls.motivo = _sql("SELECT id FROM motivos WHERE activo ORDER BY id LIMIT 1",
+                          uno=True)["id"]
+    
+        password = os.environ["PASSWORD_DEMO"]
+>       cls.tokens = {email: _auth("/api/v1/auth/login",
+                                   {"email": email, "password": password})["access_token"]
+                      for email in (cls.linea["email"], cls.otro_cliente, ANALISTA)}
+
+tests/test_integracion.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_integracion.py:89: in <dictcomp>
+    cls.tokens = {email: _auth("/api/v1/auth/login",
+tests/test_integracion.py:53: in _auth
+    with urllib.request.urlopen(peticion, timeout=10) as resp:
+/usr/local/lib/python3.11/urllib/request.py:216: in urlopen
+    return opener.open(url, data, timeout)
+/usr/local/lib/python3.11/urllib/request.py:525: in open
+    response = meth(req, response)
+/usr/local/lib/python3.11/urllib/request.py:634: in http_response
+    response = self.parent.error(
+/usr/local/lib/python3.11/urllib/request.py:563: in error
+    return self._call_chain(*args)
+/usr/local/lib/python3.11/urllib/request.py:496: in _call_chain
+    result = func(*args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <urllib.request.HTTPDefaultErrorHandler object at 0x7eff1e933650>
+req = <urllib.request.Request object at 0x7eff2036f810>
+fp = <http.client.HTTPResponse object at 0x7eff1eb62710>, code = 401
+msg = 'UNAUTHORIZED', hdrs = <http.client.HTTPMessage object at 0x7eff1e944210>
+
+    def http_error_default(self, req, fp, code, msg, hdrs):
+>       raise HTTPError(req.full_url, code, msg, hdrs, fp)
+E       urllib.error.HTTPError: HTTP Error 401: UNAUTHORIZED
+
+/usr/local/lib/python3.11/urllib/request.py:643: HTTPError
+________ ERROR at setup of PruebaIntegracion.test_2_cancelacion_logica _________
+
+cls = <class 'tests.test_integracion.PruebaIntegracion'>
+
+    @classmethod
+    def setUpClass(cls):
+        # Una linea de venta con algo por devolver y su dueno.
+        cls.linea = _sql(
+            """
+            SELECT vd.id, u.email,
+                   vd.cantidad - COALESCE((
+                       SELECT SUM(d.cantidad_devuelta) FROM devoluciones d
+                        WHERE d.venta_detalle_id = vd.id AND d.eliminado_en IS NULL
+                          AND d.estado <> 'rechazada'), 0) AS disponible
+              FROM venta_detalle vd
+              JOIN ventas v   ON v.id = vd.venta_id
+              JOIN usuarios u ON u.id = v.cliente_id
+             WHERE v.eliminado_en IS NULL
+             ORDER BY disponible DESC, vd.id
+             LIMIT 1
+            """, uno=True)
+        if not cls.linea or cls.linea["disponible"] < 2:
+            raise unittest.SkipTest("No hay lineas de venta con al menos 2 unidades disponibles")
+        cls.otro_cliente = _sql(
+            """
+            SELECT u.email FROM usuarios u JOIN roles r ON r.id = u.rol_id
+             WHERE r.nombre = 'Cliente' AND u.email <> %s AND u.eliminado_en IS NULL
+             LIMIT 1
+            """, (cls.linea["email"],), uno=True)["email"]
+        cls.motivo = _sql("SELECT id FROM motivos WHERE activo ORDER BY id LIMIT 1",
+                          uno=True)["id"]
+    
+        password = os.environ["PASSWORD_DEMO"]
+>       cls.tokens = {email: _auth("/api/v1/auth/login",
+                                   {"email": email, "password": password})["access_token"]
+                      for email in (cls.linea["email"], cls.otro_cliente, ANALISTA)}
+
+tests/test_integracion.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_integracion.py:89: in <dictcomp>
+    cls.tokens = {email: _auth("/api/v1/auth/login",
+tests/test_integracion.py:53: in _auth
+    with urllib.request.urlopen(peticion, timeout=10) as resp:
+/usr/local/lib/python3.11/urllib/request.py:216: in urlopen
+    return opener.open(url, data, timeout)
+/usr/local/lib/python3.11/urllib/request.py:525: in open
+    response = meth(req, response)
+/usr/local/lib/python3.11/urllib/request.py:634: in http_response
+    response = self.parent.error(
+/usr/local/lib/python3.11/urllib/request.py:563: in error
+    return self._call_chain(*args)
+/usr/local/lib/python3.11/urllib/request.py:496: in _call_chain
+    result = func(*args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <urllib.request.HTTPDefaultErrorHandler object at 0x7eff1e933650>
+req = <urllib.request.Request object at 0x7eff2036f810>
+fp = <http.client.HTTPResponse object at 0x7eff1eb62710>, code = 401
+msg = 'UNAUTHORIZED', hdrs = <http.client.HTTPMessage object at 0x7eff1e944210>
+
+    def http_error_default(self, req, fp, code, msg, hdrs):
+>       raise HTTPError(req.full_url, code, msg, hdrs, fp)
+E       urllib.error.HTTPError: HTTP Error 401: UNAUTHORIZED
+
+/usr/local/lib/python3.11/urllib/request.py:643: HTTPError
+_ ERROR at setup of PruebaIntegracion.test_3_listado_del_cliente_solo_trae_lo_suyo _
+
+cls = <class 'tests.test_integracion.PruebaIntegracion'>
+
+    @classmethod
+    def setUpClass(cls):
+        # Una linea de venta con algo por devolver y su dueno.
+        cls.linea = _sql(
+            """
+            SELECT vd.id, u.email,
+                   vd.cantidad - COALESCE((
+                       SELECT SUM(d.cantidad_devuelta) FROM devoluciones d
+                        WHERE d.venta_detalle_id = vd.id AND d.eliminado_en IS NULL
+                          AND d.estado <> 'rechazada'), 0) AS disponible
+              FROM venta_detalle vd
+              JOIN ventas v   ON v.id = vd.venta_id
+              JOIN usuarios u ON u.id = v.cliente_id
+             WHERE v.eliminado_en IS NULL
+             ORDER BY disponible DESC, vd.id
+             LIMIT 1
+            """, uno=True)
+        if not cls.linea or cls.linea["disponible"] < 2:
+            raise unittest.SkipTest("No hay lineas de venta con al menos 2 unidades disponibles")
+        cls.otro_cliente = _sql(
+            """
+            SELECT u.email FROM usuarios u JOIN roles r ON r.id = u.rol_id
+             WHERE r.nombre = 'Cliente' AND u.email <> %s AND u.eliminado_en IS NULL
+             LIMIT 1
+            """, (cls.linea["email"],), uno=True)["email"]
+        cls.motivo = _sql("SELECT id FROM motivos WHERE activo ORDER BY id LIMIT 1",
+                          uno=True)["id"]
+    
+        password = os.environ["PASSWORD_DEMO"]
+>       cls.tokens = {email: _auth("/api/v1/auth/login",
+                                   {"email": email, "password": password})["access_token"]
+                      for email in (cls.linea["email"], cls.otro_cliente, ANALISTA)}
+
+tests/test_integracion.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_integracion.py:89: in <dictcomp>
+    cls.tokens = {email: _auth("/api/v1/auth/login",
+tests/test_integracion.py:53: in _auth
+    with urllib.request.urlopen(peticion, timeout=10) as resp:
+/usr/local/lib/python3.11/urllib/request.py:216: in urlopen
+    return opener.open(url, data, timeout)
+/usr/local/lib/python3.11/urllib/request.py:525: in open
+    response = meth(req, response)
+/usr/local/lib/python3.11/urllib/request.py:634: in http_response
+    response = self.parent.error(
+/usr/local/lib/python3.11/urllib/request.py:563: in error
+    return self._call_chain(*args)
+/usr/local/lib/python3.11/urllib/request.py:496: in _call_chain
+    result = func(*args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <urllib.request.HTTPDefaultErrorHandler object at 0x7eff1e933650>
+req = <urllib.request.Request object at 0x7eff2036f810>
+fp = <http.client.HTTPResponse object at 0x7eff1eb62710>, code = 401
+msg = 'UNAUTHORIZED', hdrs = <http.client.HTTPMessage object at 0x7eff1e944210>
+
+    def http_error_default(self, req, fp, code, msg, hdrs):
+>       raise HTTPError(req.full_url, code, msg, hdrs, fp)
+E       urllib.error.HTTPError: HTTP Error 401: UNAUTHORIZED
+
+/usr/local/lib/python3.11/urllib/request.py:643: HTTPError
+_ ERROR at setup of PruebaIntegracion.test_4_logout_en_auth_revoca_el_token_en_devoluciones _
+
+cls = <class 'tests.test_integracion.PruebaIntegracion'>
+
+    @classmethod
+    def setUpClass(cls):
+        # Una linea de venta con algo por devolver y su dueno.
+        cls.linea = _sql(
+            """
+            SELECT vd.id, u.email,
+                   vd.cantidad - COALESCE((
+                       SELECT SUM(d.cantidad_devuelta) FROM devoluciones d
+                        WHERE d.venta_detalle_id = vd.id AND d.eliminado_en IS NULL
+                          AND d.estado <> 'rechazada'), 0) AS disponible
+              FROM venta_detalle vd
+              JOIN ventas v   ON v.id = vd.venta_id
+              JOIN usuarios u ON u.id = v.cliente_id
+             WHERE v.eliminado_en IS NULL
+             ORDER BY disponible DESC, vd.id
+             LIMIT 1
+            """, uno=True)
+        if not cls.linea or cls.linea["disponible"] < 2:
+            raise unittest.SkipTest("No hay lineas de venta con al menos 2 unidades disponibles")
+        cls.otro_cliente = _sql(
+            """
+            SELECT u.email FROM usuarios u JOIN roles r ON r.id = u.rol_id
+             WHERE r.nombre = 'Cliente' AND u.email <> %s AND u.eliminado_en IS NULL
+             LIMIT 1
+            """, (cls.linea["email"],), uno=True)["email"]
+        cls.motivo = _sql("SELECT id FROM motivos WHERE activo ORDER BY id LIMIT 1",
+                          uno=True)["id"]
+    
+        password = os.environ["PASSWORD_DEMO"]
+>       cls.tokens = {email: _auth("/api/v1/auth/login",
+                                   {"email": email, "password": password})["access_token"]
+                      for email in (cls.linea["email"], cls.otro_cliente, ANALISTA)}
+
+tests/test_integracion.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_integracion.py:89: in <dictcomp>
+    cls.tokens = {email: _auth("/api/v1/auth/login",
+tests/test_integracion.py:53: in _auth
+    with urllib.request.urlopen(peticion, timeout=10) as resp:
+/usr/local/lib/python3.11/urllib/request.py:216: in urlopen
+    return opener.open(url, data, timeout)
+/usr/local/lib/python3.11/urllib/request.py:525: in open
+    response = meth(req, response)
+/usr/local/lib/python3.11/urllib/request.py:634: in http_response
+    response = self.parent.error(
+/usr/local/lib/python3.11/urllib/request.py:563: in error
+    return self._call_chain(*args)
+/usr/local/lib/python3.11/urllib/request.py:496: in _call_chain
+    result = func(*args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <urllib.request.HTTPDefaultErrorHandler object at 0x7eff1e933650>
+req = <urllib.request.Request object at 0x7eff2036f810>
+fp = <http.client.HTTPResponse object at 0x7eff1eb62710>, code = 401
+msg = 'UNAUTHORIZED', hdrs = <http.client.HTTPMessage object at 0x7eff1e944210>
+
+    def http_error_default(self, req, fp, code, msg, hdrs):
+>       raise HTTPError(req.full_url, code, msg, hdrs, fp)
+E       urllib.error.HTTPError: HTTP Error 401: UNAUTHORIZED
+
+/usr/local/lib/python3.11/urllib/request.py:643: HTTPError
+=========================== short test summary info ============================
+ERROR tests/test_integracion.py::PruebaIntegracion::test_1_flujo_registro_revision_y_autorizacion
+ERROR tests/test_integracion.py::PruebaIntegracion::test_2_cancelacion_logica
+ERROR tests/test_integracion.py::PruebaIntegracion::test_3_listado_del_cliente_solo_trae_lo_suyo
+ERROR tests/test_integracion.py::PruebaIntegracion::test_4_logout_en_auth_revoca_el_token_en_devoluciones
+============================== 4 errors in 1.29s ===============================
+
+=== docker compose run --rm -e INTEGRACION=1 evidencias python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_mongo Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_postgres Running 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_mongo Waiting 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Healthy 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_mongo Healthy 
+ Container proyecto12-evidencias-run-b8e8e2e69f5b Creating 
+ Container proyecto12-evidencias-run-b8e8e2e69f5b Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 4 items
+
+tests/test_integracion.py::IntegracionEvidencias::test_archivo_sin_firma_ni_token_no_se_descarga PASSED [ 25%]
+tests/test_integracion.py::IntegracionEvidencias::test_comentario_json_y_archivo_png PASSED [ 50%]
+tests/test_integracion.py::IntegracionEvidencias::test_otro_rol_no_adjunta PASSED [ 75%]
+tests/test_integracion.py::IntegracionEvidencias::test_un_archivo_que_no_es_imagen_ni_pdf_se_rechaza PASSED [100%]
+
+============================== 4 passed in 1.84s ===============================
+=== docker compose run --rm -e INTEGRACION=1 logistica python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_postgres Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_redis Healthy 
+ Container devoluciones_postgres Healthy 
+ Container proyecto12-logistica-run-fcd0519eb742 Creating 
+ Container proyecto12-logistica-run-fcd0519eb742 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 3 items
+
+tests/test_integracion.py::IntegracionLogistica::test_el_cliente_no_puede_programar PASSED [ 33%]
+tests/test_integracion.py::IntegracionLogistica::test_no_se_programa_una_devolucion_sin_autorizar PASSED [ 66%]
+tests/test_integracion.py::IntegracionLogistica::test_programar_asignar_transitar_completar_y_recibir PASSED [100%]
+
+============================== 3 passed in 1.04s ===============================
+=== docker compose run --rm -e INTEGRACION=1 inspecciones python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_redis Running 
+ Container devoluciones_postgres Running 
+ Container devoluciones_mongo Running 
+ Container devoluciones_mongo Waiting 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_redis Healthy 
+ Container devoluciones_mongo Healthy 
+ Container devoluciones_postgres Healthy 
+ Container proyecto12-inspecciones-run-365ef5dccb97 Creating 
+ Container proyecto12-inspecciones-run-365ef5dccb97 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 5 items
+
+tests/test_integracion.py::IntegracionInspecciones::test_el_cliente_no_inspecciona PASSED [ 20%]
+tests/test_integracion.py::IntegracionInspecciones::test_inspeccion_apta_va_a_mongo_y_postgres_y_se_etiqueta PASSED [ 40%]
+tests/test_integracion.py::IntegracionInspecciones::test_refrigerado_con_cadena_rota_no_vuelve_a_inventario PASSED [ 60%]
+tests/test_integracion.py::IntegracionInspecciones::test_refrigerado_exige_temperatura_y_tiempo PASSED [ 80%]
+tests/test_integracion.py::IntegracionInspecciones::test_solo_se_inspecciona_lo_recibido PASSED [100%]
+
+============================== 5 passed in 1.30s ===============================
+=== docker compose run --rm -e INTEGRACION=1 reembolsos-costos python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_postgres Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Healthy 
+ Container devoluciones_postgres Healthy 
+ Container proyecto12-reembolsos-costos-run-4aeb4a9a8e42 Creating 
+ Container proyecto12-reembolsos-costos-run-4aeb4a9a8e42 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 5 items
+
+tests/test_integracion.py::IntegracionReembolsos::test_costos_por_etapa_y_total PASSED [ 20%]
+tests/test_integracion.py::IntegracionReembolsos::test_el_cliente_no_reembolsa PASSED [ 40%]
+tests/test_integracion.py::IntegracionReembolsos::test_lock_de_redis_bloquea_la_resolucion_concurrente PASSED [ 60%]
+tests/test_integracion.py::IntegracionReembolsos::test_no_reembolsa_si_no_esta_autorizada_ni_mas_del_valor PASSED [ 80%]
+tests/test_integracion.py::IntegracionReembolsos::test_un_solo_reembolso_por_devolucion FAILED [100%]
+
+=================================== FAILURES ===================================
+_________ IntegracionReembolsos.test_un_solo_reembolso_por_devolucion __________
+
+self = <test_integracion.IntegracionReembolsos testMethod=test_un_solo_reembolso_por_devolucion>
+
+    def test_un_solo_reembolso_por_devolucion(self):  # RN-03
+        dev = _sembrar_devolucion("resuelta")
+        self.ids.append(dev["id"])
+        cuerpo = {"devolucion_id": dev["id"], "estado": "aprobado", "metodo": "transferencia",
+                  "monto": self._valor(dev["id"])}
+        codigo, resp = _http(SERVICIO_URL, "POST", PREFIJO + "/reembolsos", cuerpo, self.encargado)
+>       self.assertEqual(codigo, 201, resp)
+E       AssertionError: 409 != 201 : {'error': {'codigo': 409, 'tipo': 'monto_excedido', 'mensaje': 'El reembolso excede el valor devuelto.', 'detalles': {'maximo': 227.17}, 'correlation_id': '25784f938aab4d6a'}}
+
+tests/test_integracion.py:167: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_integracion.py::IntegracionReembolsos::test_un_solo_reembolso_por_devolucion
+========================= 1 failed, 4 passed in 1.46s ==========================
+
+=== docker compose run --rm -e INTEGRACION=1 analisis-auditoria python -m pytest -v -p no:cacheprovider tests/test_integracion.py ===
+ Container devoluciones_redis Running 
+ Container devoluciones_mongo Running 
+ Container devoluciones_postgres Running 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_mongo Waiting 
+ Container devoluciones_redis Healthy 
+ Container devoluciones_mongo Healthy 
+ Container devoluciones_postgres Healthy 
+ Container proyecto12-analisis-auditoria-run-84cad38d83fc Creating 
+ Container proyecto12-analisis-auditoria-run-84cad38d83fc Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /srv/servicio
+collecting ... collected 4 items
+
+tests/test_integracion.py::IntegracionAnalisis::test_auditoria_y_eventos_solo_para_analista_o_admin PASSED [ 25%]
+tests/test_integracion.py::IntegracionAnalisis::test_clasificar_motivo_solo_sugiere PASSED [ 50%]
+tests/test_integracion.py::IntegracionAnalisis::test_pareto_primero_calcula_y_luego_sale_del_cache_con_ttl PASSED [ 75%]
+tests/test_integracion.py::IntegracionAnalisis::test_sincronizar_proyecta_postgres_en_mongo_sin_modificar_postgres PASSED [100%]
+
+============================== 4 passed in 0.80s ===============================
