@@ -17,6 +17,7 @@ from app.security import (
     ANALISTA, ENCARGADO_CENTRO, INSPECTOR, registrar_bitacora, roles_required, usuario_actual,
 )
 from app.blueprints.devoluciones import cambiar_estado, obtener_expediente
+from app.notificaciones import notificar_evento
 
 bp = Blueprint("inspecciones", __name__, url_prefix="/inspecciones")
 
@@ -185,6 +186,7 @@ def registrar(devolucion_id):
                 return render_template("inspecciones/registrar.html", d=expediente,
                                        refrigerado=refrigerado), exc.codigo
 
+            notificar_evento("inspeccion_registrada", expediente)
             flash(f"Inspeccion registrada por microservicio. Resultado: {resultado}.",
                   "ok" if apto else "aviso")
             return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
@@ -227,10 +229,18 @@ def registrar(devolucion_id):
 
         cambiar_estado(devolucion_id, "en_inspeccion",
                        f"Inspeccion registrada. Resultado: {resultado}")
+        notificar_evento("inspeccion_registrada", expediente)
         flash(f"Inspeccion registrada. Resultado: {resultado}.", "ok" if apto else "aviso")
         return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
     return render_template("inspecciones/registrar.html", d=expediente, refrigerado=refrigerado)
+
+
+def _avisar_disposicion(expediente, destino):
+    """Reembolsos evalua el pago; el centro solo actua si el producto regresa a inventario."""
+    notificar_evento("disposicion_definida", expediente)
+    if destino == "inventario":
+        notificar_evento("disposicion_inventario", expediente)
 
 
 @bp.route("/<int:devolucion_id>/disposicion", methods=["GET", "POST"])
@@ -283,6 +293,7 @@ def disposicion(devolucion_id):
                 flash(exc.mensaje, "error")
                 return render_template("inspecciones/disposicion.html", d=expediente,
                                        inspeccion=inspeccion, destinos=DESTINOS), exc.codigo
+            _avisar_disposicion(expediente, destino)
             flash("Disposicion registrada mediante microservicio.", "ok")
             return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
@@ -311,6 +322,7 @@ def disposicion(devolucion_id):
             )
 
         cambiar_estado(devolucion_id, "resuelta", f"Destino asignado: {destino}. {justificacion}".strip())
+        _avisar_disposicion(expediente, destino)
         flash("Disposicion registrada.", "ok")
         return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 

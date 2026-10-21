@@ -1,0 +1,19 @@
+{# Campanita de notificaciones (RF-29, UC-25). Sin JS es un enlace a la bandeja;
+   app.js la convierte en menu y actualiza el contador cada ~30 s. #}
+<div class="campanita" data-resumen="{{ url_for('notificaciones.resumen') }}">
+  <a class="campanita-boton" href="{{ url_for('notificaciones.listar') }}"
+     aria-label="Notificaciones" aria-haspopup="true" aria-expanded="false">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.7 21a2 2 0 0 1-3.4 0"/>
+    </svg>
+    <span class="campanita-insignia" hidden>0</span>
+  </a>
+  <div class="campanita-panel" hidden>
+    <ul class="campanita-lista"></ul>
+    <div class="campanita-pie">
+      <a href="{{ url_for('notificaciones.listar') }}">Ver todas</a>
+    </div>
+  </div>
+</div>

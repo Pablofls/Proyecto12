@@ -20,6 +20,8 @@
   </div>
   <button class="boton" type="submit">Filtrar</button>
   <a class="boton secundario" href="{{ url_for('devoluciones.listar') }}">Limpiar</a>
+  <a class="boton secundario" href="{{ url_for('reportes.devoluciones', **request.args.to_dict()) }}"
+     title="Descarga lo que muestran los filtros activos">Exportar CSV</a>
 </form>
 
 <div class="tabla-envoltura">

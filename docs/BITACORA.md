@@ -423,3 +423,66 @@ panel), se ordeno el repositorio con `git mv` para conservar el historial:
   `evidencias` no deja adjuntar despues. RNF-28 queda `parcial` hasta pegar la salida de
   la VM en `docs/pruebas/` (ver `docs/PRUEBAS.md`).
 
+## Notificaciones por rol: campanita, sondeo y matriz de destinatarios (21 de octubre de 2026)
+
+**Contexto.** Solo `services/devoluciones` y `services/reembolsos_costos`
+insertaban en `notificaciones` y ninguna pantalla las mostraba (RF-29 parcial).
+
+**Decision.** Una funcion unica, `notificar_evento` en `apps/web/app/notificaciones.py`,
+con un catalogo `EVENTOS` (evento -> avisos con destinatario, tipo, texto y
+pantalla destino). Los blueprints la llaman en la misma peticion que cambia el
+estado, asi la notificacion y el cambio se confirman o revierten juntos. La
+migracion 013 agrega `notificaciones.url` y el indice de bandeja.
+
+**Sondeo y no push.** La campanita consulta `GET /notificaciones/resumen` cada
+30 s (y al volver a la pestana). Se descarto WebSocket/SSE: con tres workers de
+gunicorn las conexiones abiertas ocupan workers, exigirian una libreria nueva
+(CLAUDE.md pide acordarlas) y para un contador de avisos 30 s es suficiente.
+
+**Matriz de destinatarios.** Sigue el flujo real de estados sin inventar nuevos:
+el aviso va a quien debe actuar despues (analista tras la solicitud; coordinador
+tras autorizar; inspector tras la recepcion; analista tras la inspeccion;
+encargado de reembolsos tras la disposicion) y el cliente recibe los cambios de
+su caso. Quien ejecuta la accion no se notifica. Si un rol no tiene usuarios
+activos, el aviso se omite y queda `notificacion_omitida` en bitacora. El
+Administrador no recibe avisos de flujo.
+
+**Web y microservicios sin duplicados.** Con `USE_MICROSERVICES=true`, resolver
+y reembolsar ya notifican al cliente desde el servicio, asi que el web no repite
+esos avisos (`omitir_cliente`); el servicio de devoluciones ahora tambien avisa
+al Coordinador al autorizar y guarda el enlace. `reembolsos_costos` no se toco:
+su aviso al cliente queda sin `url` y la campanita cae al expediente. Tipos y
+textos son los mismos en ambos lados.
+
+**Pruebas.** `apps/web/app/tests/test_notificaciones.py` con dobles de BD
+(`tests/dobles.py`): ownership, destinatarios por rol y bandeja. Lo que necesita
+PostgreSQL se verifica en la VM.
+
+## Exportacion CSV de reportes (21 de octubre de 2026)
+
+**Decision.** Un blueprint `reportes` (`/reportes/*.csv`) junto a la libreria
+`app/exportacion.py`, solo con el modulo `csv` de la libreria estandar (sin
+dependencias nuevas). Cada ruta repite el `@roles_required` y los filtros de la
+pantalla de origen; el Pareto reutiliza `panel.sql_pareto` (antes inline en
+`panel.causas`) para que archivo y pantalla no puedan diferir.
+
+**Por que asi.**
+- *Streaming:* cursor nombrado de psycopg2 (`itersize` 500) y respuesta por
+  bloques; el archivo no se arma en memoria. Tope de 50,000 filas
+  (`EXPORT_MAX_FILAS`) para no saturar la base compartida.
+- *Bitacora antes del stream:* `registrar_bitacora` y un `commit()` explicito
+  ocurren antes de empezar a enviar, porque la transaccion de la peticion
+  termina despues de que acaba el generador y una descarga cortada no debe
+  perder la auditoria.
+- *Inyeccion de formulas:* las celdas de texto que empiezan con `= + - @`, tab o
+  retorno se prefijan con `'`. Los numeros se dejan intactos (un monto negativo
+  no es una formula).
+- *Devoluciones:* el listado de pantalla usa la API cuando `USE_MICROSERVICES`
+  esta activo, pero la exportacion lee directo de PostgreSQL (como ya hacen
+  costos, bitacora y reembolsos) para poder recorrer mas de 100 filas; el
+  cliente sigue restringido a sus casos.
+- La version HTML imprimible para PDF queda fuera de esta entrega.
+
+**Pruebas.** `test_exportacion.py`: BOM, escape de formulas, bloques, filtros
+como parametros ligados, 403 por rol y bitacora sin datos sensibles. El
+streaming real con cursor nombrado solo se puede comprobar en la VM.

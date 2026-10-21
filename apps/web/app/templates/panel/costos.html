@@ -3,6 +3,7 @@
 {% block contenido %}
 <h1>Costos del proceso</h1>
 <p class="sub">Costos acumulados por etapa de la logistica inversa (RF-27).</p>
+<p><a class="boton secundario pequeno" href="{{ url_for('reportes.costos') }}">Exportar CSV (costo por devolucion y etapa)</a></p>
 
 <div class="rejilla">
   <div class="indicador"><div class="rotulo">Total acumulado</div><div class="cifra">$ {{ '%.2f'|format(total_general) }}</div></div>

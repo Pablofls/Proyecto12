@@ -17,7 +17,9 @@
 | RF-23, RF-26, RF-30 | `services/analisis_auditoria`: snapshot, Pareto MongoDB, cache Redis y consulta de bitacora | `services/analisis_auditoria/tests/test_pareto.py` |
 | RF-32 | `apps/web/app/microservicios.py` y `/integracion/servicios` consultan los ocho health checks | `apps/web/app/tests/test_microservicios.py` |
 | Integracion web/API | `apps/web/app/api_client.py` y blueprints web: JWT/refresh y flujo funcional por HTTP | `apps/web/app/tests/test_api_client.py` y prueba E2E en VM |
-| RNF-28; RF-31; RN-03, RN-06, RN-11 | Suite E2E de 11 pasos, seguridad y errores, JSON/XML y 429 (`tests/e2e/`) y `test_integracion.py` en los 8 servicios; casos en `docs/PRUEBAS.md` | `tests/e2e/`, `services/*/tests/test_integracion.py`; resultado de la VM pendiente (`docs/pruebas/`) |
+| RNF-28; RF-29, RF-31; RN-03, RN-06, RN-11, RN-13 | Suite E2E de 11 pasos mas notificaciones por rol y campanita (paso 6b), seguridad y errores, JSON/XML y 429 (`tests/e2e/`) y `test_integracion.py` en los 8 servicios; casos en `docs/PRUEBAS.md` | `tests/e2e/`, `services/*/tests/test_integracion.py`; resultado de la VM pendiente (`docs/pruebas/`) |
+| RF-28, UC-24 | Exportacion CSV (UTF-8 con BOM, streaming, escape de formulas): `apps/web/app/exportacion.py` y `apps/web/app/blueprints/reportes.py` (devoluciones, costos, Pareto de causas, bitacora, reembolsos) | `apps/web/app/tests/test_exportacion.py` y descarga en VM |
+| RF-29, UC-25, RN-13 | Campanita y bandeja por rol: `apps/web/app/notificaciones.py` (matriz de destinatarios), `apps/web/app/blueprints/notificaciones.py`, `templates/_campanita.html`, `db/migrations/013_notificaciones_enlace.sql`; `services/devoluciones/app.py` agrega enlace y aviso al Coordinador | `apps/web/app/tests/test_notificaciones.py` y recorrido por rol en VM |
 
 Relaciona los identificadores del documento con el lugar del repositorio donde
 quedan implementados. **Actualiza esta tabla en el mismo commit en el que
@@ -57,8 +59,8 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-25 | Senalar posible fraude | `GET /api/v1/analisis/alertas-fraude`; frecuencia, rechazos y monto con revision humana | implementado |
 | RF-26 | Panel de causas, Pareto y KPIs ejecutivos | `panel.causas`: Pareto de motivos, costo por causa via `vista_costo_devolucion`, tendencia mensual y KPIs (devoluciones, tasa, monto reembolsado, costo logistico, tiempo promedio de resolucion via `devoluciones.fecha_cierre` en `db/migrations/012_fecha_cierre_devolucion.sql`, % recuperado) | implementado |
 | RF-27 | Consulta de costos y costo total por devolucion | `panel.costos`, captura de costo en `logistica.py`, `inspecciones.py`, `devoluciones.agregar_costo`; `db/migrations/009_ampliar_tipos_costo.sql`, `010_vista_costo_devolucion.sql` | implementado |
-| RF-28 | Generar y exportar reportes | — | pendiente |
-| RF-29 | Notificaciones automaticas | `services/devoluciones` inserta en `notificaciones` al resolver; falta mostrarlas en la web | parcial |
+| RF-28 | Generar y exportar reportes | `reportes.devoluciones/costos/causas/bitacora/reembolsos` (`/reportes/*.csv`) con el control de rol y los filtros de su pantalla; bitacora `exportar_reporte` | implementado |
+| RF-29 | Notificaciones automaticas | `apps/web/app/notificaciones.py:notificar_evento` en cada paso del flujo; bandeja y campanita en `blueprints/notificaciones.py`; `services/devoluciones` notifica al resolver (con enlace) | implementado |
 | RF-30 | Bitacora de operaciones | `apps/web/app/security.py:registrar_bitacora`, `panel.bitacora` | implementado |
 | RF-31 | JSON para movil y XML para escritorio | `shared/respuestas.py`, contratos XSD y OpenAPI de los ocho servicios | implementado |
 | RF-32 | Monitoreo del estado de los servicios | `/health` en cada contenedor y `/integracion/servicios` en el web | implementado |
@@ -94,7 +96,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-25 | Mensajes claros al usuario | Mensajes flash en todas las operaciones | implementado |
 | RNF-26 | Adaptarse a distintos tamanos de pantalla | `apps/web/app/static/css/estilos.css` | implementado |
 | RNF-27 | Docker y Google Compute Engine | `docker-compose.yml`, VM del equipo | implementado |
-| RNF-28 | Pruebas | 88 unitarias; suite E2E `tests/e2e/` y pruebas de integracion por servicio; casos en `docs/PRUEBAS.md`. Falta pegar la salida de la VM | parcial |
+| RNF-28 | Pruebas | 119 unitarias; suite E2E `tests/e2e/` y pruebas de integracion por servicio; casos en `docs/PRUEBAS.md`. Falta pegar la salida de la VM | parcial |
 | RNF-29 | Locust con distintos perfiles | — | pendiente |
 | RNF-30 | Retencion y eliminacion logica | `db/migrations/005_eliminacion_logica.sql`; `DELETE /api/v1/devoluciones/{id}` marca `eliminado_en` | implementado |
 
@@ -121,8 +123,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 ## Casos de uso cubiertos por el monolito
 
 Implementados: UC-01, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-10,
-UC-11, UC-13, UC-14, UC-15, UC-16, UC-17, UC-22, UC-23, UC-26.
+UC-11, UC-13, UC-14, UC-15, UC-16, UC-17, UC-22, UC-23, UC-24, UC-25, UC-26.
 
 Pendientes: UC-02 (recuperar contrasena), UC-12 (escaneo), UC-18 a UC-21
-(algoritmos), UC-24 (exportar reportes), UC-25 (notificaciones), UC-27
-(monitoreo de microservicios).
+(algoritmos), UC-27 (monitoreo de microservicios).

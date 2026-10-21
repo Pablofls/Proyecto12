@@ -232,3 +232,65 @@ inspecciona y no aprueba reembolsos.
 
 En cualquier punto, el analista puede rechazar la solicitud o pedir informacion
 adicional, y cada movimiento queda en el historial del caso.
+
+---
+
+## Notificaciones (campanita)
+
+Todos los perfiles ven una campanita arriba a la derecha, junto a su nombre. La
+insignia roja indica cuantas notificaciones tiene sin leer y se actualiza sola
+cada 30 segundos, sin recargar la pagina.
+
+- **Abrirla.** Al hacer clic aparecen las ultimas ocho; las no leidas van
+  resaltadas. Cada aviso es un enlace: al hacer clic se marca como leido y la
+  plataforma abre la pantalla donde corresponde actuar (por ejemplo, el analista
+  cae en el expediente para autorizar o rechazar; el coordinador, en la pantalla
+  de programar la recoleccion).
+- **Bandeja completa.** "Ver todas" abre `/notificaciones`, con filtro
+  *Todas / No leidas*, paginacion y el boton *Marcar todas como leidas*.
+- **Privacidad.** Cada persona ve solo sus avisos; no existe forma de abrir o
+  marcar los de otra (el sistema responde 404).
+
+Quien recibe que, segun el paso del proceso:
+
+| Cuando ocurre | Recibe aviso |
+|---|---|
+| El cliente registra la solicitud o agrega evidencia | Analista |
+| El analista autoriza | Cliente y Coordinador de logistica |
+| El analista rechaza o pide informacion | Cliente |
+| Se programa la recoleccion | Cliente |
+| La recoleccion va en transito o se completa | Cliente y Encargado del centro |
+| Se confirma la recepcion | Inspector y Cliente |
+| Se registra la inspeccion | Analista |
+| Se define el destino | Encargado de reembolsos (y Encargado del centro si regresa a inventario) |
+| Se aprueba o rechaza el reembolso | Cliente y Analista |
+| El caso se cierra | Cliente |
+
+Quien ejecuta la accion no recibe aviso de su propia accion. El Administrador no
+recibe avisos del flujo.
+
+---
+
+## Exportar reportes a CSV
+
+Los listados y paneles tienen un boton **Exportar CSV**. El archivo se descarga
+con los **mismos filtros que tengas activos** en la pantalla (por ejemplo, si
+filtraste por estado "autorizada" o por un rango de fechas, el CSV trae solo eso)
+y se abre en Excel con acentos correctos.
+
+| Pantalla | Quien puede exportar | Contenido |
+|---|---|---|
+| Devoluciones | Todos los perfiles (el cliente solo ve y exporta las suyas) | Folio, estado, fecha, motivo, tienda, producto, lote, cliente |
+| Costos | Analista, Encargado de reembolsos, Administrador | Costo por devolucion y por etapa, con total |
+| Causas (Pareto de motivos) | Analista, Administrador | Motivo, devoluciones, porcentaje y porcentaje acumulado, con los filtros del panel |
+| Bitacora | Analista, Administrador | Fecha, usuario, accion, entidad, detalle |
+| Reembolsos | Encargado de reembolsos, Analista | Reembolsos aprobados y rechazados |
+
+- Cada exportacion queda en la bitacora (`exportar_reporte`) con el tipo de
+  reporte y los filtros usados, nunca con el contenido.
+- Una exportacion incluye como maximo 50,000 filas; si necesitas mas, acota con
+  fechas o estado.
+- Por seguridad, el texto que empiece con `=`, `+`, `-` o `@` se marca con un
+  apostrofo al inicio para que Excel no lo ejecute como formula.
+- Si tu perfil no tiene la pantalla, tampoco puede descargar su reporte
+  (responde 403 y se registra el intento).

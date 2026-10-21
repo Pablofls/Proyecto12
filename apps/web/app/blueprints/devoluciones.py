@@ -12,6 +12,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 
 from app import api_client
 from app.db import consultar, ejecutar
+from app.notificaciones import notificar_evento
 from app.security import (
     ADMINISTRADOR, ANALISTA, CLIENTE, INSPECTOR, TODOS_LOS_ROLES,
     exigir_devolucion_visible, registrar_bitacora, roles_required, usuario_actual,
@@ -225,6 +226,9 @@ def nueva():
                 registrar_bitacora("alta_devolucion", "devoluciones", fila["id"],
                                    f"Se registro la devolucion {fila['folio_devolucion']} "
                                    f"sobre la venta {linea['folio_venta']}")
+        notificar_evento("solicitud_nueva",
+                         {"id": fila["id"], "folio_devolucion": fila["folio_devolucion"],
+                          "cliente_id": linea["cliente_id"]})
         flash(f"Devolucion registrada con folio {fila['folio_devolucion']}.", "ok")
         return redirect(url_for("devoluciones.detalle", devolucion_id=fila["id"]))
 
@@ -374,6 +378,11 @@ def agregar_evidencia(devolucion_id):
     )
         registrar_bitacora("alta_evidencia", "devoluciones", devolucion_id,
                            f"Se agrego una evidencia de tipo {tipo}")
+    # Solo la evidencia del cliente avisa al analista: es quien debe revisarla.
+    if usuario["rol"] == CLIENTE:
+        expediente = obtener_expediente(devolucion_id)
+        if expediente is not None:
+            notificar_evento("evidencia_nueva", expediente)
     flash("Evidencia registrada.", "ok")
     return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
@@ -409,6 +418,7 @@ def resolver(devolucion_id):
         except api_client.ErrorServicio as exc:
             flash(exc.mensaje, "error")
         else:
+            # El microservicio ya notifica al cliente y al coordinador (RF-29).
             flash(f"Resolucion registrada mediante microservicio: {resultado['estado']}.", "ok")
         return redirect(url_for("devoluciones.detalle", devolucion_id=devolucion_id))
 
@@ -424,6 +434,7 @@ def resolver(devolucion_id):
         )
         registrar_bitacora("autorizacion", "devoluciones", devolucion_id,
                            f"Devolucion autorizada. {justificacion}".strip())
+        notificar_evento("autorizacion", expediente)
         flash("Devolucion autorizada.", "ok")
 
     elif decision == "rechazar":
@@ -442,6 +453,7 @@ def resolver(devolucion_id):
         )
         registrar_bitacora("rechazo", "devoluciones", devolucion_id,
                            f"Devolucion rechazada. {justificacion}")
+        notificar_evento("rechazo", expediente, nota=justificacion)
         flash("Devolucion rechazada.", "ok")
 
     elif decision == "informacion":
@@ -451,6 +463,7 @@ def resolver(devolucion_id):
         )
         registrar_bitacora("solicitud_informacion", "devoluciones", devolucion_id,
                            f"Se solicito informacion adicional. {justificacion}".strip())
+        notificar_evento("solicitud_informacion", expediente, nota=justificacion)
         flash("Se solicito informacion adicional al cliente.", "ok")
 
     else:
