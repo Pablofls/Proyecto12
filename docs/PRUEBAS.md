@@ -14,14 +14,14 @@ resultado de la VM").
 
 | Grupo | Casos | Donde corre | Estado |
 |---|---|---|---|
-| Unitarias (con dobles) | 88 | Local y VM | **88 passed** en local (`docs/pruebas/resultado_2026-10-21_local.md`) |
-| E2E: proceso completo de 11 pasos | 11 | Solo VM | <!-- EJECUTAR EN VM --> |
+| Unitarias (con dobles) | 119 | Local y VM | **119 passed** en local (`docs/pruebas/resultado_2026-10-21_local.md`) |
+| E2E: proceso completo de 11 pasos + notificaciones (6b) | 12 | Solo VM | <!-- EJECUTAR EN VM --> |
 | E2E: seguridad y errores | 23 filas (80 casos con parametros) | Solo VM | <!-- EJECUTAR EN VM --> |
 | E2E: JSON/XML y XSD | 8 | Solo VM | <!-- EJECUTAR EN VM --> |
 | Integracion por servicio | 30 nuevas + 4 previas de devoluciones | Solo VM | <!-- EJECUTAR EN VM --> |
 
 Validado localmente sin bases: compilacion (`py_compile`), descubrimiento
-(`pytest --collect-only`) y las unitarias. La suite E2E descubre **99** pruebas
+(`pytest --collect-only`) y las unitarias. La suite E2E descubre **100** pruebas
 y las pruebas de integracion por servicio descubren 34 mas (30 nuevas y las 4
 previas de devoluciones); sin `INTEGRACION=1` todas se saltan.
 
@@ -72,6 +72,7 @@ servicio del compose son: `auth`, `ventas-catalogos`, `devoluciones`,
 | `PASSWORD_DEMO` | del `.env` | Contrasena de las cuentas del seed; nunca se escribe en el repositorio |
 | `AUTH_URL`, `DEVOLUCIONES_URL`, `LOGISTICA_URL`, `INSPECCIONES_URL`, `REEMBOLSOS_URL`, `VENTAS_URL`, `EVIDENCIAS_URL`, `ANALISIS_URL` | `http://<servicio>:8000` | URL de cada contenedor dentro de la red del compose |
 | `POSTGRES_*`, `MONGO_*`, `REDIS_*`, `JWT_SECRET` | del `.env` | Los inyecta `env_file` del compose; la suite verifica efectos y firma tokens de prueba |
+| `WEB_URL` | `http://app:8000` | Monolito web, solo para el paso 6b (campanita) |
 | `LOGIN_MAX_POR_MINUTO` | 10 | Solo para que la prueba de 429 sepa cuantos intentos hacer |
 
 Dependencias: las de la imagen de `devoluciones` (`psycopg2`, `pymongo`,
@@ -86,10 +87,10 @@ Dependencias: las de la imagen de `devoluciones` (`psycopg2`, `pymongo`,
 3. En este archivo reemplaza cada `<!-- EJECUTAR EN VM -->` por el resultado real (`passed` o el
    error), el estado (`paso`/`fallo`) y la ruta de la evidencia. Si algo falla,
    no lo marques `paso`: agrega el hallazgo abajo.
-4. Repite el paso de notificaciones del E2E cuando la sesion 01 (campanita) se
-   integre a `main`: el E2E actual cubre el flujo de `main` sin esa pieza.
+4. La sesion 01 (campanita) ya esta en `main`: el paso 6b del E2E la cubre; no hay
+   pasos pendientes por integracion de otras sesiones.
 
-## Pruebas unitarias (88)
+## Pruebas unitarias (119)
 
 | ID | Servicio | Objetivo | Entradas | Resultado esperado | Resultado obtenido | Estado | Evidencia |
 |---|---|---|---|---|---|---|---|
@@ -104,9 +105,11 @@ Dependencias: las de la imagen de `devoluciones` (`psycopg2`, `pymongo`,
 | UT-09 | analisis_auditoria | Pareto y clasificador de motivos (sin bases) (RF-23, RN-09, RN-11) | `services/analisis_auditoria/tests/test_pareto.py`: 4 casos, con dobles, sin bases | Los 4 casos pasan | 4 passed | paso | `docs/pruebas/resultado_2026-10-21_local.md` |
 | UT-10 | web | Cliente HTTP del monolito hacia los microservicios (JWT, correlation id) (RNF-23) | `apps/web/app/tests/test_api_client.py`: 3 casos, con dobles, sin bases | Los 3 casos pasan | 3 passed | paso | `docs/pruebas/resultado_2026-10-21_local.md` |
 | UT-11 | web | Panel de microservicios y manejo de caidas (RF-31) | `apps/web/app/tests/test_microservicios.py`: 3 casos, con dobles, sin bases | Los 3 casos pasan | 3 passed | paso | `docs/pruebas/resultado_2026-10-21_local.md` |
+| UT-12 | web | Exportacion CSV: BOM, streaming y escape de formulas (RF-28, UC-24) | `apps/web/app/tests/test_exportacion.py`: 16 casos, con dobles, sin bases | Los 16 casos pasan | 16 passed | paso | `docs/pruebas/resultado_2026-10-21_local.md` |
+| UT-13 | web | Matriz de destinatarios, bandeja y campanita por rol (sesion 01) (RF-29, UC-25, RN-13) | `apps/web/app/tests/test_notificaciones.py`: 15 casos, con dobles, sin bases | Los 15 casos pasan | 15 passed | paso | `docs/pruebas/resultado_2026-10-21_local.md` |
 
-Salida local (2026-10-21, Python 3.13, `pytest` 8.3.3, sin bases): 88 passed, 0 failed; el detalle caso por caso esta en `docs/pruebas/resultado_2026-10-21_local.md`. La
-cifra de 84 que citaba el brief es anterior; el conteo real de `pytest
+Salida local (2026-10-21, Python 3.13, `pytest` 8.3.3, sin bases, rama ya fusionada con `main` incluida la sesion 01): 119 passed, 0 failed; el detalle caso por caso esta en `docs/pruebas/resultado_2026-10-21_local.md`. La
+cifra de 84 que citaba el brief es anterior a la sesion 01; el conteo real de `pytest
 --collect-only` por archivo es el de la tabla. Las pruebas de integracion de
 cada carpeta (`test_integracion.py`) se cuentan abajo y se saltan en local.
 
@@ -125,11 +128,16 @@ completo), `SEG` (seguridad y errores), `FMT` (JSON/XML/XSD), `INT-xxx` (por ser
 | E2E-04 | devoluciones | Paso 4: el cliente registra la solicitud (RF-07, RN-02) | POST /devoluciones con `X-Correlation-ID` | 201; folio `DEV-AAAA-n` unico; fila `solicitada` en PostgreSQL; evento `devolucion_registrada` en Mongo; mismo correlation id en respuesta, evento y bitacora | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> |
 | E2E-05 | evidencias | Paso 5: comentario en XML y archivo PNG (RN-14) | POST /evidencias (XML), POST /evidencias multipart, GET /enlace, GET url firmada | 201 x2; filas en `evidencias`; metadatos en Mongo; descarga por enlace firmado con el mismo tamano | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> |
 | E2E-06 | devoluciones | Paso 6: el analista autoriza (RF-10, RF-29) | PATCH /devoluciones/{id}/resolucion `autorizar` | 200 `autorizada`; `fecha_autorizacion` no nula; notificacion `autorizacion`; bitacora | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> |
+| E2E-06b | devoluciones / web | Paso 6b (sesion 01): notificaciones por rol y campanita (RF-29, UC-25, RN-13) | Filas de `notificaciones` tras autorizar; web `GET /notificaciones/resumen` y `POST /notificaciones/{id}/leer` con sesion de cliente, coordinador y otro cliente | Destinatarios: el cliente dueno (`autorizacion`, url `/devoluciones/{id}`) y todos los coordinadores activos (`autorizacion_logistica`, url `/logistica/...`); nadie mas; contador de la campanita = filas propias sin leer; otro cliente 404 y no marca; el dueno recibe 302 al expediente y la fila queda leida con bitacora; el coordinador ve el aviso con enlace a logistica | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> |
 | E2E-07 | logistica / reembolsos-costos | Paso 7: programar, asignar, transito, completada, recepcion y costo | POST /recolecciones, PATCH asignacion, PATCH estado x2, PATCH invalido, POST /recepciones, POST /costos | 201/200/200/200; retroceso 409; devolucion `recibida`; costo `transporte` 120.50 en PostgreSQL | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> |
 | E2E-08 | inspecciones | Paso 8: inspeccion con cadena de frio, disposicion y etiqueta (RN-05..RN-07) | POST /inspecciones, POST /disposicion `inventario`, POST /inventario/{id}/etiqueta | 201 x3; documento en Mongo enlazado por `mongo_doc_id`; `apto=true`; devolucion `resuelta`; etiqueta `REC-...` | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> |
-| E2E-09 | reembolsos-costos | Paso 9: reembolso unico con lock de Redis (RN-03) | POST /reembolsos x2 y con el lock tomado | 201; segundo 409 `reembolso_duplicado`; con lock 409 `reembolso_en_proceso`; una sola fila; devolucion `cerrada` | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> |
+| E2E-09 | reembolsos-costos | Paso 9: reembolso unico con lock de Redis (RN-03) | POST /reembolsos x2 y con el lock tomado | 201; notificacion `reembolso_aprobado` al cliente; segundo 409 `reembolso_duplicado`; con lock 409 `reembolso_en_proceso`; una sola fila; devolucion `cerrada` | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> |
 | E2E-10 | analisis-auditoria | Paso 10: sincronizar, Pareto dos veces, alertas, eventos por correlation id | POST /sincronizar, GET /pareto x2, GET /alertas-fraude, GET /eventos?correlation_id= | 1a `cache=miss`, 2a `cache=hit`; clave `cache:causas:*` con TTL <= 600; el evento del paso 4 aparece | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> |
 | E2E-11 | auth | Paso 11: logout revoca el token en todos los servicios (RNF-08) | POST /auth/logout y GET en auth, devoluciones y ventas | 200; `jwt_revocado:<jti>` en Redis; sesion borrada; 401 `token_revocado` en los tres | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> | <!-- EJECUTAR EN VM --> |
+
+El paso 6b exige que la sesion 01 este en la rama y que el contenedor `app` (web)
+responda en `WEB_URL` (por defecto `http://app:8000`); inicia sesion por el
+formulario real del web, igual que un navegador.
 
 Orden real frente al brief: la evidencia (paso 5) va antes de autorizar porque
 `evidencias` solo deja al cliente adjuntar mientras la solicitud sigue en
@@ -230,5 +238,6 @@ ha reproducido contra los contenedores porque aqui no hay bases).
 | H-06 | reembolsos-costos | RN-04 solo exige que la devolucion no este `solicitada`, `en_revision` ni `rechazada`; permite aprobar un reembolso estando `en_recoleccion` o `recibida`, antes de recibir el producto. Y solo cierra la devolucion si estaba `resuelta`; en cualquier otro estado queda abierta con reembolso | Baja (a confirmar con el negocio) | `services/reembolsos_costos/app.py:registrar_reembolso` | Confirmar si el reembolso puede anticiparse a la recepcion y que estado debe quedar |
 | H-07 | auth | El rate limit de login (10 por minuto) es por IP y cuenta tambien los intentos validos: con varios usuarios detras de la misma IP (red del compose, NAT de la universidad) se llega al 429 rapido. La suite lo evita borrando las claves `devoluciones:limite:*:login` | Baja (operativa) | `services/auth/app.py:login`, `shared/infra.py:limitar` | Considerar un limite mayor por IP o contar solo los fallos |
 | H-08 | contratos | Los XSD de devoluciones usan `xs:all` (cualquier orden) y los de logistica, reembolsos, inspecciones y evidencias usan `xs:sequence` (orden fijo): un cliente que envie los mismos elementos en otro orden recibe 400 solo en unos servicios | Baja (consistencia) | `services/*/contratos/*.xsd` | Unificar a `xs:all` o documentar el orden en cada `openapi.yaml` |
-| H-09 | brief | El brief decia 84 unitarias; el conteo real hoy es **88** (`pytest` por servicio) | Informativa | Tabla de unitarias | Actualizar el brief |
+| H-09 | brief | El brief decia 84 unitarias; tras fusionar la sesion 01 el conteo real es **119** (`pytest` por servicio y web) | Informativa | Tabla de unitarias | Actualizar el brief |
+| H-10 | logistica, inspecciones, reembolsos-costos | Por la API distribuida solo `devoluciones` (cliente y coordinador al autorizar) y `reembolsos-costos` (cliente, sin `url`) escriben notificaciones. Recoleccion programada, en transito, completada, recepcion, inspeccion, disposicion y cierre solo notifican si el paso se hace desde el web (`apps/web/app/notificaciones.py`). Quien opere solo por API no genera avisos a inspector, analista, encargado del centro ni al cliente en esos pasos, y los reembolsos por API no avisan al analista ni cierran con `caso_cerrado` | Media (RF-29 incompleto en la ruta API) | `services/logistica/app.py`, `services/inspecciones/app.py`, `services/reembolsos_costos/app.py` frente a `EVENTOS` | Insertar las mismas notificaciones desde cada microservicio (con `url`), o documentar que la campanita solo cubre el flujo por web. El E2E 6b verifica lo que hoy si existe |
 

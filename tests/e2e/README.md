@@ -6,7 +6,7 @@ verificados en PostgreSQL, MongoDB y Redis. **Solo corren en la VM** y solo con
 
 | Archivo | Que cubre |
 |---|---|
-| `test_01_proceso_completo.py` | El proceso de negocio de 11 pasos, encadenado (cada paso usa el id del anterior) |
+| `test_01_proceso_completo.py` | El proceso de negocio de 11 pasos, encadenado, mas el paso 6b de notificaciones y campanita (usa `WEB_URL`, por defecto `http://app:8000`) |
 | `test_02_seguridad_y_errores.py` | 401, 403, 400, 404 y 409 sobre los 8 servicios; correlation id; bitacora sin tokens |
 | `test_03_json_y_xml.py` | Mismo endpoint en JSON y XML; XSD de peticion y de respuesta (auth) con `shared/xsd.py` |
 | `test_99_rate_limit.py` | 429 de login; va al final para no bloquear el resto |

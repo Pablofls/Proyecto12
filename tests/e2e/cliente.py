@@ -6,11 +6,13 @@ Todo se configura con variables de entorno (mismos nombres que docker-compose).
 Trazabilidad: RNF-28, RNF-16 (los logs nunca llevan tokens ni contrasenas),
 RNF-23 (X-Correlation-ID).
 """
+import http.cookiejar
 import json
 import os
 import re
 import uuid
 import urllib.error
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from collections import namedtuple
@@ -146,6 +148,61 @@ def llamar(servicio, metodo, ruta, cuerpo=None, token=None, xml=None,
     print(f"[E2E] {metodo} {ruta.split('?')[0] if absoluta else ruta} "
           f"-> {status} {_recortar(mostrado)}")
     return Respuesta(status, cabs, texto, parseado)
+
+
+class _SinRedireccion(urllib.request.HTTPRedirectHandler):
+    """Deja ver el 302 (y su Location) en vez de seguirlo."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+class SesionWeb:
+    """Sesion con cookies contra el monolito web (campanita de notificaciones).
+
+    Inicia sesion por el formulario real de /login, igual que un navegador.
+    No sigue redirecciones: asi se comprueba a donde lleva cada una.
+    """
+
+    def __init__(self, email):
+        self.base = os.environ.get("WEB_URL", "http://app:8000").rstrip("/")
+        self.jar = http.cookiejar.CookieJar()
+        self.opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(self.jar), _SinRedireccion())
+        # El login del web en modo distribuido pasa por auth: se libera su
+        # limite por minuto antes de abrir cada sesion.
+        liberar_limite_login()
+        resp = self._pedir("POST", "/login", {"email": email,
+                                              "password": os.environ["PASSWORD_DEMO"]})
+        assert resp.status == 302, f"login web de {email}: {resp.status}"
+        assert len(self.jar) > 0, "el web no entrego cookie de sesion"
+
+    def _pedir(self, metodo, ruta, formulario=None):
+        datos = urllib.parse.urlencode(formulario).encode() if formulario is not None else None
+        peticion = urllib.request.Request(self.base + ruta, data=datos, method=metodo)
+        try:
+            with self.opener.open(peticion, timeout=20) as resp:
+                status, cabs, crudo = resp.status, resp.headers, resp.read()
+        except urllib.error.HTTPError as exc:
+            status, cabs, crudo = exc.code, exc.headers, exc.read()
+        texto = crudo.decode("utf-8", "replace")
+        tipo = (cabs.get("Content-Type") or "").lower()
+        datos_json = _decodificar(texto, tipo)
+        cuerpo = _recortar(datos_json if datos_json is not None else "<html>")
+        print(f"[E2E][web] {metodo} {ruta} -> {status} {cuerpo}")
+        return Respuesta(status, cabs, texto, datos_json)
+
+    def get(self, ruta):
+        return self._pedir("GET", ruta)
+
+    def post(self, ruta):
+        return self._pedir("POST", ruta, {})
+
+    def cerrar(self):
+        try:
+            self._pedir("POST", "/logout", {})
+        except Exception:  # noqa: BLE001 - limpieza
+            pass
 
 
 def error_tipo(resp):

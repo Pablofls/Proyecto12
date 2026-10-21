@@ -1,10 +1,10 @@
 # Resultado local de las pruebas unitarias — 2026-10-21
 
-Ejecutado en la laptop de desarrollo **sin bases de datos** (CLAUDE.md, restriccion 1): solo pruebas unitarias con dobles.
-Las pruebas de integracion y E2E se saltan aqui (`INTEGRACION` no esta definida) y quedan pendientes en la VM.
+Ejecutado en la laptop **sin bases de datos** (CLAUDE.md, restriccion 1), con la rama ya fusionada con `origin/main` (sesion 01 incluida).
+Las pruebas de integracion y E2E se saltan aqui (`INTEGRACION` no definida) y quedan pendientes en la VM.
 
 - Python: Python 3.13.1, pytest: pytest 8.3.3
-- Rama: roberto/suite-e2e sobre origin/main (2a52f76)
+- Rama: roberto/suite-e2e, base eaf0433 (origin/main)
 - Comando por carpeta: `cd services/<servicio> && PYTHONPATH=<raiz>:. python -m pytest -v tests` (y `apps/web` con `app/tests`)
 
 ## services/analisis_auditoria/
@@ -56,7 +56,7 @@ tests/test_integracion.py::IntegracionAuth::test_credenciales_malas_quedan_en_el
 tests/test_integracion.py::IntegracionAuth::test_login_crea_sesion_en_redis_historial_y_bitacora SKIPPED
 tests/test_integracion.py::IntegracionAuth::test_logout_revoca_el_token_y_borra_la_sesion SKIPPED
 tests/test_integracion.py::IntegracionAuth::test_refresh_emite_un_access_nuevo_de_la_misma_sesion SKIPPED
-======================== 27 passed, 5 skipped in 5.40s =========================
+======================== 27 passed, 5 skipped in 5.34s =========================
 ```
 
 ## services/devoluciones/
@@ -90,7 +90,7 @@ tests/test_reglas.py::PruebaReglas::test_nueva_sin_campos PASSED
 tests/test_reglas.py::PruebaReglas::test_nueva_valida_y_cantidad_por_defecto PASSED
 tests/test_reglas.py::PruebaReglas::test_rechazo_sin_justificacion PASSED
 tests/test_reglas.py::PruebaReglas::test_resolucion_valida PASSED
-======================== 24 passed, 4 skipped in 0.40s =========================
+======================== 24 passed, 4 skipped in 0.38s =========================
 ```
 
 ## services/evidencias/
@@ -103,7 +103,7 @@ tests/test_integracion.py::IntegracionEvidencias::test_un_archivo_que_no_es_imag
 tests/test_seguridad_archivos.py::test_detecta_mime_por_contenido PASSED
 tests/test_seguridad_archivos.py::test_enlace_temporal_firmado PASSED
 tests/test_seguridad_archivos.py::test_archivo_crea_id_privado_y_rechaza_exe PASSED
-========================= 3 passed, 4 skipped in 0.15s =========================
+========================= 3 passed, 4 skipped in 0.14s =========================
 ```
 
 ## services/inspecciones/
@@ -133,7 +133,7 @@ tests/test_api.py::PruebaLogistica::test_xml_invalido PASSED
 tests/test_integracion.py::IntegracionLogistica::test_el_cliente_no_puede_programar SKIPPED
 tests/test_integracion.py::IntegracionLogistica::test_no_se_programa_una_devolucion_sin_autorizar SKIPPED
 tests/test_integracion.py::IntegracionLogistica::test_programar_asignar_transitar_completar_y_recibir SKIPPED
-========================= 5 passed, 3 skipped in 0.16s =========================
+========================= 5 passed, 3 skipped in 0.15s =========================
 ```
 
 ## services/reembolsos_costos/
@@ -150,7 +150,7 @@ tests/test_integracion.py::IntegracionReembolsos::test_el_cliente_no_reembolsa S
 tests/test_integracion.py::IntegracionReembolsos::test_lock_de_redis_bloquea_la_resolucion_concurrente SKIPPED
 tests/test_integracion.py::IntegracionReembolsos::test_no_reembolsa_si_no_esta_autorizada_ni_mas_del_valor SKIPPED
 tests/test_integracion.py::IntegracionReembolsos::test_un_solo_reembolso_por_devolucion SKIPPED
-========================= 6 passed, 5 skipped in 0.16s =========================
+========================= 6 passed, 5 skipped in 0.23s =========================
 ```
 
 ## services/ventas_catalogos/
@@ -177,15 +177,46 @@ tests/test_reglas.py::test_lote_fecha_invalida PASSED
 app/tests/test_api_client.py::PruebaClienteApi::test_401_renueva_token_y_reintenta_una_vez PASSED
 app/tests/test_api_client.py::PruebaClienteApi::test_falla_de_red_se_traduce_a_503 PASSED
 app/tests/test_api_client.py::PruebaClienteApi::test_login_guarda_tokens_solo_en_sesion_servidor PASSED
+app/tests/test_exportacion.py::PruebaCeldaSegura::test_fechas_en_formato_estable PASSED
+app/tests/test_exportacion.py::PruebaCeldaSegura::test_neutraliza_formulas_en_texto PASSED
+app/tests/test_exportacion.py::PruebaCeldaSegura::test_numeros_negativos_no_se_prefijan PASSED
+app/tests/test_exportacion.py::PruebaCeldaSegura::test_texto_normal_y_vacios_no_cambian PASSED
+app/tests/test_exportacion.py::PruebaGenerarCsv::test_bom_encabezados_y_acentos PASSED
+app/tests/test_exportacion.py::PruebaGenerarCsv::test_entrega_en_bloques_sin_acumular_todo PASSED
+app/tests/test_exportacion.py::PruebaGenerarCsv::test_escapa_formulas_en_el_archivo PASSED
+app/tests/test_exportacion.py::PruebaGenerarCsv::test_sin_filas_solo_encabezado PASSED
+app/tests/test_exportacion.py::PruebaRutas::test_403_por_rol_en_cada_reporte PASSED
+app/tests/test_exportacion.py::PruebaRutas::test_bitacora_de_exportacion_lleva_tipo_y_filtros_sin_contenido PASSED
+app/tests/test_exportacion.py::PruebaRutas::test_bitacora_y_costos_y_reembolsos_responden_csv PASSED
+app/tests/test_exportacion.py::PruebaRutas::test_causas_usa_los_mismos_filtros_del_panel PASSED
+app/tests/test_exportacion.py::PruebaRutas::test_cliente_solo_exporta_sus_devoluciones PASSED
+app/tests/test_exportacion.py::PruebaRutas::test_descarga_con_cabeceras_de_archivo PASSED
+app/tests/test_exportacion.py::PruebaRutas::test_filtros_llegan_como_parametros_ligados PASSED
+app/tests/test_exportacion.py::PruebaRutas::test_sin_sesion_redirige PASSED
 app/tests/test_microservicios.py::PruebaClienteMicroservicios::test_json_invalido_degrada PASSED
 app/tests/test_microservicios.py::PruebaClienteMicroservicios::test_servicio_sano PASSED
 app/tests/test_microservicios.py::PruebaClienteMicroservicios::test_timeout_degrada_sin_romper_web PASSED
-============================== 6 passed in 0.11s ===============================
+app/tests/test_notificaciones.py::PruebaBandeja::test_destino_externo_se_ignora PASSED
+app/tests/test_notificaciones.py::PruebaBandeja::test_filtro_no_leidas_usa_parametros_ligados PASSED
+app/tests/test_notificaciones.py::PruebaBandeja::test_leer_propia_marca_leida_y_redirige_al_destino PASSED
+app/tests/test_notificaciones.py::PruebaBandeja::test_leer_todas_filtra_por_usuario PASSED
+app/tests/test_notificaciones.py::PruebaBandeja::test_leer_una_ajena_responde_404_y_no_actualiza PASSED
+app/tests/test_notificaciones.py::PruebaBandeja::test_resumen_solo_consulta_las_del_usuario_en_sesion PASSED
+app/tests/test_notificaciones.py::PruebaBandeja::test_sin_sesion_redirige_al_login PASSED
+app/tests/test_notificaciones.py::PruebaDestinatarios::test_autorizacion_avisa_al_cliente_y_al_coordinador_con_su_enlace PASSED
+app/tests/test_notificaciones.py::PruebaDestinatarios::test_disposicion_a_inventario_avisa_al_centro_a_la_bandeja_de_inventario PASSED
+app/tests/test_notificaciones.py::PruebaDestinatarios::test_matriz_cubre_el_flujo_y_solo_usa_roles_conocidos PASSED
+app/tests/test_notificaciones.py::PruebaDestinatarios::test_mensaje_largo_se_recorta_a_500 PASSED
+app/tests/test_notificaciones.py::PruebaDestinatarios::test_omitir_cliente_salta_al_cliente_del_caso PASSED
+app/tests/test_notificaciones.py::PruebaDestinatarios::test_quien_ejecuta_no_se_notifica_a_si_mismo PASSED
+app/tests/test_notificaciones.py::PruebaDestinatarios::test_recepcion_va_al_inspector_con_enlace_de_inspeccion PASSED
+app/tests/test_notificaciones.py::PruebaDestinatarios::test_rol_sin_usuarios_se_omite_y_queda_en_bitacora PASSED
+============================== 37 passed in 0.36s ==============================
 ```
 
 ## Suite E2E: descubrimiento y salto sin INTEGRACION
 
 ```
-sssssssssssssssssssssssssss                                              [100%]
-99 skipped in 0.09s
+ssssssssssssssssssssssssssss                                             [100%]
+100 skipped in 0.09s
 ```

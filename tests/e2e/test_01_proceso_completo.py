@@ -7,7 +7,7 @@ Ejecutar en la VM (ver docs/PRUEBAS.md):
     docker compose run --rm -v "$PWD":/repo -w /repo -e PYTHONPATH=/repo \
         -e INTEGRACION=1 devoluciones python -m pytest -v -s tests/e2e
 
-Trazabilidad: RNF-28; RF-07, RF-10, RF-11, RF-12 a RF-21, RF-23 a RF-25, RF-29;
+Trazabilidad: RNF-28; RF-07, RF-10, RF-11, RF-12 a RF-21, RF-23 a RF-25, RF-28, RF-29;
 RN-01 a RN-07, RN-11, RN-12; RNF-08, RNF-09, RNF-23.
 """
 import re
@@ -152,6 +152,71 @@ def test_paso_06_analista_autoriza(ctx):
                  (E["dev_id"],), uno=True)
 
 
+def test_paso_06b_notificaciones_por_rol_y_campanita(ctx):
+    """RF-29, UC-25, RN-13: al autorizar, el microservicio avisa al cliente y al
+    coordinador; la campanita del web lo muestra solo a su dueno."""
+    requiere("dev_id")
+    dev_id, folio = E["dev_id"], E["folio"]
+    filas = c.sql("""SELECT n.usuario_id, n.tipo, n.url, n.leido, r.nombre AS rol
+                       FROM notificaciones n JOIN usuarios u ON u.id = n.usuario_id
+                       JOIN roles r ON r.id = u.rol_id
+                      WHERE n.devolucion_id = %s""", (dev_id,))
+    por_tipo = {}
+    for f in filas:
+        por_tipo.setdefault(f["tipo"], []).append(f)
+
+    # Destinatarios: el cliente dueno y TODOS los coordinadores activos; nadie mas.
+    assert [f["rol"] for f in por_tipo["autorizacion"]] == [c.CLIENTE]
+    assert por_tipo["autorizacion"][0]["url"] == f"/devoluciones/{dev_id}"
+    coordinadores = {f["usuario_id"] for f in c.sql(
+        """SELECT u.id AS usuario_id FROM usuarios u JOIN roles r ON r.id = u.rol_id
+            WHERE r.nombre = %s AND u.estado = 'activo' AND u.eliminado_en IS NULL""",
+        (c.COORDINADOR,))}
+    avisados = {f["usuario_id"] for f in por_tipo["autorizacion_logistica"]}
+    assert coordinadores and avisados == coordinadores
+    assert all(f["url"].startswith("/logistica/") for f in por_tipo["autorizacion_logistica"])
+    # Quien autoriza no se avisa a si mismo, ni se avisa a roles ajenos al paso.
+    assert {f["rol"] for f in filas} <= {c.CLIENTE, c.COORDINADOR}
+
+    # Campanita del cliente: contador y ultimas salen de sus propias filas.
+    cliente = c.SesionWeb(ctx.emails[c.CLIENTE])
+    coord = c.SesionWeb(ctx.emails[c.COORDINADOR])
+    otro = c.SesionWeb(ctx.otro_cliente)
+    try:
+        resumen = cliente.get("/notificaciones/resumen")
+        assert resumen.status == 200 and resumen.headers["Cache-Control"] == "no-store"
+        propias = c.sql("""SELECT COUNT(*) AS n FROM notificaciones n JOIN usuarios u
+                            ON u.id = n.usuario_id WHERE u.email = %s AND NOT n.leido""",
+                        (ctx.emails[c.CLIENTE],), uno=True)["n"]
+        assert resumen.datos["no_leidas"] == propias >= 1
+        nota = next(n for n in resumen.datos["ultimas"] if folio in n["mensaje"])
+        assert "autorizada" in nota["mensaje"] and nota["leido"] is False
+
+        # RN-13: otro cliente no puede abrir ni marcar la notificacion ajena.
+        assert otro.post(nota["leer"]).status == 404
+        assert c.sql("SELECT leido FROM notificaciones WHERE id = %s", (nota["id"],),
+                     uno=True)["leido"] is False
+
+        # El dueno la abre: 302 al expediente y queda leida (con bitacora).
+        abierta = cliente.post(nota["leer"])
+        assert abierta.status == 302 and abierta.headers["Location"] == f"/devoluciones/{dev_id}"
+        assert c.sql("SELECT leido FROM notificaciones WHERE id = %s", (nota["id"],),
+                     uno=True)["leido"] is True
+        assert c.sql("SELECT 1 FROM bitacora WHERE accion = 'leer_notificacion' "
+                     "AND entidad_id = %s", (nota["id"],), uno=True)
+        assert cliente.get("/notificaciones/resumen").datos["no_leidas"] == propias - 1
+
+        # El coordinador ve el aviso con enlace a programar la recoleccion.
+        aviso = next(n for n in coord.get("/notificaciones/resumen").datos["ultimas"]
+                     if folio in n["mensaje"])
+        assert "programa la recoleccion" in aviso["mensaje"]
+        destino = coord.post(aviso["leer"])
+        assert destino.status == 302 and destino.headers["Location"].startswith("/logistica/")
+    finally:
+        for sesion in (cliente, coord, otro):
+            sesion.cerrar()
+
+
 def test_paso_07_logistica_hasta_recepcion_y_costo(ctx):
     requiere("dev_id")
     pref = c.PREFIJO_API["logistica"]
@@ -241,8 +306,11 @@ def test_paso_09_reembolso_unico_con_lock(ctx):
                  (E["dev_id"],), uno=True)["n"] == 1
     assert c.sql("SELECT estado FROM devoluciones WHERE id = %s", (E["dev_id"],),
                  uno=True)["estado"] == "cerrada"
-    assert c.sql("SELECT 1 FROM notificaciones WHERE devolucion_id = %s "
-                 "AND tipo = 'reembolso_aprobado'", (E["dev_id"],), uno=True)
+    nota = c.sql("SELECT n.usuario_id, n.url FROM notificaciones n WHERE n.devolucion_id = %s "
+                 "AND n.tipo = 'reembolso_aprobado'", (E["dev_id"],), uno=True)
+    assert nota, "falta la notificacion al cliente (RF-29)"
+    assert nota["usuario_id"] == c.sql("SELECT id FROM usuarios WHERE email = %s",
+                                       (ctx.emails[c.CLIENTE],), uno=True)["id"]
 
     # RN-03: repetir -> 409 y sigue habiendo una sola fila.
     resp = c.llamar("reembolsos", "POST", pref, cuerpo, token=token)
