@@ -567,3 +567,653 @@ con `lxml`.
 `inspecciones`, `reembolsos-costos`, `ventas-catalogos` y `evidencias` no
 incluyen ejemplos (`example`) de JSON ni XML, que el enunciado pide mostrar en
 Swagger; `auth`, `devoluciones` y `analisis-auditoria` si los traen.
+
+---
+
+## 11. Seguridad, JWT y control de acceso
+
+Flujo completo con secuencias en
+[`diagramas/secuencia_login_jwt.md`](diagramas/secuencia_login_jwt.md).
+
+### 11.1 Tokens
+
+| Aspecto | Implementacion | Archivo |
+|---|---|---|
+| Algoritmo y emisor | HS256, `iss = devoluciones-auth` | `shared/seguridad.py` |
+| Claims | `iss`, `sub`, `rol`, `nombre`, `sid`, `jti`, `typ`, `iat`, `exp` (todos exigidos al decodificar, salvo `rol` y `nombre`) | `services/auth/app.py:_token` |
+| Access token | 15 min (`JWT_MINUTOS_ACCESO`), `typ = access` | `services/auth/app.py` |
+| Refresh token | 8 h (`JWT_HORAS_REFRESH`), `typ = refresh`; un access no sirve como refresh ni al reves | `shared/seguridad.py:decodificar` |
+| Secreto | `JWT_SECRET` del `.env`, minimo 32 caracteres; el servicio **no arranca** si falta o es corto | `shared/seguridad.py:secreto` |
+| Sesion | `sesion_api:<sid>` en Redis durante 8 h; un token solo vale mientras su sesion exista | `services/auth/app.py:_abrir_sesion` |
+| Revocacion | `jwt_revocado:<jti>` con el tiempo restante del token (logout) y borrado de sesiones (logout y revocacion global del Administrador) | `services/auth/app.py` |
+| Verificacion | firma, emisor, vigencia, tipo, revocacion, sesion y rol, en ese orden | `shared/seguridad.py:requiere_jwt` |
+| Redis caido | `503 seguridad_no_disponible` (falla cerrada) | `shared/seguridad.py:comprobar_en_redis` |
+
+### 11.2 Control de acceso en dos niveles
+
+1. **Por rol**: `requiere_jwt(*roles)` en cada endpoint; un rol no permitido
+   recibe `403 sin_permiso` con `rol` y `roles_permitidos`.
+2. **Por recurso**: `devoluciones._exigir_visible`, `evidencias.contexto`,
+   `ventas.detalle_venta` y `ventas.permiso_lectura`. Un cliente que conoce el
+   identificador de otro cliente recibe 403 y queda `acceso_denegado` en la
+   bitacora.
+
+### 11.3 Requisitos de seguridad del enunciado y su estado real
+
+| Requisito (`docs/enunciado/Requisitos.md`) | Estado | Evidencia en el codigo |
+|---|---|---|
+| Contrasenas con hash seguro | Implementado | `werkzeug.security` en `auth` y `usuarios` |
+| JWT de acceso de corta duracion | Implementado | 15 min |
+| Token de renovacion | Implementado | `POST /auth/refresh` |
+| Revocacion mediante Redis | Implementado | `jwt_revocado:*`, `sesion_api:*` |
+| Control de acceso por roles | Implementado | `requiere_jwt` en los 8 servicios |
+| Autorizacion por recurso | Implementado | ver 11.2 |
+| Separacion de tenants | No aplica en el alcance (RNF-17 pendiente) | sistema de una sola organizacion |
+| Proteccion contra inyeccion SQL | Implementado | parametros ligados; listas blancas para nombres de tabla |
+| Validacion de JSON y XML | Implementado | validacion por endpoint y XSD |
+| Proteccion contra XXE | Implementado en el parser, **sin prueba dedicada** | `shared/xsd.py` (`resolve_entities=False`, `no_network=True`, `load_dtd=False`) |
+| Limitacion de peticiones | **Parcial** | `limitar` solo en `auth` y `devoluciones` |
+| Registro de intentos fallidos | Implementado | `intentos_acceso` |
+| Bloqueo temporal | Implementado | 5 intentos, 15 min, Redis + PostgreSQL |
+| Cifrado de comunicaciones | **No implementado**: todo corre en HTTP | pendiente de TLS (apartado 19) |
+| Secretos fuera del codigo | Implementado | `.env` fuera de git, `.env.example` versionado |
+| URLs firmadas para objetos privados | **Parcial**: HMAC de 15 min sobre volumen local, sin GCS | `services/evidencias` |
+| Bitacoras de auditoria | Implementado | `registrar_bitacora`, `GET /auditoria` |
+| Ocultamiento de datos sensibles | Implementado | errores genericos, `/health` sin detalle, sin trazas al cliente |
+| Politicas de retencion | **Parcial**: eliminacion logica sin politica de purga definida | migracion 005 |
+| Eliminacion logica | Implementado | `eliminado_en` |
+
+### 11.4 Limitaciones de seguridad conocidas
+
+- El secreto HS256 es **compartido** por los ocho servicios y el web puede
+  conocerlo solo a traves del `.env`; comprometer un servicio permitiria
+  falsificar tokens. Un esquema asimetrico (RS256) lo evitaria.
+- El enlace firmado de evidencias reutiliza `JWT_SECRET` como clave HMAC.
+- Los puertos 8001-8008 se publican en `0.0.0.0`; el acceso real depende de las
+  reglas de firewall de GCP.
+- El rate limit del web y de seis servicios no existe; en `auth` el sujeto es la
+  IP de origen.
+
+## 12. Documentacion de endpoints
+
+Codigos comunes a todo endpoint protegido: `401` (`no_autenticado`,
+`token_expirado`, `token_invalido`, `token_revocado`, `sesion_inactiva`), `403`
+(`sin_permiso`), `503` (`seguridad_no_disponible`). A todo endpoint con cuerpo:
+`400` (`validacion`, `json_invalido`, `xml_invalido`, `xml_no_cumple_xsd`) y
+`415`. Se omiten en las tablas salvo cuando son el codigo de negocio relevante.
+Todos los servicios exponen ademas `GET /health` (200 o 503, publico),
+`GET /docs`, `GET /openapi.json` y `GET /contratos/<archivo>.xsd`.
+
+Tablas verificadas contra los decoradores de cada `app.py`. "Todos" significa
+cualquier rol autenticado.
+
+### auth (`/api/v1/auth`)
+
+| Metodo | Ruta | Rol | Codigos de negocio |
+|---|---|---|---|
+| POST | `/login` | publico | 200, 400, 401 `credenciales_invalidas`, 423 `cuenta_bloqueada`, 429 |
+| POST | `/refresh` | publico (refresh token en el cuerpo) | 200, 400, 401, 429 |
+| POST | `/logout` | Todos | 200, 401 |
+| GET | `/sesion` | Todos | 200, 401 |
+| DELETE | `/usuarios/{id}/sesiones` | Administrador | 200, 404 |
+
+### devoluciones (`/api/v1/devoluciones`)
+
+| Metodo | Ruta | Rol | Codigos de negocio |
+|---|---|---|---|
+| POST | `` | Cliente, Analista | 201, 400, 403, 404, 409 `cantidad_excedida`/`sin_disponible`, 429 |
+| GET | `` (filtros `estado`, `q`; paginado) | Todos (el Cliente solo ve lo suyo) | 200, 400 |
+| GET | `/{id}` | Todos (recurso) | 200, 403, 404 |
+| PUT | `/{id}` | Cliente | 200, 400, 403, 404, 409 `estado_no_permite` |
+| PATCH | `/{id}/resolucion` | Analista | 200, 400, 404, 409 |
+| DELETE | `/{id}` | Cliente | 200, 403, 404, 409 |
+
+### logistica (`/api/v1/logistica`)
+
+| Metodo | Ruta | Rol | Codigos de negocio |
+|---|---|---|---|
+| POST | `/recolecciones` | Coordinador | 201, 400, 404, 409 |
+| GET | `/recolecciones` (filtro `estado`) | Coordinador, Encargado del Centro | 200, 400 |
+| PATCH | `/recolecciones/{id}/asignacion` | Coordinador | 200, 400, 404, 409 |
+| PATCH | `/recolecciones/{id}/estado` | Coordinador | 200, 404, 409 `transicion_invalida` |
+| POST | `/recepciones` | Encargado del Centro | 201, 400, 404, 409 |
+
+### inspecciones (`/api/v1/inspecciones`)
+
+| Metodo | Ruta | Rol | Codigos de negocio |
+|---|---|---|---|
+| POST | `` | Inspector | 201, 400, 404, 409 `inspeccion_duplicada`/`estado_no_permite` |
+| GET | `/{devolucion_id}` | Inspector, Analista, Encargado del Centro | 200, 404 |
+| PATCH | `/{devolucion_id}` | Inspector | 200, 400, 404 |
+| POST | `/{devolucion_id}/disposicion` | Analista | 201, 400, 404, 409 `sin_inspeccion`/`no_apto_inventario`/`disposicion_duplicada` |
+| POST | `/inventario/{disposicion_id}/etiqueta` | Encargado del Centro | 201, 404, 409 `destino_no_etiquetable` |
+
+### reembolsos-costos (`/api/v1/reembolsos-costos`)
+
+| Metodo | Ruta | Rol | Codigos de negocio |
+|---|---|---|---|
+| POST | `/reembolsos` | Encargado de Reembolsos | 201, 400, 404, 409 `reembolso_en_proceso`/`reembolso_duplicado`/`monto_excedido`/`estado_no_permite` |
+| GET | `/reembolsos` | Encargado de Reembolsos, Analista | 200 |
+| POST | `/costos` | Coordinador, Encargado del Centro, Inspector, Analista, Encargado de Reembolsos (cada uno solo su etapa) | 201, 400, 403, 404 |
+| GET | `/costos/{devolucion_id}` | Encargado de Reembolsos, Analista | 200, 404 |
+
+### ventas-catalogos (`/api/v1`)
+
+| Metodo | Ruta | Rol | Codigos de negocio |
+|---|---|---|---|
+| GET | `/ventas` (filtro `q`; paginado) | Todos (el Cliente solo las suyas) | 200, 400 |
+| GET | `/ventas/{id}` | Todos (recurso) | 200, 403, 404 |
+| GET | `/catalogos` | Administrador, Analista | 200 |
+| GET | `/catalogos/{nombre}` (paginado, `solo_activos`) | Todos (el Cliente solo `motivos`) | 200, 403, 404 |
+| GET | `/catalogos/{nombre}/{id}` | Todos (el Cliente solo `motivos`) | 200, 403, 404 |
+| POST | `/catalogos/{nombre}` | Administrador | 201, 400, 404, 409 `referencia_inactiva` |
+| PUT | `/catalogos/{nombre}/{id}` | Administrador | 200, 400, 404, 409 |
+| PATCH | `/catalogos/{nombre}/{id}/estado` | Administrador | 200, 400, 404 |
+| DELETE | `/catalogos/{nombre}/{id}` | Administrador | 200 (desactiva), 404 |
+
+### evidencias (`/api/v1/evidencias`)
+
+| Metodo | Ruta | Rol | Codigos de negocio |
+|---|---|---|---|
+| POST | `` (multipart o comentario JSON/XML) | Cliente, Inspector | 201, 400, 403, 404, 409, 413, 415 |
+| GET | `` (`devolucion_id` obligatorio; paginado) | Todos (recurso) | 200, 400, 403, 404 |
+| GET | `/{id}` | Todos (recurso) | 200, 403, 404 |
+| GET | `/{id}/enlace` | Todos (recurso) | 200, 403, 404, 409 `sin_archivo` |
+| GET | `/{id}/archivo` | Enlace firmado vigente o JWT con acceso al recurso | 200, 401, 403, 404 |
+| DELETE | `/{id}` | Cliente, Inspector (solo evidencia propia) | 200, 403, 404, 409 |
+
+### analisis-auditoria (`/api/v1`)
+
+| Metodo | Ruta | Rol | Codigos de negocio |
+|---|---|---|---|
+| POST | `/analisis/clasificar-motivo` | Cliente, Administrador, Analista | 200, 400 |
+| GET | `/analisis/alertas-fraude` | Administrador, Analista | 200 |
+| POST | `/analisis/sincronizar` | Administrador, Analista | 200 |
+| GET | `/analisis/pareto` | Administrador, Analista | 200, 400, 409 `analisis_sin_datos` |
+| GET | `/analisis/resumen` | Administrador, Analista | 200 |
+| GET | `/analisis/eventos` | Administrador, Analista | 200, 400 |
+| GET | `/auditoria` (filtros `accion`, `entidad`, `correlation_id`; paginado) | Administrador, Analista | 200, 400 |
+
+Las rutas de este apartado coinciden con los `openapi.yaml` de cada servicio
+(revisados ruta por ruta el 21 de octubre de 2026). Las fichas previas decian
+que `devoluciones` tenia `GET /{id}/historial`; ese endpoint no existe: el
+historial viene dentro de `GET /{id}` y la ficha ya se corrigio.
+
+## 13. Evidencias request/response
+
+> **Estado: estructura lista, evidencia no capturada.** Este repositorio no
+> contiene capturas ni respuestas reales de los servicios, y este documento no
+> las inventa. Las colecciones de Postman existentes cubren auth y devoluciones
+> (`docs/postman/`) y un avance de tres servicios; no hay captura de ninguna
+> ejecucion. Cada bloque de abajo indica **que escenarios** se deben ejecutar en
+> la VM, tomados de los codigos de error que el propio servicio devuelve.
+
+Para cada escenario se debe anexar (`docs/FICHAS_MICROSERVICIOS.md`): metodo y
+URL, objetivo, parametros, headers (incluido `Authorization` y
+`X-Correlation-ID`), cuerpo JSON o XML, respuesta completa, codigo HTTP,
+captura de Swagger o Postman, el efecto en PostgreSQL, MongoDB o Redis, y al
+menos un error controlado.
+
+### 13.1 auth
+
+| Escenario | JSON | XML | Efecto a mostrar |
+|---|---|---|---|
+| Login correcto | pendiente | pendiente | `sesion_api:*` en Redis, `intentos_acceso` y bitacora `login_api` |
+| Credenciales invalidas (401) y bloqueo al quinto intento (423) | pendiente | — | `intentos:*`, `bloqueo:*`, `usuarios.bloqueado_hasta` |
+| Rate limit (429 con `Retry-After`) | pendiente | — | `limite:IP:login` con TTL |
+| Refresh | pendiente | pendiente | access nuevo, misma sesion |
+| Logout y reuso del token (401 `token_revocado`) | pendiente | — | `jwt_revocado:*` |
+| Revocacion global por Administrador | pendiente | — | sesiones borradas |
+
+> **EVIDENCIA PENDIENTE [EV-10]:** request/response, capturas de Swagger
+> (`:8001/docs`) y de Redis/PostgreSQL para los escenarios de auth.
+> <!-- EVIDENCIA PENDIENTE: EV-10 auth -->
+
+### 13.2 devoluciones
+
+| Escenario | JSON | XML | Efecto a mostrar |
+|---|---|---|---|
+| Alta (201) y folio `DEV-AAAA-NNNN` | pendiente | pendiente | fila en `devoluciones`, evento en `eventos` |
+| Cantidad excedida (409) y compra ajena (403) | pendiente | — | bitacora `acceso_denegado` |
+| Listado con filtro y paginacion | pendiente | pendiente | — |
+| Detalle con `historial` y `eventos` | pendiente | — | consulta cruzada PostgreSQL-MongoDB |
+| Correccion (PUT) y cancelacion logica (DELETE) | pendiente | pendiente | `eliminado_en` |
+| Resolucion: autorizar, rechazar sin justificacion (400), pedir informacion | pendiente | pendiente | `notificaciones`, `fecha_cierre` si rechaza |
+| XML que no cumple el XSD (400 `xml_no_cumple_xsd`) | — | pendiente | — |
+
+> **EVIDENCIA PENDIENTE [EV-11]:** request/response, Swagger (`:8002/docs`) y
+> efectos en PostgreSQL y MongoDB. <!-- EVIDENCIA PENDIENTE: EV-11 devoluciones -->
+
+### 13.3 logistica
+
+| Escenario | JSON | XML | Efecto a mostrar |
+|---|---|---|---|
+| Programar sobre devolucion autorizada (201) y sobre no autorizada (409) | pendiente | pendiente | estado `en_recoleccion` |
+| Fecha pasada o con formato invalido (400) | pendiente | — | sin fila en PostgreSQL |
+| Asignar ruta y transportista; avanzar de estado; transicion invalida (409) | pendiente | pendiente | `recolecciones.estado` |
+| Confirmar recepcion y recepcion duplicada (409) | pendiente | pendiente | estado `recibida` |
+
+> **EVIDENCIA PENDIENTE [EV-12]:** request/response y Swagger (`:8003/docs`).
+> <!-- EVIDENCIA PENDIENTE: EV-12 logistica -->
+
+### 13.4 inspecciones
+
+| Escenario | JSON | XML | Efecto a mostrar |
+|---|---|---|---|
+| Inspeccion de producto refrigerado, apta (201) | pendiente | pendiente | documento en `inspecciones` y `mongo_doc_id` en `inspecciones_ref` |
+| Refrigerado sin temperatura o minutos (400) | pendiente | — | — |
+| Mas de 30 min fuera de refrigeracion: `apto_para_inventario = false` | pendiente | — | documento y fila |
+| Disposicion `inventario` sobre producto no apto (409) | pendiente | — | sin fila en `disposiciones` |
+| Disposicion valida y etiqueta `REC-...` | pendiente | pendiente | `disposiciones`, `inventario_recuperado` |
+| PATCH del detalle | pendiente | pendiente | `update_one` en Mongo |
+
+> **EVIDENCIA PENDIENTE [EV-13]:** request/response, Swagger (`:8004/docs`),
+> documento Mongo y fila PostgreSQL enlazados. <!-- EVIDENCIA PENDIENTE: EV-13 inspecciones -->
+
+### 13.5 reembolsos-costos
+
+| Escenario | JSON | XML | Efecto a mostrar |
+|---|---|---|---|
+| Reembolso aprobado (201) y cierre de la devolucion | pendiente | pendiente | `reembolsos`, `costos`, estado `cerrada` |
+| Segundo intento (409 `reembolso_duplicado`) y lock | pendiente | — | `lock:reembolso:*` mientras se procesa |
+| Monto mayor al valor devuelto (409 `monto_excedido`) | pendiente | — | — |
+| Monto negativo o NaN (400) | pendiente | — | — |
+| Costo por etapa y por rol equivocado (403) | pendiente | pendiente | `costos`, `vista_costo_devolucion` |
+
+> **EVIDENCIA PENDIENTE [EV-14]:** request/response, Swagger (`:8005/docs`) y
+> `redis-cli` con el lock. <!-- EVIDENCIA PENDIENTE: EV-14 reembolsos-costos -->
+
+### 13.6 ventas-catalogos
+
+| Escenario | JSON | XML | Efecto a mostrar |
+|---|---|---|---|
+| Venta propia con `disponible` por linea; venta ajena (403) | pendiente | — | — |
+| Listado de catalogos con paginacion y busqueda | pendiente | pendiente | — |
+| Alta con campo no permitido (400) y con referencia inactiva (409) | pendiente | pendiente | — |
+| Cliente leyendo un catalogo distinto de `motivos` (403) | pendiente | — | — |
+| Cambio de estado y desactivacion | pendiente | pendiente | `activo` |
+
+> **EVIDENCIA PENDIENTE [EV-15]:** request/response y Swagger (`:8006/docs`).
+> <!-- EVIDENCIA PENDIENTE: EV-15 ventas-catalogos -->
+
+### 13.7 evidencias
+
+| Escenario | JSON | XML | Efecto a mostrar |
+|---|---|---|---|
+| Comentario | pendiente | pendiente | fila en `evidencias` y documento en `evidencias_metadatos` |
+| Fotografia JPG o PNG (multipart) | pendiente | — | archivo con nombre aleatorio en el volumen privado |
+| Archivo `.exe` renombrado (415) y mayor a 10 MB (413) | pendiente | — | sin archivo ni fila |
+| Enlace firmado, descarga con enlace vigente y con enlace vencido | pendiente | — | — |
+| Cliente ajeno (403) y retiro logico | pendiente | — | `eliminado_en` |
+
+> **EVIDENCIA PENDIENTE [EV-16]:** request/response, Swagger (`:8007/docs`),
+> `ls` del volumen y los tres efectos (archivo, PostgreSQL, MongoDB).
+> <!-- EVIDENCIA PENDIENTE: EV-16 evidencias -->
+
+### 13.8 analisis-auditoria
+
+| Escenario | JSON | XML | Efecto a mostrar |
+|---|---|---|---|
+| Pareto antes de sincronizar (409 `analisis_sin_datos`) | pendiente | — | — |
+| Sincronizar | pendiente | pendiente | `snapshot_devolucion` y `sincronizacion` en Mongo, `analisis:version` |
+| Pareto: primera llamada `miss`, segunda `hit` | pendiente | pendiente | `cache:causas:*` con TTL de 600 s y documento `pareto` |
+| Sugerencia de motivo | pendiente | pendiente | `requiere_confirmacion = true` |
+| Alertas de fraude, eventos por `correlation_id`, auditoria | pendiente | pendiente | — |
+
+> **EVIDENCIA PENDIENTE [EV-17]:** request/response, Swagger (`:8008/docs`) y
+> la agregacion en Mongo. <!-- EVIDENCIA PENDIENTE: EV-17 analisis-auditoria -->
+
+### 13.9 Indice de evidencias pendientes
+
+| ID | Que debe capturarse | Se llena en |
+|---|---|---|
+| EV-01 | `docker compose ps` con los 12 contenedores | `diagramas/despliegue.md`, apartado 15 |
+| EV-02 | Firewall de GCP y consola de la VM | `diagramas/despliegue.md`, apartado 15 |
+| EV-03 | Login real, `sesion_api` con TTL y `jwt_revocado` tras el logout | `diagramas/secuencia_login_jwt.md` |
+| EV-04 | Flujo E2E completo con capturas | `diagramas/secuencia_proceso_completo.md`, apartado 17 |
+| EV-05 | Mismo `correlation_id` en dos servicios desde una accion del web | `diagramas/comunicacion_web_servicios.md` |
+| EV-06 | Esquema real de PostgreSQL y migraciones aplicadas | `diagramas/datos_postgresql.md` |
+| EV-07 | Colecciones, indices y documentos de MongoDB (incluye `getIndexes()` de `inspecciones`) | `diagramas/datos_mongodb.md` |
+| EV-08 | Claves de Redis con TTL | `diagramas/redis_claves.md` |
+| EV-09 | XML real por servicio y un `xml_no_cumple_xsd` | apartado 10 |
+| EV-10 a EV-17 | Request/response, Swagger y efecto en BD de cada servicio | apartados 13.1 a 13.8 |
+| EV-20 | Resultado de las pruebas unitarias dentro de los contenedores | apartado 16 |
+| EV-21 | Pruebas de integracion `INTEGRACION=1` | apartado 16 |
+| EV-22 | Caida de PostgreSQL, MongoDB y Redis; servicio no disponible | apartado 16 |
+| EV-23 | Concurrencia (doble reembolso, doble alta) y archivo mayor a 10 MB | apartado 16 |
+| EV-24 | Prueba de XXE contra un endpoint con XML | apartado 16 |
+| EV-25 | Build y arranque de Compose con todos los servicios sanos | apartado 15 |
+| EV-26 | Panel `/integracion/servicios` con 8 de 8 disponibles | apartado 14 |
+| EV-27 | Capturas del web: login, panel de causas con Highcharts, bitacora | apartado 14 |
+| EV-28 | Suite E2E y su resultado | apartado 17 |
+
+## 14. Integracion del web con los servicios
+
+Detalle en
+[`INTEGRACION_WEB_MICROSERVICIOS.md`](INTEGRACION_WEB_MICROSERVICIOS.md) y
+[`CAMBIOS_INTEGRACION_MICROSERVICIOS.md`](CAMBIOS_INTEGRACION_MICROSERVICIOS.md);
+secuencia en
+[`diagramas/comunicacion_web_servicios.md`](diagramas/comunicacion_web_servicios.md).
+
+- **Cliente comun** `apps/web/app/api_client.py`: JSON, `Authorization: Bearer`,
+  `X-Correlation-ID`, timeout de 5 s, un reintento tras renovar el token, y
+  conversion de fallos de red en `503 servicio_no_disponible`.
+- **Sesion**: los JWT viven en la sesion de Flask-Session respaldada por Redis
+  (`devoluciones:sesion:<id>`), con cookie `HttpOnly` y `SameSite=Lax`; nunca en
+  `localStorage`.
+- **Operaciones conectadas por API**: login y logout; ventas; alta y resolucion
+  de devoluciones; comentarios de evidencia; programar, asignar, avanzar y
+  recibir en logistica; inspeccion, disposicion y etiqueta; costos y
+  reembolso; sincronizacion y Pareto.
+- **Lecturas compuestas**: el expediente y los paneles conservan consultas
+  relacionales directas a PostgreSQL porque cruzan varios dominios en una
+  plantilla.
+- **Contingencia**: `USE_MICROSERVICES=false` regresa las rutas a la logica de
+  monolito. No hay fallback automatico: si un servicio falla en modo
+  distribuido el web muestra el error y no repite la escritura en la base.
+- **Monitoreo**: `/integracion/servicios` (solo Administrador) consulta los ocho
+  `/health` con timeout de 2 s y muestra disponibilidad, latencia y
+  dependencias; el web tiene su propio `/health`.
+- **Formato**: el web usa JSON. El XML queda para clientes de escritorio, fuera
+  del alcance de esta entrega.
+
+Estado reportado por el equipo (sin captura en el repositorio): el 21 de octubre
+de 2026 se recorrio desde formularios web el caso `DEV-2026-0033` hasta el
+estado `cerrada`, y los nueve `/health` respondieron 200
+(`docs/INTEGRACION_WEB_MICROSERVICIOS.md`, `docs/BITACORA.md`).
+
+> **EVIDENCIA PENDIENTE [EV-26]:** captura del panel `/integracion/servicios`
+> con 8 de 8 servicios disponibles. <!-- EVIDENCIA PENDIENTE: EV-26 panel de servicios 8/8 -->
+
+> **EVIDENCIA PENDIENTE [EV-27]:** capturas del web: inicio de sesion con la
+> insignia "API distribuida", panel de causas con Highcharts y bitacora.
+> <!-- EVIDENCIA PENDIENTE: EV-27 capturas del web -->
+
+<!-- ACTUALIZAR tras sesion 01: agregar la campanita de notificaciones por rol (RF-29) y la exportacion CSV de reportes (RF-28) a la lista de funciones del web -->
+
+## 15. Docker
+
+### 15.1 Contenedores
+
+Doce servicios en `docker-compose.yml` (diagrama en
+[`diagramas/despliegue.md`](diagramas/despliegue.md)):
+
+| Contenedor | Imagen / build | Dependencias (`depends_on` sano) |
+|---|---|---|
+| `devoluciones_postgres` | `postgres:16-alpine`, volumen `postgres_data` | — |
+| `devoluciones_redis` | `redis:7-alpine --appendonly yes`, volumen `redis_data` | — |
+| `devoluciones_mongo` | `mongo:7`, volumen `mongo_data`, `./db/mongo` como init | — |
+| `devoluciones_app` (web) | `apps/web/Dockerfile`, 3 workers de gunicorn | postgres, redis |
+| `devoluciones_auth`, `_logistica`, `_reembolsos_costos`, `_ventas_catalogos` | `services/<servicio>/Dockerfile`, 2 workers | postgres, redis |
+| `devoluciones_devoluciones`, `_inspecciones`, `_analisis_auditoria` | idem | postgres, redis, mongo |
+| `devoluciones_evidencias` | idem, volumen `evidencias_data` | postgres, redis, mongo |
+
+El contexto de build de cada imagen es la raiz del repositorio para poder copiar
+`shared/`. Todos usan `restart: unless-stopped`; healthchecks de Compose en
+postgres, redis, mongo, auth, devoluciones, ventas-catalogos, evidencias y
+analisis-auditoria.
+
+### 15.2 Variables de entorno
+
+Se copian de `.env.example` a `.env` **en la VM**; el `.env` nunca se versiona.
+
+| Grupo | Variables |
+|---|---|
+| Aplicacion | `FLASK_SECRET_KEY`, `FLASK_ENV`, `APP_PORT`, `USE_MICROSERVICES`, `MICROSERVICE_TIMEOUT` |
+| PostgreSQL | `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` |
+| Redis | `REDIS_HOST`, `REDIS_PORT` |
+| MongoDB | `MONGO_ROOT_USER`, `MONGO_ROOT_PASSWORD` (solo para crear la base), `MONGO_HOST`, `MONGO_PORT`, `MONGO_DB`, `MONGO_APP_USER`, `MONGO_APP_PASSWORD` |
+| JWT | `JWT_SECRET` (minimo 32 caracteres, igual en todos), `JWT_MINUTOS_ACCESO`, `JWT_HORAS_REFRESH`, `LOGIN_MAX_POR_MINUTO` |
+| Acceso | `MAX_INTENTOS_FALLIDOS`, `MINUTOS_BLOQUEO` |
+| Datos de demostracion | `PASSWORD_DEMO` |
+| Direcciones de servicios (web) | `AUTH_SERVICE_URL`, `DEVOLUCIONES_SERVICE_URL`, `LOGISTICA_SERVICE_URL`, `INSPECCIONES_SERVICE_URL`, `REEMBOLSOS_SERVICE_URL`, `VENTAS_SERVICE_URL`, `EVIDENCIAS_SERVICE_URL`, `ANALISIS_SERVICE_URL` |
+| Opcionales | `DEVOLUCIONES_MAX_POR_MINUTO` (default 20), `EVIDENCIAS_DIR` (lo fija Compose), `GCS_BUCKET` (sin uso hoy) |
+
+### 15.3 Levantar, detener y reconstruir (en la VM)
+
+| Tarea | Comando |
+|---|---|
+| Actualizar el codigo | `git pull origin main` |
+| Preparar el entorno | `cp .env.example .env` y completar los valores |
+| Construir y levantar todo | `docker compose up -d --build` |
+| Estado | `docker compose ps` |
+| Migraciones | `docker compose exec app python scripts/migrate.py` (estado: `--estado`) |
+| Catalogos y datos de demostracion | `docker compose exec -T postgres psql -U devoluciones_app -d devoluciones < db/seeds/001_catalogos.sql` y `docker compose exec app python scripts/seed_demo.py` |
+| Salud de un servicio | `curl -s localhost:8001/health` (puertos 8001 a 8008; web en 8000) |
+| Reconstruir un servicio | `docker compose up -d --build auth` |
+| Aplicar cambios del `.env` | `docker compose up -d <servicio>` (`restart` no relee el `.env`) |
+| Logs | `docker compose logs --tail=100 <servicio>` |
+| Detener sin borrar datos | `docker compose stop` o `docker compose down` |
+| Borrar tambien los datos | `docker compose down -v` (destruye los cuatro volumenes) |
+| Validar Compose sin secretos | `APP_ENV_FILE=.env.example docker compose --env-file .env.example config` |
+
+Procedimiento completo y guion de demostracion: [`SETUP.md`](SETUP.md).
+
+Aviso: `db/mongo/init.js` solo se ejecuta con el volumen `mongo_data` vacio; si
+se cambia hay que aplicarlo a mano o recrear el volumen.
+
+> **EVIDENCIA PENDIENTE [EV-25]:** salida del build y de `docker compose ps`
+> con los servicios sanos, y `curl` a los nueve `/health`.
+> <!-- EVIDENCIA PENDIENTE: EV-25 build, ps y health de los nueve endpoints -->
+
+## 16. Pruebas unitarias y de integracion
+
+### 16.1 Estado real
+
+Conteo de funciones `test_*` por archivo (contado en el codigo; las pruebas
+parametrizadas se expanden al ejecutarse). Las pruebas unitarias usan dobles
+(por ejemplo Redis en memoria) y no requieren servidores locales; las de
+integracion usan las bases reales de la VM.
+
+| Archivo | Funciones | Cubre |
+|---|---:|---|
+| `services/auth/tests/test_auth.py` | 27 | login JSON/XML, 401 generico, bloqueo, rate limit, refresh, logout y revocacion, token falso y expirado, 403, Redis caido, XSD de respuestas |
+| `services/devoluciones/tests/test_reglas.py` | 11 | validaciones de entrada y de resolucion |
+| `services/devoluciones/tests/test_api.py` | 13 | 401, token revocado, 403 por rol, validacion, XML contra XSD, paginacion, rate limit |
+| `services/devoluciones/tests/test_integracion.py` | 4 | flujo real con auth, PostgreSQL, MongoDB y Redis; **solo en la VM** |
+| `services/logistica/tests/test_api.py` | 5 | 401, 403, XML invalido, fecha invalida, booleano estricto |
+| `services/inspecciones/tests/test_reglas.py` | 5 | `evaluar_aptitud` (danos, cadena de frio, 30 min) y booleano ambiguo |
+| `services/reembolsos_costos/tests/test_api.py` | 6 | 401, rol sin permiso, monto negativo y no finito, XML invalido, etapas por rol |
+| `services/ventas_catalogos/tests/test_reglas.py` | 5 | catalogos iguales al monolito, producto y lote validos e invalidos |
+| `services/evidencias/tests/test_seguridad_archivos.py` | 3 | tipo por contenido, enlace firmado, rechazo de `.exe` |
+| `services/analisis_auditoria/tests/test_pareto.py` | 4 | Pareto, division por cero, clasificador explicable |
+| `apps/web/app/tests/test_api_client.py` | 3 | JWT solo en sesion, 503 por red, renovacion con un reintento |
+| `apps/web/app/tests/test_microservicios.py` | 3 | salud del servicio, timeout y JSON invalido degradan sin romper |
+| **Total** | **89** | |
+
+`docs/AUDITORIA_SEGUNDO_PARCIAL.md` reporta 84 pruebas aprobadas y 4 de
+integracion omitidas en una corrida local; esa cifra no pudo reproducirse al
+redactar este documento (no hay dependencias instaladas en la maquina de
+redaccion y las bases viven solo en la VM). Los resultados reales deben
+tomarse de la VM.
+
+> **EVIDENCIA PENDIENTE [EV-20]:** salida de `pytest` de cada servicio y del
+> web dentro de los contenedores (por ejemplo `docker compose run --rm --no-deps
+> auth python -m pytest -v`). <!-- EVIDENCIA PENDIENTE: EV-20 pytest por servicio -->
+
+> **EVIDENCIA PENDIENTE [EV-21]:** `docker compose run --rm -e INTEGRACION=1
+> devoluciones python -m pytest -v tests/test_integracion.py` (comando del
+> encabezado del archivo). <!-- EVIDENCIA PENDIENTE: EV-21 pruebas de integracion -->
+
+### 16.2 Cobertura frente a las pruebas que pide el enunciado
+
+| Prueba obligatoria | Estado |
+|---|---|
+| Unitarias | Existen (tabla anterior); resultado en VM pendiente |
+| De integracion | Parcial: 4 de `devoluciones`; no hay suite de los 8 servicios |
+| Contratos JSON | Parcial: validacion de campos; no hay suite dedicada |
+| Esquemas XML | Parcial: auth valida sus respuestas contra XSD; devoluciones prueba XML invalido |
+| Autenticacion, autorizacion, expiracion y revocacion | Cubiertas en `auth` y 401/403 en varios servicios |
+| Recuperacion ante fallos | Solo Redis caido en `auth` (con dobles) y microservicio no disponible en el web |
+| Caida de PostgreSQL y de MongoDB | **No hay prueba** |
+| Concurrencia | **No hay prueba** (existen `FOR UPDATE` y el lock de reembolso como mecanismos) |
+| Archivos grandes | Parcial: el 413 no tiene prueba |
+| Grandes volumenes | **No hay prueba** |
+| Seguridad basica y XXE | Parcial: firma falsa, enlace firmado, rate limit; **sin prueba de XXE** |
+| Carga con Locust y perfiles (RNF-29) | **No existe**; corresponde al tercer parcial |
+
+> **EVIDENCIA PENDIENTE [EV-22]:** detener el contenedor de PostgreSQL, el de
+> MongoDB y el de Redis y mostrar la respuesta de `/health` y de un endpoint de
+> negocio en cada caso; apagar un microservicio y mostrar el panel del web.
+> <!-- EVIDENCIA PENDIENTE: EV-22 caida de dependencias -->
+
+> **EVIDENCIA PENDIENTE [EV-23]:** dos solicitudes simultaneas de reembolso y
+> de alta sobre la misma linea de venta, y una subida mayor a 10 MB (413).
+> <!-- EVIDENCIA PENDIENTE: EV-23 concurrencia y archivo grande -->
+
+> **EVIDENCIA PENDIENTE [EV-24]:** un XML con entidad externa contra un endpoint
+> de un servicio, para demostrar que no se resuelve.
+> <!-- EVIDENCIA PENDIENTE: EV-24 prueba de XXE -->
+
+## 17. Resultados, problemas identificados y soluciones
+
+### 17.1 Resultados reportados por el equipo
+
+Fuentes: `docs/BITACORA.md`, `docs/AUDITORIA_SEGUNDO_PARCIAL.md`,
+`docs/INTEGRACION_WEB_MICROSERVICIOS.md`. Ninguno tiene captura en el
+repositorio.
+
+| Resultado | Fuente |
+|---|---|
+| Compose construido en la VM; nueve `/health` en 200 y 8 de 8 servicios en el panel (21 de octubre) | `BITACORA.md`, `AUDITORIA_SEGUNDO_PARCIAL.md` |
+| Caso `DEV-2026-0033` recorrido desde el web hasta `cerrada`; reembolso de 32.24; lock liberado (`TTL=-2`); etiqueta `REC-2026-0033`; Pareto con cache | `INTEGRACION_WEB_MICROSERVICIOS.md` |
+| Con 12 IPs falsas en `X-Forwarded-For`, la peticion 11 recibe 429 | `BITACORA.md` |
+| Ocho servicios compilan; ocho OpenAPI cargan; 22 XSD compilan; `docker compose config` resuelve 12 servicios y 4 volumenes | `AUDITORIA_SEGUNDO_PARCIAL.md` |
+
+> **EVIDENCIA PENDIENTE [EV-04 / EV-28]:** capturas del caso E2E y una suite E2E
+> automatizada de los ocho servicios (auth -> venta -> devolucion ->
+> logistica -> inspeccion -> evidencia -> reembolso -> Pareto).
+> <!-- EVIDENCIA PENDIENTE: EV-28 suite E2E -->
+
+### 17.2 Problemas encontrados y como se resolvieron
+
+| Problema | Solucion | Referencia |
+|---|---|---|
+| PostgreSQL nativo de la VM ocupaba el 5432 | Mapeo del contenedor a 55432 y 56379/57017 para Redis/Mongo, solo en `127.0.0.1` | `BITACORA.md` |
+| SELinux impedia leer el codigo montado | Etiqueta `:z` en el volumen | `BITACORA.md` |
+| Una migracion fallaba al reclasificar datos | Quitar el CHECK antes del `UPDATE` | `60d7c90` |
+| El seed no funcionaba en base limpia | Usar la etapa `transporte` | `04dfc46` |
+| Rate limit evadible con `X-Forwarded-For` | No leer ese header | `shared/infra.py:ip_origen` |
+| Un 500 confirmaba la transaccion | Marca `g.error_interno` y rollback | `shared/respuestas.py` |
+| Dos solicitudes podian devolver mas de lo comprado | `SELECT ... FOR UPDATE` en linea y devolucion | `services/devoluciones/app.py` |
+| Doble reembolso concurrente | Lock Redis `NX EX 30` + `UNIQUE` + trigger | `services/reembolsos_costos/app.py` |
+| Archivo huerfano si fallaba Mongo o PostgreSQL | Compensacion: borrar archivo y metadatos y `rollback` | `services/evidencias/app.py` |
+
+### 17.3 Problemas abiertos detectados al redactar este documento
+
+| # | Hallazgo | Impacto | Accion sugerida |
+|---|---|---|---|
+| 1 | Posible conflicto de indices en MongoDB: `init.js` crea `idx_devolucion` sobre `inspecciones.devolucion_id` y el servicio pide otro indice unico sobre la misma llave | Podria fallar el alta de inspecciones en una base creada desde cero | Comprobar `getIndexes()` en la VM (EV-07) |
+| 2 | Solo `devoluciones` publica eventos en `eventos` | La trazabilidad por `correlation_id` en Mongo no cubre el resto del flujo (la bitacora de PostgreSQL si) | Publicar eventos tambien desde los demas servicios o documentarlo como limite |
+| 3 | `limitar` solo en `auth` y `devoluciones` | RNF-13 parcial | Aplicarlo a los demas servicios |
+| 4 | `openapi.yaml` de cinco servicios sin ejemplos JSON/XML | El enunciado lo exige en Swagger | Agregar ejemplos |
+| 5 | Sin `healthcheck` de Compose en logistica, inspecciones y reembolsos-costos | `docker compose ps` no mostrara su salud | Copiar el bloque de los demas servicios |
+| 6 | Todo en HTTP | Credenciales y tokens sin cifrar en la red | TLS en el tercer parcial |
+| 7 | Base de datos compartida y `JWT_SECRET` simetrico en todos | Acoplamiento y radio de dano ante una fuga | Documentado como limite (apartados 7 y 11) |
+| 8 | `README.md` describia solo el primer parcial | Documentacion desactualizada | Corregido en este mismo trabajo |
+| 9 | Las fichas tenian cifras de pruebas y un endpoint que no coinciden con el codigo | Documentacion contradictoria | Corregido en este mismo trabajo |
+| 10 | Josue Berdeal no aparece en el historial de git | La rubrica exige evidencia de los cuatro integrantes | Ver apartado 20 |
+
+## 18. Matriz de trazabilidad y cumplimiento
+
+La matriz vigente esta en [`TRAZABILIDAD.md`](TRAZABILIDAD.md): una fila por RF
+(32), RNF (30) y RN (15), la lista de casos de uso, y una tabla de ampliacion
+del segundo parcial que apunta a archivo y prueba. En este trabajo se
+corrigieron contra el codigo RNF-13 (de pendiente a parcial), RNF-15 y RN-14
+(de pendiente a parcial por los enlaces firmados HMAC), RNF-28, la cuenta de
+XSD, el lugar de los triggers de RN-07 y los casos de uso UC-18 a UC-21 y UC-27.
+
+<!-- ACTUALIZAR tras sesion 01: RF-28, RF-29, UC-24 y UC-25 -->
+
+Cumplimiento por rubro, segun `AUDITORIA_SEGUNDO_PARCIAL.md` y lo verificado
+aqui:
+
+| Rubro | Estado |
+|---|---|
+| Microservicios (8) | Implementados; falta evidencia en VM por endpoint |
+| Contratos JSON/XML/XSD | 22 XSD y 8 OpenAPI; faltan ejemplos en 5 y evidencia de XML real |
+| Web + PostgreSQL + MongoDB + Redis + JWT + Docker | Integrado; falta E2E automatizado y capturas |
+| Pruebas | 89 funciones de prueba; faltan caidas, concurrencia, carga y E2E |
+| Documentacion | Este documento, 8 diagramas, trazabilidad; faltan las evidencias del apartado 13 |
+| Aplicaciones movil y de escritorio | Fuera del alcance acordado (ver apartado 3) |
+
+## 19. Conclusiones tecnicas y trabajo pendiente
+
+### 19.1 Conclusiones
+
+1. La separacion en ocho servicios con una libreria `shared/` comun permitio
+   que seguridad, formato de errores, paginacion y negociacion JSON/XML se
+   comportaran igual en todos, con pocas lineas por servicio.
+2. Llevar las reglas criticas a triggers de PostgreSQL y a un lock de Redis
+   hizo que RN-03, RN-04, RN-06 y RN-07 se cumplan aunque un servicio falle.
+3. Se usan las tres bases con una razon cada una (transaccion, estructura
+   variable y datos efimeros) y los enlaces entre ellas son por identificador,
+   no por llave foranea.
+4. La decision de compartir la base de datos simplifico la integracion pero
+   limita la independencia de los servicios.
+5. Lo mas debil es la **evidencia**, no el codigo: faltan ejecuciones y capturas
+   reproducibles en la VM.
+
+### 19.2 Requerimientos no implementados o parciales
+
+La justificacion se limita a lo que el repositorio o el documento del curso
+permite afirmar.
+
+| ID | Estado | Justificacion | Que falta |
+|---|---|---|---|
+| RF-02 | Pendiente | Sin implementar y sin una decision registrada en `BITACORA.md`; no bloquea el proceso principal porque el Administrador gestiona las cuentas (RF-03). Requiere definir un canal de entrega (correo) que el proyecto no tiene | Flujo de recuperacion con token de un solo uso |
+| RF-14 | Pendiente | Requiere la aplicacion movil (escaneo de QR o codigo de barras), fuera del alcance acordado | App movil |
+| RF-19 | Parcial | El codigo de etiqueta y el inventario existen; la **impresion** requiere la aplicacion de escritorio e impresora | Impresion de etiquetas |
+| RF-28 | Pendiente | Lo cubre la sesion 01 (exportacion CSV). <!-- ACTUALIZAR tras sesion 01 --> | Confirmar al integrar |
+| RF-29 | Parcial | `devoluciones` y `reembolsos-costos` generan notificaciones; falta mostrarlas en el web. <!-- ACTUALIZAR tras sesion 01 --> | Campanita por rol |
+| RN-14 / RNF-15 | Parcial | Hay enlaces firmados de 15 min sobre volumen local; el almacenamiento en Google Cloud Storage esta planeado para el tercer parcial (`Entregables.md`) | Bucket de GCS y URLs firmadas del proveedor |
+| RNF-13 | Parcial | Solo `auth` y `devoluciones` limitan peticiones | Aplicarlo al resto y al web |
+| RNF-14 | Parcial | Secretos fuera del codigo; falta cifrado de comunicaciones | HTTPS con proxy TLS |
+| RNF-17 | Pendiente | El sistema opera para una sola organizacion; no hay separacion de tenants | Solo si el alcance lo requiere |
+| RNF-20 | Pendiente | Hay una instancia por servicio; no se probo ni se configuro escalado horizontal | Balanceador y pruebas |
+| RNF-21 | Parcial | El bloqueo sobrevive a Redis y `/health` degrada, pero falta probar la caida de las demas dependencias | EV-22 |
+| RNF-24 | Pendiente | Respaldo y recuperacion pertenecen al tercer parcial (`Entregables.md`, "Recuperacion ante fallos") | Respaldos de volumenes y prueba de restauracion |
+| RNF-28 | Parcial | Faltan E2E, caidas y carga | Suite E2E |
+| RNF-29 | Pendiente | Las pruebas de carga con Locust son del tercer parcial | Perfiles de Locust |
+
+Otros pendientes del entregable del curso: aplicaciones Android y de
+escritorio (fuera de alcance acordado), ejemplos en Swagger de cinco servicios,
+healthchecks de Compose en tres, eventos de MongoDB en los demas servicios,
+pruebas de XXE y de caidas de dependencias, y los pendientes tras la sesion 01
+<!-- ACTUALIZAR tras sesion 01 -->.
+
+## 20. Anexo: que cambio en este parcial y reparto
+
+### 20.1 Funcionalidades corregidas, ampliadas y nuevas
+
+| Tipo | Elemento |
+|---|---|
+| Corregido | Modelo de datos (`venta_detalle`, triggers, folio, roles, costos, destino `donacion`, `fecha_cierre`); seguridad de la contrasena de demostracion; puertos y SELinux; ver apartado 5 |
+| Ampliado | Web: panel de causas con cruce producto-lote-proveedor-ruta-tienda, Pareto, tendencia mensual y KPIs; captura de costos por etapa; panel `/integracion/servicios`; modo distribuido con `api_client.py` |
+| Nuevo | `shared/` (JWT, JSON/XML, XSD, paginacion, MongoDB, Swagger); los ocho microservicios; MongoDB en Compose con `init.js`; 22 XSD; 8 `openapi.yaml`; claves Redis de sesion, revocacion, limites, lock y cache; colecciones de Postman; 8 diagramas Mermaid y este documento |
+
+### 20.2 Reparto de responsabilidades (segun el historial de git)
+
+Obtenido con `git shortlog -sn --all` y `git log --all` sobre el repositorio
+(47 commits en `main` al 21 de octubre, incluidos 2 merges de Pull Request). Es evidencia de autoria en
+git, no una valoracion del esfuerzo.
+
+| Integrante | Identidad en git | Commits | Periodo | Trabajo principal |
+|---|---|---:|---|---|
+| Pablo Flores | `Pablofls` | 31 | 2 sep al 21 oct | Estructura del repositorio y Compose; migraciones 001 a 012; monolito del primer parcial; panel de causas, KPIs y costos; seguridad del seed; reglas del proyecto; integracion final y reestructura del monorepo (PR #3 y #4) |
+| David Munoz | `Thedavidzavala6` (8) y `thedavidzavala6` (1) | 9 | 6 sep, 18 oct | MongoDB en Compose; `shared/`; microservicio `auth`; microservicio `devoluciones`; bitacora de decisiones del segundo parcial; correcciones del seed |
+| Roberto Sandoval | `BobbySandoval122` | 7 | 21 oct | `logistica`, `inspecciones`, `reembolsos-costos`, `ventas-catalogos`, `evidencias`, `analisis-auditoria`; panel de salud; consumo de los servicios desde el web; etapas de costo por rol; documentacion de la integracion |
+| Josue Berdeal | — | **0** | — | **Sin commits en el historial** |
+
+> **ACCION REQUERIDA antes de la entrega:** `CLAUDE.md` indica que el parcial
+> exige evidencia de participacion de los cuatro integrantes y que el historial
+> de git es esa evidencia. El historial actual no contiene commits atribuibles a
+> Josue Berdeal (la cuenta `thedavidzavala6` con otro correo parece una segunda
+> identidad de David y no se le asigno a Josue). Si Josue trabajo en una rama sin
+> subir o con otra identidad de git, debe subirse a `josue/...` y entrar por
+> Pull Request; este documento no le atribuye trabajo que git no muestra.
+> <!-- COMPLETAR: confirmar con Josue Berdeal su aportacion y su evidencia en git -->
+
+Documentos de apoyo por integrante: `docs/MICROSERVICIOS_AVANCE_ROBERTO.md`
+(servicios de Roberto), `docs/CAMBIOS_INTEGRACION_MICROSERVICIOS.md`
+(integracion del web) y `docs/BITACORA.md` (decisiones).
