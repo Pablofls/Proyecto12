@@ -23,6 +23,16 @@ def registrar(ctx, cantidad=1, token=None, correlation_id=None):
     return resp
 
 
+def disponible_actual(ctx):
+    """Unidades aun devolvibles de la linea de la suite, leidas en este momento."""
+    return c.sql("""
+        SELECT vd.cantidad - COALESCE((
+                   SELECT SUM(d.cantidad_devuelta) FROM devoluciones d
+                    WHERE d.venta_detalle_id = vd.id AND d.eliminado_en IS NULL
+                      AND d.estado <> 'rechazada'), 0) AS disponible
+          FROM venta_detalle vd WHERE vd.id = %s""", (ctx.linea["id"],), uno=True)["disponible"]
+
+
 def autorizar(ctx, dev_id):
     return c.llamar("devoluciones", "PATCH",
                     f"{c.PREFIJO_API['devoluciones']}/{dev_id}/resolucion",

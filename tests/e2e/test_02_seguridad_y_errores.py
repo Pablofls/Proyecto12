@@ -228,7 +228,10 @@ def test_error_incluye_el_correlation_id_de_la_peticion(ctx):
 # 409: reglas de negocio
 # --------------------------------------------------------------------------- #
 def test_cantidad_excedida_responde_409(ctx):  # RN-01
-    resp = flujo.registrar(ctx, cantidad=ctx.linea["disponible"] + 5)
+    # Se lee lo disponible ahora: ctx.linea["disponible"] es el de antes de la corrida.
+    disponible = flujo.disponible_actual(ctx)
+    assert disponible > 0, "la prueba necesita unidades: debe fallar por cantidad, no por sin_disponible"
+    resp = flujo.registrar(ctx, cantidad=disponible + 1)
     assert resp.status == 409 and c.error_tipo(resp) == "cantidad_excedida"
 
 

@@ -147,7 +147,10 @@ def test_paso_06_analista_autoriza(ctx):
                  (E["dev_id"],), uno=True)
     assert fila["estado"] == "autorizada" and fila["fecha_autorizacion"] is not None
     nota = c.sql("SELECT tipo FROM notificaciones WHERE devolucion_id = %s", (E["dev_id"],))
-    assert [n["tipo"] for n in nota] == ["autorizacion"]  # RF-29
+    tipos = [n["tipo"] for n in nota]
+    # RF-29: aviso al cliente y, ademas, uno por coordinador (destinatarios en el paso 6b).
+    assert tipos.count("autorizacion") == 1
+    assert set(tipos) == {"autorizacion", "autorizacion_logistica"}
     assert c.sql("SELECT 1 FROM bitacora WHERE accion = 'autorizacion' AND entidad_id = %s",
                  (E["dev_id"],), uno=True)
 

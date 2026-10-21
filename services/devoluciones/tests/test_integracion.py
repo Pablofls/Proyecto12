@@ -170,7 +170,10 @@ class PruebaIntegracion(unittest.TestCase):
         self.assertEqual(resp.get_json()["estado"], "autorizada")
         notas = _sql("SELECT tipo FROM notificaciones WHERE devolucion_id = %s ORDER BY id",
                      (dev["id"],))
-        self.assertEqual([n["tipo"] for n in notas], ["solicitud_informacion", "autorizacion"])
+        tipos = [n["tipo"] for n in notas]
+        self.assertEqual(tipos[:2], ["solicitud_informacion", "autorizacion"])
+        # Al autorizar tambien se avisa al Coordinador (una fila por coordinador activo).
+        self.assertTrue(tipos[2:] and set(tipos[2:]) == {"autorizacion_logistica"})
 
         # 7. Ya no se puede resolver otra vez.
         resp = self.cliente.patch(f"/api/v1/devoluciones/{dev['id']}/resolucion",
