@@ -3,7 +3,7 @@
 Rama: `roberto/integracion-web-microservicios`.
 
 Esta version conserva las pantallas del primer parcial, pero las operaciones
-criticas ya no escriben directamente en PostgreSQL. `app/api_client.py` envia
+criticas ya no escriben directamente en PostgreSQL. `apps/web/app/api_client.py` envia
 HTTP JSON a las API `/api/v1`, propaga `X-Correlation-ID` y adjunta el JWT del
 usuario.
 

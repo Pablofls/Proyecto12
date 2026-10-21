@@ -2,5 +2,6 @@
 .git
 .env
 *.pdf
+docs/
 **/__pycache__
 db/data

@@ -5,7 +5,7 @@ devolucion sobre una linea de venta y el analista la autoriza, la rechaza o
 pide informacion. Los estados posteriores (recoleccion, inspeccion,
 reembolso) los mueven sus propios servicios.
 
-Mismas reglas que el monolito (app/blueprints/devoluciones.py), ahora como API
+Mismas reglas que el monolito (apps/web/app/blueprints/devoluciones.py), ahora como API
 REST con JWT, JSON/XML, eventos en MongoDB y notificaciones al cliente.
 
 Trazabilidad: RF-06, RF-07, RF-08, RF-10, RF-11, RF-29, RF-30, RN-01, RN-02,

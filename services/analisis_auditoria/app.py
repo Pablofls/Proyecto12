@@ -39,7 +39,7 @@ PALABRAS_MOTIVO={
     "Etiqueta incorrecta":["etiqueta","rotulo","informacion incorrecta"],
 }
 
-# JOIN idéntico a BASE_CAUSAS de app/blueprints/panel.py, con UNA fila por
+# JOIN idéntico a BASE_CAUSAS de apps/web/app/blueprints/panel.py, con UNA fila por
 # devolucion. La vista de costo ya agrega costos a una sola fila por caso.
 SQL_SNAPSHOTS="""
 SELECT d.id AS devolucion_id,d.folio_devolucion,d.estado,d.fecha_solicitud,

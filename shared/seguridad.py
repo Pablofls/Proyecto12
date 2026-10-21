@@ -23,7 +23,7 @@ from shared.respuestas import ErrorApi
 ALGORITMO = "HS256"
 EMISOR = "devoluciones-auth"
 
-# Nombres identicos al catalogo de roles (migracion 001) y a app/security.py.
+# Nombres identicos al catalogo de roles (migracion 001) y a apps/web/app/security.py.
 CLIENTE = "Cliente"
 INSPECTOR = "Inspector"
 ENCARGADO_CENTRO = "Encargado del Centro de Devoluciones"

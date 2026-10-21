@@ -75,7 +75,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: apps/web/Dockerfile
     container_name: devoluciones_app
     restart: unless-stopped
     env_file: ${APP_ENV_FILE:-.env}

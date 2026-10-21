@@ -134,9 +134,9 @@ errores de sintaxis:
 
 ```bash
 python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-python -m py_compile app/*.py app/blueprints/*.py scripts/*.py
-python -c "from app import create_app; create_app(); print('la app arranca')"
+pip install -r apps/web/requirements.txt
+python -m py_compile apps/web/app/*.py apps/web/app/blueprints/*.py scripts/*.py
+(cd apps/web && python -c "from app import create_app; create_app(); print('la app arranca')")
 ```
 
 Eso no requiere PostgreSQL ni Redis: solo comprueba que el codigo carga.

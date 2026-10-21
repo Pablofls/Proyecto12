@@ -20,7 +20,7 @@ repite la escritura directamente en la base de datos.
 
 ### Cliente comun para microservicios
 
-Se agrego `app/api_client.py` para centralizar:
+Se agrego `apps/web/app/api_client.py` para centralizar:
 
 - requests HTTP en JSON;
 - encabezado `Authorization: Bearer <JWT>`;
