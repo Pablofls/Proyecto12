@@ -408,3 +408,18 @@ panel), se ordeno el repositorio con `git mv` para conservar el historial:
   `./:/srv/app`, porque `scripts/migrate.py` y `db/` se ejecutan desde ahi; gunicorn
   arranca con `--chdir apps/web`.
 - Las migraciones no se tocaron (checksums intactos).
+
+## Suite E2E y casos de prueba (21 de octubre de 2026)
+
+- **Decision.** La suite E2E vive en `tests/e2e/` (raiz) y corre dentro de la imagen de
+  `devoluciones` con el repositorio montado en `/repo`; asi usa `shared/` y los XSD sin
+  agregar una imagen ni librerias. Las pruebas de integracion por servicio viven en cada
+  `services/<x>/tests/` y se corren en su propia imagen, por eso repiten un poco de codigo.
+- **Por que.** Las bases solo existen en la VM; la suite se escribe y se valida aqui
+  (compilacion, `--collect-only`, unitarias) y se ejecuta alla.
+- **Detalles que otro deberia saber.** El rate limit de login es de 10 por minuto por IP:
+  la suite borra las claves `devoluciones:limite:*:login` antes de cada bloque de logins
+  y la prueba de 429 va al final. La evidencia del cliente va antes de autorizar porque
+  `evidencias` no deja adjuntar despues. RNF-28 queda `parcial` hasta pegar la salida de
+  la VM en `docs/pruebas/` (ver `docs/PRUEBAS.md`).
+

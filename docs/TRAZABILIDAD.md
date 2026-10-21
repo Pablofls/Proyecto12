@@ -17,6 +17,7 @@
 | RF-23, RF-26, RF-30 | `services/analisis_auditoria`: snapshot, Pareto MongoDB, cache Redis y consulta de bitacora | `services/analisis_auditoria/tests/test_pareto.py` |
 | RF-32 | `apps/web/app/microservicios.py` y `/integracion/servicios` consultan los ocho health checks | `apps/web/app/tests/test_microservicios.py` |
 | Integracion web/API | `apps/web/app/api_client.py` y blueprints web: JWT/refresh y flujo funcional por HTTP | `apps/web/app/tests/test_api_client.py` y prueba E2E en VM |
+| RNF-28; RF-31; RN-03, RN-06, RN-11 | Suite E2E de 11 pasos, seguridad y errores, JSON/XML y 429 (`tests/e2e/`) y `test_integracion.py` en los 8 servicios; casos en `docs/PRUEBAS.md` | `tests/e2e/`, `services/*/tests/test_integracion.py`; resultado de la VM pendiente (`docs/pruebas/`) |
 
 Relaciona los identificadores del documento con el lugar del repositorio donde
 quedan implementados. **Actualiza esta tabla en el mismo commit en el que
@@ -93,7 +94,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-25 | Mensajes claros al usuario | Mensajes flash en todas las operaciones | implementado |
 | RNF-26 | Adaptarse a distintos tamanos de pantalla | `apps/web/app/static/css/estilos.css` | implementado |
 | RNF-27 | Docker y Google Compute Engine | `docker-compose.yml`, VM del equipo | implementado |
-| RNF-28 | Pruebas | — | pendiente |
+| RNF-28 | Pruebas | 88 unitarias; suite E2E `tests/e2e/` y pruebas de integracion por servicio; casos en `docs/PRUEBAS.md`. Falta pegar la salida de la VM | parcial |
 | RNF-29 | Locust con distintos perfiles | — | pendiente |
 | RNF-30 | Retencion y eliminacion logica | `db/migrations/005_eliminacion_logica.sql`; `DELETE /api/v1/devoluciones/{id}` marca `eliminado_en` | implementado |
 
