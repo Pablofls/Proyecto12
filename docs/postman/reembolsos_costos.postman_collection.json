@@ -1,0 +1,1290 @@
+{
+  "info": {
+    "name": "Reembolsos y costos (reembolsos_costos) - v1",
+    "description": "Evidencias request/response del servicio reembolsos_costos (puerto 8005). Requiere el environment vm.postman_environment.json con vm_host, password_demo y, si aplica, los ids de las colecciones previas. Orden de corrida y capturas: docs/evidencias/README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Preparacion (requiere devolucion_id autorizada o resuelta)",
+      "item": [
+        {
+          "name": "health 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/health",
+            "description": "RNF-22, RF-32: el servicio responde y reporta el estado de sus dependencias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"postgresql ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.postgresql.ok === true).to.be.true; });",
+                  "pm.test(\"redis ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.redis.ok === true).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login reembolsos (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Encargado de Reembolsos y lo guarda en token_reembolsos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_reembolsos}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_reembolsos\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login coordinador (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Coordinador de Logistica y lo guarda en token_coordinador.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_coordinador}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_coordinador\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login centro (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Encargado del Centro de Devoluciones y lo guarda en token_centro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_centro}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_centro\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login analista (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Analista de Devoluciones y lo guarda en token_analista.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_analista}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_analista\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login cliente (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Cliente (dueno de la compra) y lo guarda en token_cliente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_cliente}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_cliente\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 Costos (POST)",
+      "item": [
+        {
+          "name": "costo 401 sin token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos",
+            "description": "Endpoint protegido sin Authorization.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"etapa\": \"transporte\",\n  \"monto\": 150.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = no_autenticado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_autenticado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costo 403 cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos",
+            "description": "El cliente no registra costos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"etapa\": \"transporte\",\n  \"monto\": 150.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costo 403 etapa de otro rol",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos",
+            "description": "El coordinador solo registra costos de transporte.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"etapa\": \"reembolso\",\n  \"monto\": 150.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costo 400 monto negativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos",
+            "description": "monto debe ser decimal no negativo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"etapa\": \"transporte\",\n  \"monto\": -5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costo 400 etapa invalida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos",
+            "description": "Etapa fuera del catalogo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"etapa\": \"viaje\",\n  \"monto\": 150.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costo 400 devolucion_id invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos",
+            "description": "devolucion_id debe ser entero.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": \"abc\",\n  \"etapa\": \"transporte\",\n  \"monto\": 150.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costo 400 XML no cumple XSD",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos",
+            "description": "Faltan etapa y monto (costo.xsd).",
+            "body": {
+              "mode": "raw",
+              "raw": "<costo>\n  <devolucion_id>{{devolucion_id}}</devolucion_id>\n</costo>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = xml_no_cumple_xsd\", () => pm.expect(xml2Json(pm.response.text()).error.tipo).to.eql(\"xml_no_cumple_xsd\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costo 404 devolucion inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos",
+            "description": "La devolucion no existe.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": 999999,\n  \"etapa\": \"transporte\",\n  \"monto\": 150.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costo 201 transporte JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos",
+            "description": "RF-27: el coordinador registra el costo de transporte.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"etapa\": \"transporte\",\n  \"monto\": 150.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costo 201 almacenamiento XML",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos",
+            "description": "El encargado del centro registra almacenamiento; XML.",
+            "body": {
+              "mode": "raw",
+              "raw": "<costo>\n  <devolucion_id>{{devolucion_id}}</devolucion_id>\n  <etapa>almacenamiento</etapa>\n  <monto>45.00</monto>\n</costo>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Reembolsos (POST)",
+      "item": [
+        {
+          "name": "reembolso 403 analista",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "Solo el Encargado de Reembolsos resuelve.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"estado\": \"aprobado\",\n  \"metodo\": \"transferencia\",\n  \"monto\": 1.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reembolso 400 estado invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_reembolsos}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "estado debe ser aprobado o rechazado.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"estado\": \"quizas\",\n  \"metodo\": \"transferencia\",\n  \"monto\": 1.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reembolso 400 metodo invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_reembolsos}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "Un reembolso aprobado exige metodo valido.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"estado\": \"aprobado\",\n  \"metodo\": \"cheque\",\n  \"monto\": 1.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reembolso 400 devolucion_id invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_reembolsos}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "devolucion_id debe ser entero positivo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": 0,\n  \"estado\": \"aprobado\",\n  \"metodo\": \"transferencia\",\n  \"monto\": 1.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reembolso 404 devolucion inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_reembolsos}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "La devolucion no existe.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": 999999,\n  \"estado\": \"aprobado\",\n  \"metodo\": \"transferencia\",\n  \"monto\": 1.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reembolso 409 monto excedido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_reembolsos}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "RN-03: el reembolso no puede superar el valor devuelto.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"estado\": \"aprobado\",\n  \"metodo\": \"transferencia\",\n  \"monto\": 9999999.99\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"error.tipo = monto_excedido\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"monto_excedido\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"informa el maximo\", () => { const J = pm.response.json(); pm.expect(J.error.detalles.maximo > 0).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reembolso 201 aprobado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_reembolsos}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "RF-20, RF-21: aprueba el reembolso con monto y metodo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"estado\": \"aprobado\",\n  \"metodo\": \"transferencia\",\n  \"monto\": 1.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"aprobado\", () => { const J = pm.response.json(); pm.expect(J.estado === \"aprobado\").to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reembolso 409 duplicado XML",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_reembolsos}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "La devolucion ya tiene un reembolso valido; error en XML.",
+            "body": {
+              "mode": "raw",
+              "raw": "<reembolso>\n  <devolucion_id>{{devolucion_id}}</devolucion_id>\n  <monto>1.00</monto>\n  <metodo>transferencia</metodo>\n  <estado>aprobado</estado>\n</reembolso>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"error.tipo = reembolso_duplicado\", () => pm.expect(xml2Json(pm.response.text()).error.tipo).to.eql(\"reembolso_duplicado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Consulta (GET)",
+      "item": [
+        {
+          "name": "reembolsos 200 lista",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_reembolsos}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "Ultimos 100 reembolsos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"trae datos\", () => { const J = pm.response.json(); pm.expect(Array.isArray(J.datos)).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reembolsos 200 analista XML",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "El analista tambien consulta; XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reembolsos 403 cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "El cliente no lista reembolsos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reembolsos 401 token invalido",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_falso}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/reembolsos",
+            "description": "JWT sin firma valida."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = token_invalido\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"token_invalido\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costos 200 desglose",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_reembolsos}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos/{{devolucion_id}}",
+            "description": "RF-27: costo por etapa y total de la devolucion."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"desglose y total\", () => { const J = pm.response.json(); pm.expect(J.desglose.length >= 1 && J.costo_total > 0).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costos 200 analista XML",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos/{{devolucion_id}}",
+            "description": "Mismo desglose en XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costos 403 centro",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos/{{devolucion_id}}",
+            "description": "El centro registra costos pero no consulta el total."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "costos 404 devolucion inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_reembolsos}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{reembolsos_url}}/api/v1/reembolsos-costos/costos/999999",
+            "description": "La devolucion no existe."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
