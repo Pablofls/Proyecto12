@@ -274,3 +274,15 @@ correr este script. No sube los JSON de Newman ni los environments exportados (l
 La carpeta `06` de auth (bloqueo 423 y limite 429) no se corre en la primera pasada y sus dos casos siguen como
 `CAPTURA PENDIENTE`.
 
+
+## Evidencia de Docker, PostgreSQL, MongoDB y Redis en texto (un solo comando)
+
+En la VM, despues de correr las colecciones de Newman:
+
+```bash
+bash scripts/evidencias_vm.sh
+```
+
+Ejecuta los comandos de las secciones 3 a 7 y guarda la salida real en `docs/evidencias/bases/` (`docker.txt`,
+`postgresql.txt`, `mongodb.txt`, `redis.txt`, `volumen.txt`), con los JWT ocultos. Incluye el caso del candado de Redis
+(409 `reembolso_en_proceso`). Se versionan como transcripciones; las capturas de pantalla de estas mismas salidas son opcionales.
