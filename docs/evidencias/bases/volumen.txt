@@ -1,0 +1,35 @@
+# Volumen privado de evidencias (RN-14)
+
+Capturado en la VM el 2026-10-22 00:50 UTC con scripts/evidencias_vm.sh. Salida real, sin editar.
+
+>>> docker compose exec evidencias ls -l /srv/evidencias_privadas
+total 24
+-rw-------. 1 root root 69 Oct 21 18:22 19f7f8183d9641e7bac7b31d47ba663e.png
+-rw-------. 1 root root 69 Oct 21 18:22 2610685c1fd34c77b65d2e0720b53ca3.png
+-rw-------. 1 root root 69 Oct 21 17:22 3701f11568a24a4089a409da52ae3fd0.png
+-rw-------. 1 root root 69 Oct 21 18:15 9db414cd8c2042549d5945dc4fe374aa.png
+-rw-------. 1 root root 70 Oct 22 00:40 a9b1984127c3432f917cc3db6dde39b4.png
+-rw-------. 1 root root 69 Oct 21 17:23 be114aa02779461e9905da290a820c50.png
+
+>>> docker volume inspect (nombre desde docker volume ls)
+[
+    {
+        "CreatedAt": "2026-10-21T15:44:57Z",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.config-hash": "7a982a9a109c4b8fbff20eb4dbd3e6c7a18dc33bf672b84798f5e65189029dd0",
+            "com.docker.compose.project": "proyecto12",
+            "com.docker.compose.version": "5.5.1",
+            "com.docker.compose.volume": "evidencias_data"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/proyecto12_evidencias_data/_data",
+        "Name": "proyecto12_evidencias_data",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+
+>>> el directorio no se sirve por HTTP: curl -i /uploads/
+HTTP/1.1 404 NOT FOUND
+Server: gunicorn
+Date: Thu, 22 Oct 2026 00:50:51 GMT

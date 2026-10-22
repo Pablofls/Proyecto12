@@ -1,0 +1,69 @@
+# Docker: contenedores, recursos y volumenes
+
+Capturado en la VM el 2026-10-22 00:50 UTC con scripts/evidencias_vm.sh. Salida real, sin editar.
+
+>>> docker compose ps
+NAME                              IMAGE                           COMMAND                  SERVICE              CREATED       STATUS                  PORTS
+devoluciones_analisis_auditoria   proyecto12-analisis-auditoria   "gunicorn --bind 0.0…"   analisis-auditoria   8 hours ago   Up 8 hours (healthy)    0.0.0.0:8008->8000/tcp
+devoluciones_app                  proyecto12-app                  "gunicorn --bind 0.0…"   app                  8 hours ago   Up 8 hours              0.0.0.0:8000->8000/tcp
+devoluciones_auth                 proyecto12-auth                 "gunicorn --bind 0.0…"   auth                 7 hours ago   Up 7 hours (healthy)    0.0.0.0:8001->8000/tcp
+devoluciones_devoluciones         proyecto12-devoluciones         "gunicorn --bind 0.0…"   devoluciones         6 hours ago   Up 6 hours (healthy)    0.0.0.0:8002->8000/tcp
+devoluciones_evidencias           proyecto12-evidencias           "gunicorn --bind 0.0…"   evidencias           8 hours ago   Up 8 hours (healthy)    0.0.0.0:8007->8000/tcp
+devoluciones_inspecciones         proyecto12-inspecciones         "gunicorn --bind 0.0…"   inspecciones         8 hours ago   Up 8 hours              0.0.0.0:8004->8000/tcp
+devoluciones_logistica            proyecto12-logistica            "gunicorn --bind 0.0…"   logistica            8 hours ago   Up 8 hours              0.0.0.0:8003->8000/tcp
+devoluciones_mongo                mongo:7                         "docker-entrypoint.s…"   mongo                9 hours ago   Up 9 hours (healthy)    127.0.0.1:57017->27017/tcp
+devoluciones_postgres             postgres:16-alpine              "docker-entrypoint.s…"   postgres             6 weeks ago   Up 23 hours (healthy)   127.0.0.1:55432->5432/tcp
+devoluciones_redis                redis:7-alpine                  "docker-entrypoint.s…"   redis                6 weeks ago   Up 23 hours (healthy)   127.0.0.1:56379->6379/tcp
+devoluciones_reembolsos_costos    proyecto12-reembolsos-costos    "gunicorn --bind 0.0…"   reembolsos-costos    6 hours ago   Up 6 hours              0.0.0.0:8005->8000/tcp
+devoluciones_ventas_catalogos     proyecto12-ventas-catalogos     "gunicorn --bind 0.0…"   ventas-catalogos     8 hours ago   Up 8 hours (healthy)    0.0.0.0:8006->8000/tcp
+
+>>> docker stats --no-stream
+CONTAINER ID   NAME                              CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
+0dbf3c0b21c4   devoluciones_devoluciones         0.07%     93.79MiB / 7.496GiB   1.22%     5.86MB / 3.55MB   0B / 16.4kB       9
+6d3ecfed34e3   devoluciones_reembolsos_costos    0.01%     84.07MiB / 7.496GiB   1.10%     138kB / 132kB     0B / 28.7kB       3
+b92fc559ca33   devoluciones_auth                 0.01%     77.72MiB / 7.496GiB   1.01%     2.67MB / 2.62MB   270kB / 16.4kB    3
+b5b3d4d27e7b   devoluciones_evidencias           0.11%     93.1MiB / 7.496GiB    1.21%     7.08MB / 4.31MB   283kB / 81.9kB    9
+1466204b07a5   devoluciones_app                  0.01%     111.2MiB / 7.496GiB   1.45%     575kB / 745kB     0B / 20.5kB       4
+7c1613c9c35a   devoluciones_logistica            0.01%     80.11MiB / 7.496GiB   1.04%     272kB / 247kB     0B / 24.6kB       3
+29c9f93a2797   devoluciones_ventas_catalogos     0.01%     87.95MiB / 7.496GiB   1.15%     2.78MB / 2.51MB   5.2MB / 8.19kB    3
+e41c91e40e3d   devoluciones_inspecciones         0.08%     94.75MiB / 7.496GiB   1.23%     4.36MB / 1.64MB   0B / 16.4kB       9
+20b373af83cf   devoluciones_analisis_auditoria   0.07%     92.47MiB / 7.496GiB   1.20%     7.12MB / 4.47MB   0B / 12.3kB       9
+65483c7dcc3d   devoluciones_mongo                0.76%     131.2MiB / 7.496GiB   1.71%     8.59MB / 20.5MB   2.07MB / 109MB    59
+3f14570396b5   devoluciones_postgres             0.00%     33.62MiB / 7.496GiB   0.44%     14.5MB / 16.9MB   48MB / 30.6MB     6
+1a9cf0738959   devoluciones_redis                0.45%     13MiB / 7.496GiB      0.17%     2.61MB / 1.36MB   16.4MB / 5.87MB   6
+
+>>> docker volume ls
+DRIVER    VOLUME NAME
+local     23c37b9727fb444fcb52a76c93d862e0db2a0fbadc06218e451ed5c3880391cd
+local     proyecto12_evidencias_data
+local     proyecto12_mongo_data
+local     proyecto12_postgres_data
+local     proyecto12_redis_data
+
+>>> health de los servicios (desde la VM)
+8000: 200
+8001: 200
+8002: 200
+8003: 200
+8004: 200
+8005: 200
+8006: 200
+8007: 200
+8008: 200
+
+>>> docker compose logs --tail=15 devoluciones (se ve el X-Correlation-ID)
+devoluciones_devoluciones  | 2026-10-22 00:47:03,420 INFO devoluciones 127.0.0.1 GET /health 200 11ms usuario=- cid=115597e2f7314ee9
+devoluciones_devoluciones  | 2026-10-22 00:47:19,077 INFO devoluciones 127.0.0.1 GET /health 200 14ms usuario=- cid=331d559556b64b67
+devoluciones_devoluciones  | 2026-10-22 00:47:34,427 INFO devoluciones 127.0.0.1 GET /health 200 7ms usuario=- cid=5869647fb4704933
+devoluciones_devoluciones  | 2026-10-22 00:47:49,786 INFO devoluciones 127.0.0.1 GET /health 200 7ms usuario=- cid=1ab1776633834519
+devoluciones_devoluciones  | 2026-10-22 00:48:05,176 INFO devoluciones 127.0.0.1 GET /health 200 9ms usuario=- cid=5554374b1f6c4e4e
+devoluciones_devoluciones  | 2026-10-22 00:48:20,540 INFO devoluciones 127.0.0.1 GET /health 200 7ms usuario=- cid=4952dc351c0646f5
+devoluciones_devoluciones  | 2026-10-22 00:48:35,898 INFO devoluciones 127.0.0.1 GET /health 200 7ms usuario=- cid=fab09e2d4c0d4ff5
+devoluciones_devoluciones  | 2026-10-22 00:48:51,280 INFO devoluciones 127.0.0.1 GET /health 200 7ms usuario=- cid=577c1b495cdb4a91
+devoluciones_devoluciones  | 2026-10-22 00:49:06,666 INFO devoluciones 127.0.0.1 GET /health 200 7ms usuario=- cid=daf3e07bc83942a3
+devoluciones_devoluciones  | 2026-10-22 00:49:22,069 INFO devoluciones 127.0.0.1 GET /health 200 7ms usuario=- cid=023afe84bc764f19
+devoluciones_devoluciones  | 2026-10-22 00:49:37,483 INFO devoluciones 127.0.0.1 GET /health 200 7ms usuario=- cid=db07f18820cb4b5d
+devoluciones_devoluciones  | 2026-10-22 00:49:52,893 INFO devoluciones 127.0.0.1 GET /health 200 7ms usuario=- cid=be4bf06784114735
+devoluciones_devoluciones  | 2026-10-22 00:50:08,464 INFO devoluciones 127.0.0.1 GET /health 200 7ms usuario=- cid=781f30bf62c1406b
+devoluciones_devoluciones  | 2026-10-22 00:50:23,876 INFO devoluciones 127.0.0.1 GET /health 200 10ms usuario=- cid=49cb11773ddb4b0a
+devoluciones_devoluciones  | 2026-10-22 00:50:33,528 INFO devoluciones 172.18.0.1 GET /health 200 7ms usuario=- cid=4a28154143594f64

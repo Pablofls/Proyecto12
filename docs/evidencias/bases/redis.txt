@@ -1,0 +1,95 @@
+# Redis: sesiones, lista negra, limite de login, cache y candado
+
+Capturado en la VM el 2026-10-22 00:50 UTC con scripts/evidencias_vm.sh. Salida real, sin editar.
+
+>>> redis-cli PING
+PONG
+
+>>> redis-cli --scan --pattern devoluciones:*
+devoluciones:sesion_api:8a17bd2b16cc4c608d6632812c2f95b8
+devoluciones:sesion_api:6a9bc71611cd472497fa0d218a8cf3c4
+devoluciones:sesion_api:3d42a067993a4259ad98301351178732
+devoluciones:sesion:kVlTCzvqMVjQ41hfGB6OG7hebXHx0eIz2tUAPbePi2I
+devoluciones:sesion_api:5ec51ef488e64213866de3aea17908b7
+devoluciones:sesion:gF3FrhHtz-6b06TPzMt4r8wG9gv0R6kYVINFqGPOCh8
+devoluciones:sesion_api:1079c4a2d4f249ff91abc69bc7db7f1b
+devoluciones:sesion_api:b7b5728573a44692a3bf69cec8bc4610
+devoluciones:sesion_api:6b6a8f70fa3047ff9b107adc0e82f89b
+devoluciones:sesiones_usuario:11
+devoluciones:sesion_api:68378b30a5944d9caf5e43974ee572b0
+devoluciones:sesion_api:9d55cc099e6948c782d9efbef57c93d9
+devoluciones:sesion_api:cc273e4515134678900421de4f7892b4
+devoluciones:sesion_api:7e74c78c44094b1d9be51154afd9ba64
+devoluciones:sesion_api:a1af7ac262a44b5591a3e0e482e57231
+devoluciones:sesion_api:01ca10ef636d4f39b1c4796213091841
+devoluciones:sesion_api:b3c899ae1a0049c8a9b62dd5080275a1
+devoluciones:sesion_api:7140af83bda541f89c2900e04a06199f
+devoluciones:sesion_api:c36c9cde959c48af99b129d5c1a60b53
+devoluciones:sesion_api:e5053a351e764b1bb2b2757615aff6b0
+devoluciones:sesion_api:bce0ed93a41d4ea5928460892a5d6fa6
+devoluciones:sesion_api:273e64bfd0e944038d04b67bfc0e974b
+devoluciones:sesiones_usuario:13
+devoluciones:sesion_api:4ff3d61cf17c496c8698fa517709d486
+devoluciones:sesion_api:64acb8671aeb4d6cb0cf2cd4dd779e60
+devoluciones:sesion_api:36c68ebfae664b4e90bad05e94afb281
+devoluciones:sesiones_usuario:17
+devoluciones:sesion:44sX-_HdYEirizgv23dvlztIpavXWBKrMQ-GpVqlbfg
+devoluciones:sesion:CXmkgzOEwIx82shPK2k8a_XPiis2UuQy4TNni37S1I0
+devoluciones:sesion_api:cfbb3300649946fb9379d7bb1696f624
+devoluciones:sesion:D-QxpZxBU9thBftxfGCMuA02h-gnzJaO519qbao7qms
+devoluciones:sesion_api:e36c2a4a645348e38565b3fed24bcff8
+devoluciones:cache:causas:416a35b5b5ac1e9bcf02f4ca
+devoluciones:sesion_api:e3628e5e08894d08a881a1081babddc1
+devoluciones:cache:causas:2aeb5f6796b2df21c5a45a43
+devoluciones:sesiones_usuario:14
+devoluciones:sesion_api:6fca4ddcf091439ea15021a5764fdaa3
+devoluciones:sesion_api:6653581900164bee85b9510d5581ca0c
+devoluciones:sesion:ps4UJezi-3Jk-TaiQn5wR8nztgD8ODhYU-CN1xz6kOE
+devoluciones:sesiones_usuario:10
+devoluciones:sesion:evth8z6qSE5PAN-tZSd5mDjk-MLh_0zgPN5tvU6yvN4
+devoluciones:sesion_api:7ad9bc7e3c2c402f8505a994488ec94b
+devoluciones:sesiones_usuario:16
+devoluciones:sesion:JG7TF5fcvwoK0edUG7ItCzllQtGd1djR30hFLnS4LFw
+devoluciones:sesiones_usuario:15
+devoluciones:sesion_api:fb1218fbf63f42b58ce11bbecba3258a
+devoluciones:sesiones_usuario:18
+devoluciones:sesion_api:30771fae2c3b4e9cb85cac2f3675017f
+devoluciones:sesion:1cOTQzh5-u-5FyYosrzvNItjF__aRwCeGuJqebuYBaA
+devoluciones:sesion_api:456ce806f6944367a6d3c75da710152f
+devoluciones:analisis:version
+devoluciones:sesion_api:2f778ad5b35740aca12b2e43957554ed
+
+>>> redis-cli HGETALL devoluciones:sesion_api:8a17bd2b16cc4c608d6632812c2f95b8
+usuario_id
+14
+rol
+Encargado del Centro de Devoluciones
+ip
+200.188.67.69
+creada
+2026-10-22T00:39:41.638110+00:00
+
+>>> redis-cli TTL devoluciones:sesion_api:8a17bd2b16cc4c608d6632812c2f95b8
+28132
+(no hay tokens revocados vigentes: duran 15 min)
+(no hay contador de limite vigente: dura 60 s)
+
+>>> redis-cli TTL devoluciones:cache:causas:416a35b5b5ac1e9bcf02f4ca
+142
+
+>>> redis-cli GET devoluciones:analisis:version
+7
+
+>>> redis-cli SET devoluciones:lock:reembolso:999999 x NX EX 30
+OK
+
+>>> redis-cli TTL devoluciones:lock:reembolso:999999
+30
+
+>>> POST /api/v1/reembolsos-costos/reembolsos con el candado puesto (devolucion_id 999999)
+HTTP/1.1 409 CONFLICT
+X-Correlation-ID: 6a8dc797d11649f1
+{"error":{"codigo":409,"tipo":"reembolso_en_proceso","mensaje":"Otro proceso esta resolviendo este reembolso.","detalles":null,"correlation_id":"6a8dc797d11649f1"}}
+
+>>> redis-cli DEL devoluciones:lock:reembolso:999999
+1
