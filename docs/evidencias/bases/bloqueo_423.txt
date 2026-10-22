@@ -1,0 +1,35 @@
+# Apartado 13.1: 423 al quinto intento fallido (RNF-12)
+
+Capturado en la VM el 2026-10-22 01:07 UTC con scripts/evidencias_vm_extra.sh. Salida real, sin editar.
+
+>>> intento 1 con contrasena incorrecta
+HTTP/1.1 401 UNAUTHORIZED
+{"error":{"codigo":401,"tipo":"credenciales_invalidas","mensaje":"Correo o contrasena incorrectos.","detalles":null,"correlation_id":"b5a2d5d9c99b4b82"}}
+
+>>> intento 2 con contrasena incorrecta
+HTTP/1.1 401 UNAUTHORIZED
+{"error":{"codigo":401,"tipo":"credenciales_invalidas","mensaje":"Correo o contrasena incorrectos.","detalles":null,"correlation_id":"3615f2084a4747c1"}}
+
+>>> intento 3 con contrasena incorrecta
+HTTP/1.1 401 UNAUTHORIZED
+{"error":{"codigo":401,"tipo":"credenciales_invalidas","mensaje":"Correo o contrasena incorrectos.","detalles":null,"correlation_id":"6826603244044641"}}
+
+>>> intento 4 con contrasena incorrecta
+HTTP/1.1 401 UNAUTHORIZED
+{"error":{"codigo":401,"tipo":"credenciales_invalidas","mensaje":"Correo o contrasena incorrectos.","detalles":null,"correlation_id":"48cff31d80f34b2d"}}
+
+>>> intento 5 con contrasena incorrecta
+HTTP/1.1 401 UNAUTHORIZED
+{"error":{"codigo":401,"tipo":"credenciales_invalidas","mensaje":"Correo o contrasena incorrectos.","detalles":null,"correlation_id":"38850d5b84844e9d"}}
+
+>>> intento 6 con contrasena incorrecta
+HTTP/1.1 423 LOCKED
+{"error":{"codigo":423,"tipo":"cuenta_bloqueada","mensaje":"La cuenta esta bloqueada temporalmente. Intenta de nuevo en 15 minutos.","detalles":null,"correlation_id":"12a461ef6a514294"}}
+
+>>> intentos y bloqueo en Redis
+5
+899
+
+>>> se desbloquea la cuenta para no dejarla bloqueada 15 min
+2
+UPDATE 1
