@@ -1,0 +1,51 @@
+# EV-06: migraciones aplicadas y tablas de PostgreSQL
+
+Capturado en la VM el 2026-10-22 01:07 UTC con scripts/evidencias_vm_extra.sh. Salida real, sin editar.
+
+>>> python scripts/migrate.py --estado
+Aplicadas:
+  001_esquema_base.sql  (2026-09-06 23:19)
+  002_venta_detalle.sql  (2026-09-06 23:19)
+  003_evidencias.sql  (2026-09-06 23:19)
+  004_control_accesos.sql  (2026-09-06 23:19)
+  005_eliminacion_logica.sql  (2026-09-06 23:19)
+  006_validaciones_reembolso.sql  (2026-09-06 23:19)
+  007_folio_devolucion.sql  (2026-09-06 23:19)
+  008_roles_base.sql  (2026-09-06 23:19)
+  009_ampliar_tipos_costo.sql  (2026-09-28 04:10)
+  010_vista_costo_devolucion.sql  (2026-09-28 04:10)
+  011_destino_donacion.sql  (2026-09-28 04:10)
+  012_fecha_cierre_devolucion.sql  (2026-09-28 04:10)
+  013_notificaciones_enlace.sql  (2026-10-21 17:17)
+Pendientes:
+
+>>> \dt
+                     List of relations
+ Schema |         Name          | Type  |      Owner       
+--------+-----------------------+-------+------------------
+ public | bitacora              | table | devoluciones_app
+ public | costos                | table | devoluciones_app
+ public | devoluciones          | table | devoluciones_app
+ public | disposiciones         | table | devoluciones_app
+ public | evidencias            | table | devoluciones_app
+ public | inspecciones_ref      | table | devoluciones_app
+ public | intentos_acceso       | table | devoluciones_app
+ public | inventario_recuperado | table | devoluciones_app
+ public | lotes                 | table | devoluciones_app
+ public | motivos               | table | devoluciones_app
+ public | notificaciones        | table | devoluciones_app
+ public | productos             | table | devoluciones_app
+ public | proveedores           | table | devoluciones_app
+ public | recepciones           | table | devoluciones_app
+ public | recolecciones         | table | devoluciones_app
+ public | reembolsos            | table | devoluciones_app
+ public | roles                 | table | devoluciones_app
+ public | rutas                 | table | devoluciones_app
+ public | schema_migrations     | table | devoluciones_app
+ public | tiendas               | table | devoluciones_app
+ public | transportistas        | table | devoluciones_app
+ public | usuarios              | table | devoluciones_app
+ public | venta_detalle         | table | devoluciones_app
+ public | ventas                | table | devoluciones_app
+(24 rows)
+

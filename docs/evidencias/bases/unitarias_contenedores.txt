@@ -1,0 +1,51 @@
+# EV-20: pruebas unitarias dentro de cada contenedor (sin INTEGRACION)
+
+Capturado en la VM el 2026-10-22 01:07 UTC con scripts/evidencias_vm_extra.sh. Salida real, sin editar.
+
+>>> docker compose run --rm --no-deps auth python -m pytest -q -p no:cacheprovider
+ Container proyecto12-auth-run-686c1cae7324 Creating 
+ Container proyecto12-auth-run-686c1cae7324 Created 
+...........................sssss                                         [100%]
+27 passed, 5 skipped in 9.18s
+
+>>> docker compose run --rm --no-deps ventas-catalogos python -m pytest -q -p no:cacheprovider
+ Container proyecto12-ventas-catalogos-run-dc716fba834c Creating 
+ Container proyecto12-ventas-catalogos-run-dc716fba834c Created 
+ssss........                                                             [100%]
+8 passed, 4 skipped in 0.42s
+
+>>> docker compose run --rm --no-deps devoluciones python -m pytest -q -p no:cacheprovider
+ Container proyecto12-devoluciones-run-bb0b9498d852 Creating 
+ Container proyecto12-devoluciones-run-bb0b9498d852 Created 
+.............ssss...........                                             [100%]
+24 passed, 4 skipped in 0.90s
+
+>>> docker compose run --rm --no-deps evidencias python -m pytest -q -p no:cacheprovider
+ Container proyecto12-evidencias-run-bf84c8c06953 Creating 
+ Container proyecto12-evidencias-run-bf84c8c06953 Created 
+ssss...                                                                  [100%]
+3 passed, 4 skipped in 0.49s
+
+>>> docker compose run --rm --no-deps logistica python -m pytest -q -p no:cacheprovider
+ Container proyecto12-logistica-run-8e03400a171d Creating 
+ Container proyecto12-logistica-run-8e03400a171d Created 
+.....sss                                                                 [100%]
+5 passed, 3 skipped in 0.43s
+
+>>> docker compose run --rm --no-deps inspecciones python -m pytest -q -p no:cacheprovider
+ Container proyecto12-inspecciones-run-269d4c961bc9 Creating 
+ Container proyecto12-inspecciones-run-269d4c961bc9 Created 
+sssss.....                                                               [100%]
+5 passed, 5 skipped in 0.39s
+
+>>> docker compose run --rm --no-deps reembolsos-costos python -m pytest -q -p no:cacheprovider
+ Container proyecto12-reembolsos-costos-run-4fcb0ea65f6d Creating 
+ Container proyecto12-reembolsos-costos-run-4fcb0ea65f6d Created 
+........sssss                                                            [100%]
+8 passed, 5 skipped in 0.45s
+
+>>> docker compose run --rm --no-deps analisis-auditoria python -m pytest -q -p no:cacheprovider
+ Container proyecto12-analisis-auditoria-run-deb7db4ccd04 Creating 
+ Container proyecto12-analisis-auditoria-run-deb7db4ccd04 Created 
+ssss....                                                                 [100%]
+4 passed, 4 skipped in 0.38s

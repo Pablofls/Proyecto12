@@ -1,0 +1,18 @@
+# EV-03: lista negra de JWT en Redis tras el logout
+
+Capturado en la VM el 2026-10-22 01:07 UTC con scripts/evidencias_vm_extra.sh. Salida real, sin editar.
+
+>>> POST /auth/logout (cierra la sesion de Carla)
+HTTP/1.1 200 OK
+{"mensaje":"Sesion cerrada. El token ya no es valido."}
+
+>>> GET /auth/sesion con el mismo token (debe ser 401 token_revocado)
+HTTP/1.1 401 UNAUTHORIZED
+{"error":{"codigo":401,"tipo":"token_revocado","mensaje":"El token fue revocado. Inicia sesion de nuevo.","detalles":null,"correlation_id":"91ff9eb85a384fc4"}}
+
+>>> redis-cli --scan --pattern devoluciones:jwt_revocado:*
+devoluciones:jwt_revocado:c0775f0565204f189b22e7bf345796f9
+
+>>> GET / TTL devoluciones:jwt_revocado:c0775f0565204f189b22e7bf345796f9
+1
+898
