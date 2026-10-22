@@ -130,3 +130,11 @@ Desde el segundo parcial tambien UC-18 a UC-21 (RF-22 a RF-25:
 `/integracion/servicios`).
 
 Pendientes: UC-02 (recuperar contrasena) y UC-12 (escaneo).
+
+## Evidencias request/response (sesion de Postman)
+
+| Identificadores | Que cubre | Archivos |
+|---|---|---|
+| RF-31, RNF-05 | Coleccion Postman por servicio (exito en JSON y XML, 400, 401, 403, 404 y 409) y environment de la VM | `docs/postman/*.postman_collection.json`, `docs/postman/vm.postman_environment.json`, generados por `docs/postman/generar_colecciones.py` desde `docs/postman/especificaciones.py` |
+| RNF-05, RNF-22, RNF-23 | Plantilla del apartado 5 por endpoint de `openapi.yaml`, con marcadores de captura pendiente | `docs/EVIDENCIAS.md` |
+| RNF-06, RNF-08, RNF-12, RNF-13, RN-12 | Guia de captura en la VM: `psql`, `mongosh`, `redis-cli`, Docker y volumen privado | `docs/evidencias/README.md`, `docs/evidencias/CHECKLIST_CAPTURAS.md` |

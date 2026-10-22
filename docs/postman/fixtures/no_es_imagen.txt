@@ -1,0 +1,1 @@
+Archivo de texto: el servicio debe rechazarlo con 415.

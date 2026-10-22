@@ -1,0 +1,1558 @@
+{
+  "info": {
+    "name": "Logistica inversa (logistica) - v1",
+    "description": "Evidencias request/response del servicio logistica (puerto 8003). Requiere el environment vm.postman_environment.json con vm_host, password_demo y, si aplica, los ids de las colecciones previas. Orden de corrida y capturas: docs/evidencias/README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Preparacion (requiere devolucion_id autorizada: coleccion devoluciones)",
+      "item": [
+        {
+          "name": "health 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/health",
+            "description": "RNF-22, RF-32: el servicio responde y reporta el estado de sus dependencias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"postgresql ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.postgresql.ok === true).to.be.true; });",
+                  "pm.test(\"redis ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.redis.ok === true).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login coordinador (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Coordinador de Logistica y lo guarda en token_coordinador.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_coordinador}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_coordinador\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login centro (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Encargado del Centro de Devoluciones y lo guarda en token_centro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_centro}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_centro\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login cliente (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Cliente (dueno de la compra) y lo guarda en token_cliente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_cliente}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_cliente\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ruta y transportista para asignar",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/rutas?por_pagina=1",
+            "description": "Toma una ruta activa del catalogo (ventas_catalogos)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"ruta_id\", pm.response.json().datos[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "transportista para asignar",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/transportistas?por_pagina=1",
+            "description": "Toma un transportista activo del catalogo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"transportista_id\", pm.response.json().datos[0].id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 Programar recoleccion (POST)",
+      "item": [
+        {
+          "name": "programar 401 sin token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "Endpoint protegido sin Authorization.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"fecha_programada\": \"{{fecha_futura}}\",\n  \"lugar\": \"Domicilio del cliente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"fecha_futura\", new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = no_autenticado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_autenticado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "programar 401 token invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_falso}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "JWT sin firma valida.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"fecha_programada\": \"{{fecha_futura}}\",\n  \"lugar\": \"Domicilio del cliente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"fecha_futura\", new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = token_invalido\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"token_invalido\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "programar 403 centro sin permiso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "Solo el Coordinador de Logistica programa.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"fecha_programada\": \"{{fecha_futura}}\",\n  \"lugar\": \"Domicilio del cliente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"fecha_futura\", new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "programar 400 devolucion_id invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "devolucion_id debe ser entero positivo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": \"abc\",\n  \"fecha_programada\": \"{{fecha_futura}}\",\n  \"lugar\": \"Domicilio del cliente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"fecha_futura\", new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "programar 404 devolucion inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "La devolucion no existe.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": 999999,\n  \"fecha_programada\": \"{{fecha_futura}}\",\n  \"lugar\": \"Domicilio del cliente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"fecha_futura\", new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "programar 400 fecha en el pasado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "fecha_programada no puede ser anterior a hoy (RF-12).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"fecha_programada\": \"2020-01-01\",\n  \"lugar\": \"Domicilio del cliente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "programar 400 XML no cumple XSD",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "Falta fecha_programada (recoleccion.xsd).",
+            "body": {
+              "mode": "raw",
+              "raw": "<recoleccion>\n  <devolucion_id>{{devolucion_id}}</devolucion_id>\n  <lugar>Domicilio</lugar>\n</recoleccion>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = xml_no_cumple_xsd\", () => pm.expect(xml2Json(pm.response.text()).error.tipo).to.eql(\"xml_no_cumple_xsd\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "programar 201 exitoso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "RF-12: programa la recoleccion de una devolucion autorizada.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"fecha_programada\": \"{{fecha_futura}}\",\n  \"lugar\": \"Domicilio del cliente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"fecha_futura\", new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"estado programada\", () => { const J = pm.response.json(); pm.expect(J.estado === \"programada\").to.be.true; });",
+                  "pm.environment.set(\"recoleccion_id\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "programar 409 ya programada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "La devolucion ya no esta autorizada: no se programa dos veces.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"fecha_programada\": \"{{fecha_futura}}\",\n  \"lugar\": \"Domicilio del cliente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"fecha_futura\", new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"error.tipo = estado_no_permite\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"estado_no_permite\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Consulta (GET)",
+      "item": [
+        {
+          "name": "listar 200 coordinador",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "Recolecciones con folio, ruta y transportista."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"trae datos\", () => { const J = pm.response.json(); pm.expect(Array.isArray(J.datos) && J.datos.length > 0).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "listar 200 centro XML con filtro",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones?estado=programada",
+            "description": "El Encargado del Centro tambien consulta; XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "listar 400 estado invalido",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones?estado=volando",
+            "description": "Estado de recoleccion fuera del catalogo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "listar 403 cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "El cliente no consulta recolecciones."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "listar 401 sin token",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones",
+            "description": "Endpoint protegido sin Authorization."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = no_autenticado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_autenticado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Asignar ruta y transportista (PATCH)",
+      "item": [
+        {
+          "name": "asignar 403 centro sin permiso",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones/{{recoleccion_id}}/asignacion",
+            "description": "Solo el Coordinador asigna.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruta_id\": {{ruta_id}},\n  \"transportista_id\": {{transportista_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "asignar 400 ruta invalida",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones/{{recoleccion_id}}/asignacion",
+            "description": "ruta_id debe ser entero positivo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruta_id\": 0,\n  \"transportista_id\": {{transportista_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "asignar 400 ruta inexistente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones/{{recoleccion_id}}/asignacion",
+            "description": "La ruta no existe o esta inactiva.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruta_id\": 999999,\n  \"transportista_id\": {{transportista_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "asignar 404 recoleccion inexistente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones/999999/asignacion",
+            "description": "La recoleccion no existe.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruta_id\": {{ruta_id}},\n  \"transportista_id\": {{transportista_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "asignar 200 XML",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones/{{recoleccion_id}}/asignacion",
+            "description": "RF-13: asigna ruta y transportista (asignacion.xsd).",
+            "body": {
+              "mode": "raw",
+              "raw": "<asignacion>\n  <ruta_id>{{ruta_id}}</ruta_id>\n  <transportista_id>{{transportista_id}}</transportista_id>\n</asignacion>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"asignada\", () => { const X = xml2Json(pm.response.text()); pm.expect(X.respuesta.estado === \"asignada\").to.be.true; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Estado de la recoleccion (PATCH)",
+      "item": [
+        {
+          "name": "estado 409 transicion invalida",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones/{{recoleccion_id}}/estado",
+            "description": "De asignada solo se pasa a en_transito o fallida.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"completada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"error.tipo = transicion_invalida\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"transicion_invalida\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "estado 404 inexistente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones/999999/estado",
+            "description": "La recoleccion no existe.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"en_transito\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "estado 200 en_transito",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones/{{recoleccion_id}}/estado",
+            "description": "RF-14: el producto va en camino.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"en_transito\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"en_transito\", () => { const J = pm.response.json(); pm.expect(J.estado === \"en_transito\").to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "asignar 409 ya inicio",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones/{{recoleccion_id}}/asignacion",
+            "description": "Una recoleccion en transito ya no se reasigna.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruta_id\": {{ruta_id}},\n  \"transportista_id\": {{transportista_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"error.tipo = estado_no_permite\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"estado_no_permite\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "estado 200 completada XML",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recolecciones/{{recoleccion_id}}/estado",
+            "description": "La recoleccion termina; XML (estado_recoleccion.xsd).",
+            "body": {
+              "mode": "raw",
+              "raw": "<estado_recoleccion>\n  <estado>completada</estado>\n</estado_recoleccion>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"completada\", () => { const X = xml2Json(pm.response.text()); pm.expect(X.respuesta.estado === \"completada\").to.be.true; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Recepcion en el centro (POST)",
+      "item": [
+        {
+          "name": "recepcion 403 coordinador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_coordinador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recepciones",
+            "description": "Solo el Encargado del Centro recibe.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"coincide_expediente\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "recepcion 400 devolucion invalida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recepciones",
+            "description": "devolucion_id debe ser entero positivo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": 0,\n  \"coincide_expediente\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "recepcion 404 inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recepciones",
+            "description": "La devolucion no existe.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": 999999,\n  \"coincide_expediente\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "recepcion 400 booleano invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recepciones",
+            "description": "coincide_expediente debe ser booleano.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"coincide_expediente\": \"quizas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "recepcion 201 exitoso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recepciones",
+            "description": "RF-15: el centro confirma que recibio el producto.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"coincide_expediente\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "recepcion 409 duplicada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{logistica_url}}/api/v1/logistica/recepciones",
+            "description": "La devolucion ya fue recibida.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"devolucion_id\": {{devolucion_id}},\n  \"coincide_expediente\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"error.tipo = recepcion_duplicada\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"recepcion_duplicada\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
