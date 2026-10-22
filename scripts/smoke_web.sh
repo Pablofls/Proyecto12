@@ -7,6 +7,7 @@
 #
 #   bash scripts/smoke_web.sh                 # contra http://localhost:8000
 #   WEB=http://34.51.108.167:8000 bash scripts/smoke_web.sh
+#   NUEVO_PANEL=1 bash scripts/smoke_web.sh   # tras integrar el rediseno: tambien /integracion/servicios/estado
 #
 # Requiere PASSWORD_DEMO en el .env (no se imprime). No modifica datos: solo GET.
 set -uo pipefail
@@ -31,7 +32,7 @@ ver() {      # ver <alias> <ruta> [texto que debe aparecer]
   local malo=""
   if [ "$c" != "200" ]; then malo="HTTP $c"
   elif grep -qiE 'Traceback|Internal Server Error|TemplateSyntaxError|UndefinedError|jinja2\.exceptions' "$cuerpo"; then malo="error de servidor/plantilla en el cuerpo"
-  elif [ -n "${3:-}" ] && ! grep -qiF "$3" "$cuerpo"; then malo="no aparece '$3'"
+  elif [ -n "${3:-}" ] && ! grep -qiE "$3" "$cuerpo"; then malo="no aparece '$3'"
   fi
   if [ -z "$malo" ]; then printf 'OK     %-5s %s\n' "$1" "$2"
   else printf 'FALLO  %-5s %s  -> %s\n' "$1" "$2" "$malo"; fallos=$((fallos+1)); fi
@@ -47,8 +48,8 @@ entrar ana josue.analista@demo.mx
 entrar cli miguel.cliente@demo.mx
 
 # Administrador
-ver adm /panel "bell\|campan\|notificaciones"
-ver adm /ventas
+ver adm /panel "campanita|notificaciones"
+ver adm /ventas/
 ver adm /devoluciones/
 ver adm "/devoluciones/$DEV"
 ver adm /catalogos/
@@ -60,7 +61,8 @@ ver adm /panel/causas
 ver adm /panel/costos
 ver adm /bitacora
 ver adm /integracion/servicios
-ver adm /integracion/servicios/estado '"disponibles"'
+# Solo existe con el rediseno del panel de servicios: NUEVO_PANEL=1 bash scripts/smoke_web.sh
+[ "${NUEVO_PANEL:-0}" = "1" ] && ver adm /integracion/servicios/estado '"disponibles"'
 ver adm /notificaciones/
 # Analista (resuelve solicitudes: el expediente debe traer su formulario)
 ver ana /panel
@@ -72,7 +74,7 @@ ver ana /bitacora
 ver ana /notificaciones/
 # Cliente
 ver cli /panel
-ver cli /ventas
+ver cli /ventas/
 ver cli /devoluciones/
 [ -n "$DEV_CLI" ] && ver cli "/devoluciones/$DEV_CLI"
 ver cli /notificaciones/
