@@ -1,0 +1,138 @@
+# PostgreSQL: filas del proceso completo (devolucion 81)
+
+Capturado en la VM el 2026-10-22 00:50 UTC con scripts/evidencias_vm.sh. Salida real, sin editar.
+
+>>> SELECT id, folio_devolucion, estado, cantidad_devuelta, fecha_solicitud, fecha_cierre FROM devoluciones WHERE id = 81
+ id | folio_devolucion | estado  | cantidad_devuelta |        fecha_solicitud        |         fecha_cierre          
+----+------------------+---------+-------------------+-------------------------------+-------------------------------
+ 81 | DEV-2026-0081    | cerrada |                 1 | 2026-10-22 00:37:25.634753+00 | 2026-10-22 00:42:03.019623+00
+(1 row)
+
+
+>>> SELECT id, devolucion_id, estado, fecha_programada, lugar, ruta_id, transportista_id FROM recolecciones WHERE devolucion_id = 81
+ id | devolucion_id |   estado   | fecha_programada |         lugar         | ruta_id | transportista_id 
+----+---------------+------------+------------------+-----------------------+---------+------------------
+ 29 |            81 | completada | 2026-10-29       | Domicilio del cliente |       4 |                4
+(1 row)
+
+
+>>> SELECT id, devolucion_id, coincide_expediente, fecha_recepcion FROM recepciones WHERE devolucion_id = 81
+ id | devolucion_id | coincide_expediente |        fecha_recepcion        
+----+---------------+---------------------+-------------------------------
+ 23 |            81 | t                   | 2026-10-22 00:38:37.180712+00
+(1 row)
+
+
+>>> SELECT id, devolucion_id, resultado_general, apto_para_inventario, mongo_doc_id FROM inspecciones_ref WHERE devolucion_id = 81
+ id | devolucion_id | resultado_general | apto_para_inventario |       mongo_doc_id       
+----+---------------+-------------------+----------------------+--------------------------
+ 21 |            81 | apto              | t                    | 6ad95b4fdc019a2bc7393ae6
+(1 row)
+
+
+>>> SELECT id, devolucion_id, destino, justificacion FROM disposiciones WHERE devolucion_id = 81
+ id | devolucion_id |  destino   |            justificacion             
+----+---------------+------------+--------------------------------------
+ 16 |            81 | inventario | Producto apto, regresa a inventario.
+(1 row)
+
+
+>>> SELECT id, disposicion_id, etiqueta_codigo FROM inventario_recuperado ORDER BY id DESC LIMIT 3
+ id | disposicion_id | etiqueta_codigo 
+----+----------------+-----------------
+  5 |             16 | REC-2026-0081
+(1 row)
+
+
+>>> SELECT id, devolucion_id, monto, metodo, estado, fecha_resolucion FROM reembolsos WHERE devolucion_id = 81
+ id | devolucion_id | monto |    metodo     |  estado  |       fecha_resolucion        
+----+---------------+-------+---------------+----------+-------------------------------
+ 11 |            81 |  1.00 | transferencia | aprobado | 2026-10-22 00:42:03.019623+00
+(1 row)
+
+
+>>> SELECT etapa, SUM(monto) AS subtotal FROM costos WHERE devolucion_id = 81 GROUP BY etapa ORDER BY etapa
+     etapa      | subtotal 
+----------------+----------
+ almacenamiento |    45.00
+ reembolso      |     1.00
+ transporte     |   150.50
+(3 rows)
+
+
+>>> SELECT * FROM vista_costo_devolucion WHERE devolucion_id = 81
+ devolucion_id | costo_transporte | costo_inspeccion | costo_almacenamiento | costo_reacondicionamiento | costo_destruccion | monto_reembolsado | costo_otros | costo_total 
+---------------+------------------+------------------+----------------------+---------------------------+-------------------+-------------------+-------------+-------------
+            81 |           150.50 |                0 |                45.00 |                         0 |                 0 |              1.00 |           0 |      196.50
+(1 row)
+
+
+>>> SELECT id, devolucion_id, tipo, etapa, nombre_original, mime_type, tamano_bytes, eliminado_en FROM evidencias ORDER BY id DESC LIMIT 6
+ id | devolucion_id |    tipo    |   etapa    |   nombre_original    | mime_type | tamano_bytes |         eliminado_en          
+----+---------------+------------+------------+----------------------+-----------+--------------+-------------------------------
+ 17 |            81 | comentario | inspeccion |                      |           |              | 
+ 16 |            83 | fotografia | solicitud  | evidencia_prueba.png | image/png |           70 | 
+ 15 |            83 | comentario | solicitud  |                      |           |              | 2026-10-22 00:40:55.496387+00
+ 14 |            83 | comentario | solicitud  |                      |           |              | 
+  3 |            35 | comentario | inspeccion |                      |           |              | 
+  2 |            33 | comentario | inspeccion |                      |           |              | 
+(6 rows)
+
+
+>>> SELECT fecha, accion, entidad, entidad_id, detalle, correlation_id FROM bitacora WHERE entidad = 'devoluciones' AND entidad_id = 81 ORDER BY fecha
+             fecha             |         accion          |   entidad    | entidad_id |                                  detalle                                   |  correlation_id  
+-------------------------------+-------------------------+--------------+------------+----------------------------------------------------------------------------+------------------
+ 2026-10-22 00:37:25.634753+00 | alta_devolucion         | devoluciones |         81 | Se registro la devolucion DEV-2026-0081 sobre la venta VTA-2026-0006 (API) | f09c57e7806e439c
+ 2026-10-22 00:37:27.362837+00 | acceso_denegado         | devoluciones |         81 | Intento de acceder a una devolucion de otro cliente (API)                  | ec46ff33240d4a86
+ 2026-10-22 00:37:27.827236+00 | solicitud_informacion   | devoluciones |         81 | Decision 'informacion' por API. Describe el estado del sello.              | 4c1c883a2bc949ef
+ 2026-10-22 00:37:27.949793+00 | actualizacion_solicitud | devoluciones |         81 | El cliente corrigio la solicitud (API)                                     | 3b9720bb9dc84aaa
+ 2026-10-22 00:37:28.248568+00 | autorizacion            | devoluciones |         81 | Decision 'autorizar' por API. Evidencia suficiente.                        | feca4df0209d4877
+ 2026-10-22 00:38:34.584256+00 | recoleccion_programada  | devoluciones |         81 | Recoleccion 29 programada por API                                          | ceaa44e98a9c447f
+ 2026-10-22 00:38:36.004624+00 | recoleccion_asignada    | devoluciones |         81 | Ruta 4, transportista 4                                                    | cd63209b770a41a8
+ 2026-10-22 00:38:36.399528+00 | estado_recoleccion      | devoluciones |         81 | Estado logistico: en_transito                                              | 5ddcdd20429b43ce
+ 2026-10-22 00:38:36.611218+00 | estado_recoleccion      | devoluciones |         81 | Estado logistico: completada                                               | ec66b5aa4d9c4a7c
+ 2026-10-22 00:38:37.180712+00 | recepcion_confirmada    | devoluciones |         81 | Coincide expediente: True                                                  | de3c11a62a2d469b
+ 2026-10-22 00:39:43.019119+00 | inspeccion_registrada   | devoluciones |         81 | Resultado: apto; Mongo 6ad95b4fdc019a2bc7393ae6                            | 8c29b283310d4dd1
+ 2026-10-22 00:39:44.269433+00 | inspeccion_actualizada  | devoluciones |         81 | Se actualizo el detalle semiestructurado en MongoDB                        | 6ffbda7400e94ee4
+ 2026-10-22 00:39:44.746378+00 | disposicion_registrada  | devoluciones |         81 | Destino: inventario                                                        | ac5eb74b3c634ddd
+ 2026-10-22 00:39:45.250034+00 | inventario_recuperado   | devoluciones |         81 | Etiqueta REC-2026-0081                                                     | 765a58ac8bf949e4
+ 2026-10-22 00:42:01.962684+00 | costo_registrado        | devoluciones |         81 | transporte: 150.50                                                         | c8c0e626b3804e9d
+ 2026-10-22 00:42:02.119018+00 | costo_registrado        | devoluciones |         81 | almacenamiento: 45.00                                                      | aceae34fe9524a98
+ 2026-10-22 00:42:03.019623+00 | reembolso_aprobado      | devoluciones |         81 | Monto 1.00; metodo transferencia                                           | 7e31dbd2d3dc462e
+(17 rows)
+
+
+>>> SELECT usuario_id, tipo, mensaje, url, fecha_creacion FROM notificaciones WHERE devolucion_id = 81 ORDER BY id
+ usuario_id |          tipo          |                                           mensaje                                            |                  url                  |        fecha_creacion         
+------------+------------------------+----------------------------------------------------------------------------------------------+---------------------------------------+-------------------------------
+         11 | solicitud_informacion  | Necesitamos mas informacion sobre tu devolucion DEV-2026-0081. Describe el estado del sello. | /devoluciones/81                      | 2026-10-22 00:37:27.827236+00
+         11 | autorizacion           | Tu devolucion DEV-2026-0081 fue autorizada. Pronto programaremos la recoleccion.             | /devoluciones/81                      | 2026-10-22 00:37:28.248568+00
+         15 | autorizacion_logistica | Autorizada DEV-2026-0081: programa la recoleccion                                            | /logistica/recolecciones/81/programar | 2026-10-22 00:37:28.248568+00
+         11 | reembolso_aprobado     | El reembolso de DEV-2026-0081 fue aprobado.                                                  |                                       | 2026-10-22 00:42:03.019623+00
+(4 rows)
+
+
+>>> SELECT email, exitoso, ip_origen, fecha FROM intentos_acceso ORDER BY id DESC LIMIT 10
+          email           | exitoso |   ip_origen   |             fecha             
+--------------------------+---------+---------------+-------------------------------
+ roberto.centro@demo.mx   | t       | 200.188.67.69 | 2026-10-22 00:43:10.668578+00
+ pablo.admin@demo.mx      | t       | 200.188.67.69 | 2026-10-22 00:43:10.467235+00
+ josue.analista@demo.mx   | t       | 200.188.67.69 | 2026-10-22 00:43:10.17585+00
+ miguel.cliente@demo.mx   | t       | 200.188.67.69 | 2026-10-22 00:43:09.977766+00
+ miguel.cliente@demo.mx   | t       | 200.188.67.69 | 2026-10-22 00:42:00.740599+00
+ josue.analista@demo.mx   | t       | 200.188.67.69 | 2026-10-22 00:42:00.457025+00
+ roberto.centro@demo.mx   | t       | 200.188.67.69 | 2026-10-22 00:42:00.246828+00
+ david.logistica@demo.mx  | t       | 200.188.67.69 | 2026-10-22 00:41:59.976867+00
+ carla.reembolsos@demo.mx | t       | 200.188.67.69 | 2026-10-22 00:41:59.72788+00
+ josue.analista@demo.mx   | t       | 200.188.67.69 | 2026-10-22 00:40:51.211735+00
+(10 rows)
+
+
+>>> SELECT version FROM schema_migrations ORDER BY 1 DESC LIMIT 3
+             version             
+---------------------------------
+ 013_notificaciones_enlace.sql
+ 012_fecha_cierre_devolucion.sql
+ 011_destino_donacion.sql
+(3 rows)
+

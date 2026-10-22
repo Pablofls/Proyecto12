@@ -1,0 +1,378 @@
+# MongoDB: insercion, consulta, actualizacion, filtro, agregacion, indices y explain
+
+Capturado en la VM el 2026-10-22 00:50 UTC con scripts/evidencias_vm.sh. Salida real, sin editar.
+
+>>> printjson(db.getCollectionNames())
+[
+  'evidencias_metadatos',
+  'inspecciones',
+  'resultados_analisis',
+  'eventos'
+]
+
+>>> printjson(db.eventos.insertOne({ servicio: 'evidencias_vm', tipo: 'captura_manual', datos: { nota: 'prueba de insercion' }, correlation_id: 'captura-vm-01', fecha: new Date() }))
+{
+  acknowledged: true,
+  insertedId: ObjectId('6ad95ddd3a9dd00b2b1a3f04')
+}
+
+>>> printjson(db.inspecciones.findOne({ devolucion_id: 81 }))
+{
+  _id: ObjectId('6ad95b4fdc019a2bc7393ae6'),
+  devolucion_id: 81,
+  inspector_id: 13,
+  fecha: ISODate('2026-10-22T00:39:43.025Z'),
+  producto: {
+    clasificacion_temperatura: 'refrigerado'
+  },
+  condiciones: {
+    estado_empaque: 'Empaque intacto, sello cerrado',
+    danos: false,
+    caducidad_vencida: false,
+    cadena_frio_rota: false,
+    minutos_fuera_refrigeracion: 10,
+    temperatura_recepcion: 4.5
+  },
+  observaciones: 'Observacion actualizada desde Postman',
+  resultado: {
+    apto_para_inventario: true,
+    motivos: []
+  }
+}
+
+>>> printjson(db.eventos.find({ servicio: 'devoluciones' }, { datos: 0 }).sort({ fecha: -1 }).limit(5).toArray())
+[
+  {
+    _id: ObjectId('6ad95b98e8c6892d152d3f05'),
+    servicio: 'devoluciones',
+    tipo: 'devolucion_cancelada',
+    usuario_id: 11,
+    correlation_id: 'b4c2cb4c21b24e7e',
+    fecha: ISODate('2026-10-22T00:40:56.020Z')
+  },
+  {
+    _id: ObjectId('6ad95b93e8c6892d152d3f04'),
+    servicio: 'devoluciones',
+    tipo: 'devolucion_registrada',
+    usuario_id: 11,
+    correlation_id: 'f30a1513ec204262',
+    fecha: ISODate('2026-10-22T00:40:51.428Z')
+  },
+  {
+    _id: ObjectId('6ad95ac80194762f256264d2'),
+    servicio: 'devoluciones',
+    tipo: 'devolucion_cancelada',
+    usuario_id: 11,
+    correlation_id: '426efbdc1104455d',
+    fecha: ISODate('2026-10-22T00:37:28.699Z')
+  },
+  {
+    _id: ObjectId('6ad95ac8e8c6892d152d3f03'),
+    servicio: 'devoluciones',
+    tipo: 'devolucion_autorizacion',
+    usuario_id: 16,
+    correlation_id: 'feca4df0209d4877',
+    fecha: ISODate('2026-10-22T00:37:28.264Z')
+  },
+  {
+    _id: ObjectId('6ad95ac70194762f256264d1'),
+    servicio: 'devoluciones',
+    tipo: 'devolucion_corregida',
+    usuario_id: 11,
+    correlation_id: '3b9720bb9dc84aaa',
+    fecha: ISODate('2026-10-22T00:37:27.964Z')
+  }
+]
+
+>>> printjson(db.evidencias_metadatos.find({ devolucion_id: 81 }).toArray())
+[
+  {
+    _id: ObjectId('6ad95b97c703a34b44966137'),
+    evidencia_id: 17,
+    devolucion_id: 81,
+    usuario_id: 13,
+    tipo: 'comentario',
+    etapa: 'inspeccion',
+    nombre_original: null,
+    mime_type: null,
+    tamano_bytes: null
+  }
+]
+
+>>> printjson(db.inspecciones.updateOne({ devolucion_id: 81 }, { $set: { observaciones: 'actualizacion manual para captura' } }))
+{
+  acknowledged: true,
+  insertedId: null,
+  matchedCount: 1,
+  modifiedCount: 1,
+  upsertedCount: 0
+}
+
+>>> printjson(db.inspecciones.findOne({ devolucion_id: 81 }, { observaciones: 1 }))
+{
+  _id: ObjectId('6ad95b4fdc019a2bc7393ae6'),
+  observaciones: 'actualizacion manual para captura'
+}
+
+>>> printjson(db.inspecciones.find({ 'resultado.apto_para_inventario': true }, { devolucion_id: 1 }).limit(5).toArray())
+[
+  {
+    _id: ObjectId('6ad95b4fdc019a2bc7393ae6'),
+    devolucion_id: 81
+  }
+]
+
+>>> printjson(db.eventos.find({ correlation_id: 'captura-vm-01' }).toArray())
+[
+  {
+    _id: ObjectId('6ad95ddd3a9dd00b2b1a3f04'),
+    servicio: 'evidencias_vm',
+    tipo: 'captura_manual',
+    datos: {
+      nota: 'prueba de insercion'
+    },
+    correlation_id: 'captura-vm-01',
+    fecha: ISODate('2026-10-22T00:50:37.303Z')
+  }
+]
+
+>>> printjson(db.resultados_analisis.aggregate([{ $match: { tipo_analisis: 'snapshot_devolucion', vigente: true } }, { $group: { _id: '$motivo', total: { $sum: 1 } } }, { $sort: { total: -1, _id: 1 } }]).toArray())
+[
+  {
+    _id: 'Cadena de frio rota',
+    total: 12
+  },
+  {
+    _id: 'Caducidad proxima',
+    total: 8
+  },
+  {
+    _id: 'Etiqueta incorrecta',
+    total: 7
+  },
+  {
+    _id: 'Caducidad vencida',
+    total: 3
+  },
+  {
+    _id: 'Calidad inferior',
+    total: 3
+  },
+  {
+    _id: 'Producto danado',
+    total: 3
+  },
+  {
+    _id: 'Error en el pedido',
+    total: 2
+  }
+]
+
+>>> printjson(db.inspecciones.getIndexes())
+[
+  {
+    v: 2,
+    key: {
+      _id: 1
+    },
+    name: '_id_'
+  },
+  {
+    v: 2,
+    key: {
+      devolucion_id: 1
+    },
+    name: 'idx_devolucion'
+  },
+  {
+    v: 2,
+    key: {
+      devolucion_id: 1
+    },
+    name: 'uq_inspeccion_devolucion',
+    unique: true
+  }
+]
+
+>>> printjson(db.evidencias_metadatos.getIndexes())
+[
+  {
+    v: 2,
+    key: {
+      _id: 1
+    },
+    name: '_id_'
+  },
+  {
+    v: 2,
+    key: {
+      devolucion_id: 1
+    },
+    name: 'idx_devolucion'
+  }
+]
+
+>>> printjson(db.eventos.getIndexes())
+[
+  {
+    v: 2,
+    key: {
+      _id: 1
+    },
+    name: '_id_'
+  },
+  {
+    v: 2,
+    key: {
+      correlation_id: 1
+    },
+    name: 'idx_correlation'
+  },
+  {
+    v: 2,
+    key: {
+      fecha: -1
+    },
+    name: 'idx_fecha'
+  },
+  {
+    v: 2,
+    key: {
+      'datos.devolucion_id': 1,
+      fecha: -1
+    },
+    name: 'idx_devolucion_fecha'
+  }
+]
+
+>>> printjson(db.resultados_analisis.getIndexes())
+[
+  {
+    v: 2,
+    key: {
+      _id: 1
+    },
+    name: '_id_'
+  },
+  {
+    v: 2,
+    key: {
+      tipo_analisis: 1,
+      fecha_calculo: -1
+    },
+    name: 'idx_tipo_fecha'
+  },
+  {
+    v: 2,
+    key: {
+      tipo_analisis: 1,
+      devolucion_id: 1
+    },
+    name: 'idx_snapshot_devolucion_unico',
+    unique: true,
+    partialFilterExpression: {
+      tipo_analisis: 'snapshot_devolucion'
+    }
+  }
+]
+
+>>> var e = db.eventos.find({ correlation_id: 'captura-vm-01' }).explain('executionStats'); printjson({ plan: e.queryPlanner.winningPlan, docsExaminados: e.executionStats.totalDocsExamined, clavesExaminadas: e.executionStats.totalKeysExamined })
+{
+  plan: {
+    stage: 'FETCH',
+    inputStage: {
+      stage: 'IXSCAN',
+      keyPattern: {
+        correlation_id: 1
+      },
+      indexName: 'idx_correlation',
+      isMultiKey: false,
+      multiKeyPaths: {
+        correlation_id: []
+      },
+      isUnique: false,
+      isSparse: false,
+      isPartial: false,
+      indexVersion: 2,
+      direction: 'forward',
+      indexBounds: {
+        correlation_id: [
+          '["captura-vm-01", "captura-vm-01"]'
+        ]
+      }
+    }
+  },
+  docsExaminados: 1,
+  clavesExaminadas: 1
+}
+
+>>> var e = db.inspecciones.find({ devolucion_id: 81 }).explain('executionStats'); printjson({ plan: e.queryPlanner.winningPlan, docsExaminados: e.executionStats.totalDocsExamined, clavesExaminadas: e.executionStats.totalKeysExamined })
+{
+  plan: {
+    stage: 'FETCH',
+    inputStage: {
+      stage: 'IXSCAN',
+      keyPattern: {
+        devolucion_id: 1
+      },
+      indexName: 'idx_devolucion',
+      isMultiKey: false,
+      multiKeyPaths: {
+        devolucion_id: []
+      },
+      isUnique: false,
+      isSparse: false,
+      isPartial: false,
+      indexVersion: 2,
+      direction: 'forward',
+      indexBounds: {
+        devolucion_id: [
+          '[81, 81]'
+        ]
+      }
+    }
+  },
+  docsExaminados: 1,
+  clavesExaminadas: 1
+}
+
+>>> var e = db.resultados_analisis.find({ tipo_analisis: 'snapshot_devolucion' }).explain('executionStats'); printjson({ plan: e.queryPlanner.winningPlan, docsExaminados: e.executionStats.totalDocsExamined, clavesExaminadas: e.executionStats.totalKeysExamined })
+{
+  plan: {
+    stage: 'FETCH',
+    inputStage: {
+      stage: 'IXSCAN',
+      keyPattern: {
+        tipo_analisis: 1,
+        fecha_calculo: -1
+      },
+      indexName: 'idx_tipo_fecha',
+      isMultiKey: false,
+      multiKeyPaths: {
+        tipo_analisis: [],
+        fecha_calculo: []
+      },
+      isUnique: false,
+      isSparse: false,
+      isPartial: false,
+      indexVersion: 2,
+      direction: 'forward',
+      indexBounds: {
+        tipo_analisis: [
+          '["snapshot_devolucion", "snapshot_devolucion"]'
+        ],
+        fecha_calculo: [
+          '[MaxKey, MinKey]'
+        ]
+      }
+    }
+  },
+  docsExaminados: 38,
+  clavesExaminadas: 38
+}
+
+>>> printjson(db.eventos.deleteMany({ correlation_id: 'captura-vm-01' }))
+{
+  acknowledged: true,
+  deletedCount: 1
+}
