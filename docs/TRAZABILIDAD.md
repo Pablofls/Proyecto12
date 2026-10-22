@@ -80,7 +80,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-08 | JWT corto y token de renovacion | `services/auth` emite access/refresh y todos verifican sesion/revocacion Redis | implementado |
 | RNF-09 | Verificar rol y permisos antes de cada operacion | `roles_required`, `exigir_devolucion_visible` | implementado |
 | RNF-10 | Validar los datos antes de almacenarlos | Validacion en navegador y servidor en cada blueprint | implementado |
-| RNF-11 | Proteccion contra inyeccion SQL y XXE | Parametros ligados en `apps/web/app/db.py` y `shared/infra.py`; listas blancas en `catalogos.py` y `services/ventas_catalogos`; parser `lxml` sin entidades ni red en `shared/xsd.py` | implementado (sin prueba dedicada de XXE) |
+| RNF-11 | Proteccion contra inyeccion SQL y XXE | Parametros ligados en `apps/web/app/db.py` y `shared/infra.py`; listas blancas en `catalogos.py` y `services/ventas_catalogos`; parser `lxml` sin entidades ni red en `shared/xsd.py`; XXE probado en la VM por E2E FMT-07 (400 `xml_invalido`, entidad no resuelta) | implementado |
 | RNF-12 | Registro de intentos fallidos y bloqueo | `apps/web/app/cache.py`, `db/migrations/004_control_accesos.sql` | implementado |
 | RNF-13 | Limitacion de peticiones | `shared/infra.py:limitar`; aplicado solo en `auth` (`/login`, `/refresh`) y `devoluciones` (alta). Los otros seis servicios y el web no limitan | parcial |
 | RNF-14 | Cifrado y secretos fuera del codigo | `.env` fuera de git, `apps/web/app/config.py` | parcial (falta HTTPS) |
@@ -91,13 +91,13 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-19 | Consistencia con usuarios concurrentes | Transaccion por peticion; folio por secuencia | implementado |
 | RNF-20 | Escalar agregando instancias | — | pendiente |
 | RNF-21 | Una falla parcial no tumba todo | `/health` degradado; bloqueo persistido en Postgres | parcial |
-| RNF-22 | Health checks | `/health` y `healthcheck` en el compose | implementado |
+| RNF-22 | Health checks | `/health` responde 200 en los nueve endpoints (VM, `docs/evidencias/bases/docker.txt`); `healthcheck` de Compose en ocho contenedores, faltan `app`, `logistica`, `inspecciones` y `reembolsos-costos` | parcial |
 | RNF-23 | Identificador de correlacion | `apps/web/app/security.py:correlation_id`; `shared/respuestas.py` (header `X-Correlation-ID`, bitacora y coleccion `eventos`) | implementado |
 | RNF-24 | Respaldo y recuperacion | — | pendiente |
 | RNF-25 | Mensajes claros al usuario | Mensajes flash en todas las operaciones | implementado |
 | RNF-26 | Adaptarse a distintos tamanos de pantalla | `apps/web/app/static/css/estilos.css` | implementado |
 | RNF-27 | Docker y Google Compute Engine | `docker-compose.yml`, VM del equipo | implementado |
-| RNF-28 | Pruebas | 119 unitarias y de API con dobles en `services/*/tests` y `apps/web/app/tests`; suite E2E `tests/e2e/` y `test_integracion.py` en los ocho servicios (`INTEGRACION=1`, solo en la VM); casos en `docs/PRUEBAS.md`. Falta pegar la salida de la VM; faltan carga y recuperacion ante fallos | parcial |
+| RNF-28 | Pruebas | 119 unitarias y de API con dobles en `services/*/tests` y `apps/web/app/tests`; suite E2E `tests/e2e/` y `test_integracion.py` en los ocho servicios (`INTEGRACION=1`, solo en la VM); casos en `docs/PRUEBAS.md`. VM (21 de octubre): E2E 100 passed y integracion 8 de 8 (`docs/pruebas/salida_2026-10-21.txt`); 119 unitarias passed en local. Faltan caidas de dependencias, concurrencia real, 413 y carga | parcial |
 | RNF-29 | Locust con distintos perfiles | — | pendiente |
 | RNF-30 | Retencion y eliminacion logica | `db/migrations/005_eliminacion_logica.sql`; `DELETE /api/v1/devoluciones/{id}` marca `eliminado_en` | implementado |
 
@@ -138,3 +138,6 @@ Pendientes: UC-02 (recuperar contrasena) y UC-12 (escaneo).
 | RF-31, RNF-05 | Coleccion Postman por servicio (exito en JSON y XML, 400, 401, 403, 404 y 409) y environment de la VM | `docs/postman/*.postman_collection.json`, `docs/postman/vm.postman_environment.json`, generados por `docs/postman/generar_colecciones.py` desde `docs/postman/especificaciones.py` |
 | RNF-05, RNF-22, RNF-23 | Plantilla del apartado 5 por endpoint de `openapi.yaml`, con marcadores de captura pendiente | `docs/EVIDENCIAS.md` |
 | RNF-06, RNF-08, RNF-12, RNF-13, RN-12 | Guia de captura en la VM: `psql`, `mongosh`, `redis-cli`, Docker y volumen privado | `docs/evidencias/README.md`, `docs/evidencias/CHECKLIST_CAPTURAS.md` |
+| RF-31, RNF-05, RNF-11, RNF-13, RNF-28; RN-03 | Ejecucion real en la VM (22 de octubre): 238 casos de Newman con peticion y respuesta (JSON, XML, 400, 401, 403, 404, 409, 415), 767 verificaciones sin fallos; XXE, 429 y lock 409 | `docs/evidencias/ejecuciones/*.md`, `docs/pruebas/salida_2026-10-21.txt`, `docs/evidencias/bases/redis.txt` |
+| RNF-06, RNF-22, RNF-27 | Efecto en PostgreSQL, MongoDB (incluye `getIndexes()`), Redis, Docker (12 contenedores, nueve `/health` en 200) y volumen privado | `docs/evidencias/bases/*.txt` |
+| RF-31, RNF-05, RNF-06, RNF-28 | Documento tecnico con la evidencia real resumida y enlazada (apartados 10, 13, 15, 16 y 17) y la tabla de evidencia pendiente (apartado 19.3) | `docs/DOCUMENTO_TECNICO.md` |
