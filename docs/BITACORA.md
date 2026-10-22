@@ -512,3 +512,33 @@ pantalla de origen; el Pareto reutiliza `panel.sql_pareto` (antes inline en
 **Pruebas.** `test_exportacion.py`: BOM, escape de formulas, bloques, filtros
 como parametros ligados, 403 por rol y bitacora sin datos sensibles. El
 streaming real con cursor nombrado solo se puede comprobar en la VM.
+
+## Colecciones Postman y evidencias desde una sola especificacion (21 de octubre de 2026)
+
+**Decision.** Las 8 colecciones, el environment, `docs/EVIDENCIAS.md` y el checklist
+de capturas se generan con `docs/postman/generar_colecciones.py` a partir de
+`docs/postman/especificaciones.py`. Reemplaza a `generar_devoluciones.py`.
+
+**Por que asi.**
+- *Una sola fuente:* el id de captura (`NNN_servicio_metodo_endpoint_codigo`) aparece
+  en Postman, en `EVIDENCIAS.md` y en el checklist; escribirlos a mano los haria
+  divergir.
+- *Sin PyYAML:* la VM y las laptops no instalan nada para regenerar. Por eso el
+  generador no parsea `openapi.yaml`: los casos estan en codigo y el generador solo
+  **compara** con regex las rutas y metodos de cada `openapi.yaml` y avisa si falta
+  un endpoint o sobra un caso (termina con codigo 1).
+- *Cada coleccion inicia sesion con sus roles:* asi corre sola. Los ids que pasan
+  de una coleccion a otra (`devolucion_id`, `ruta_id`, ...) viajan por el
+  environment, no por variables de coleccion. A cambio, el login (10 por minuto
+  por IP, RNF-13) obliga a esperar entre colecciones.
+- *Evidencias crea y cancela su propia devolucion:* el cliente solo adjunta
+  mientras la devolucion esta en solicitud o revision, y el flujo principal ya la
+  autorizo.
+- *Casos de bloqueo y limite repiten la peticion* (`setNextRequest`) hasta ver 423
+  o 429; usan `email_bloqueo` (Sofia) para no bloquear a los usuarios del resto.
+
+**Que no es.** Ninguna respuesta de `EVIDENCIAS.md` fue ejecutada. Los codigos y
+`error.tipo` salieron de leer `services/*/app.py`; los cuerpos XML se validaron
+con `xmllint` contra los XSD, pero la corrida real es en la VM. Si una peticion
+falla ahi, lo correcto es revisar si cambio el servicio y corregir
+`especificaciones.py`.
