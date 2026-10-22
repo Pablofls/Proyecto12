@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Orvia - analisis auditoria
+  title: Servicio de analisis y auditoria - Plataforma de devoluciones
   version: 1.0.0
-  description: API del proyecto integrador, respuestas JSON y XML.
+  description: Analisis de causas con MongoDB - sincronizacion, Pareto (cache Redis, TTL 600 s), clasificacion de motivo, alertas de fraude, eventos y consulta de bitacora. JSON/XML y JWT. RF-22 a RF-26, RF-30.
 servers:
 - url: /
 paths:
