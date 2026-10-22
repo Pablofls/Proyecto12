@@ -1,36 +1,1355 @@
+
 {% extends "base.html" %}
-{% block titulo %}Ventas{% endblock %}
+{% block titulo %}Ventas | Orvia{% endblock %}
+
 {% block contenido %}
-<h1>{{ 'Mis compras' if rol_actual == 'Cliente' else 'Ventas' }}</h1>
-<p class="sub">Toda devolucion debe partir de una venta registrada (RN-01).</p>
 
-<form method="get" class="filtros">
-  <div>
-    <label for="q">Folio de venta</label>
-    <input type="text" id="q" name="q" value="{{ busqueda }}" placeholder="VTA-2026-...">
-  </div>
-  <button class="boton" type="submit">Buscar</button>
-  <a class="boton secundario" href="{{ url_for('ventas.listar') }}">Limpiar</a>
-</form>
+<style>
+/* ==========================================
+   ORVIA | VENTAS
+   Estilos exclusivos de esta pantalla
+========================================== */
 
-<div class="tabla-envoltura">
-  <table>
-    <thead><tr><th>Folio</th><th>Cliente</th><th>Tienda</th><th>Fecha</th><th>Articulos</th><th>Total</th><th></th></tr></thead>
-    <tbody>
-    {% for v in ventas %}
-      <tr>
-        <td>{{ v.folio_venta }}</td>
-        <td>{{ v.cliente }}</td>
-        <td>{{ v.tienda }}</td>
-        <td>{{ v.fecha_venta.strftime('%d/%m/%Y') }}</td>
-        <td>{{ v.lineas }}</td>
-        <td>$ {{ '%.2f'|format(v.total) }}</td>
-        <td><a class="boton secundario pequeno" href="{{ url_for('ventas.detalle', venta_id=v.id) }}">Ver detalle</a></td>
-      </tr>
-    {% else %}
-      <tr><td colspan="7" class="vacio">Sin ventas registradas.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</div>
+body:has(#ov-ventas) {
+    margin: 0;
+    background: #f7f9fc;
+    color: #14243b;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+body:has(#ov-ventas) > main {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body.ov-ventas-ready > header.barra,
+body.ov-ventas-ready > nav.menu {
+    display: none !important;
+}
+
+body.ov-ventas-ready > main > .avisos {
+    position: fixed;
+    top: 96px;
+    right: 24px;
+    z-index: 100;
+    max-width: min(440px, 90vw);
+}
+
+#ov-ventas,
+#ov-ventas * {
+    box-sizing: border-box;
+}
+
+#ov-ventas {
+    --ov-green: #078858;
+    --ov-ink: #14243b;
+    --ov-muted: #7385a0;
+    --ov-border: #e7ecf2;
+
+    display: grid;
+    grid-template-columns: 258px minmax(0, 1fr);
+    min-height: 100vh;
+    background: #f7f9fc;
+    font-size: 14px;
+}
+
+#ov-ventas button,
+#ov-ventas input,
+#ov-ventas select {
+    font: inherit;
+}
+
+#ov-ventas button {
+    cursor: pointer;
+}
+
+#ov-ventas :is(a, button, input, select):focus-visible {
+    outline: 3px solid #14a16a55;
+    outline-offset: 2px;
+}
+
+/* ==========================================
+   SIDEBAR
+========================================== */
+
+#ov-ventas .ov-side {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 30px 21px 23px;
+    border-right: 1px solid var(--ov-border);
+    background: #fff;
+    z-index: 30;
+}
+
+#ov-ventas .ov-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px;
+    margin-bottom: 43px;
+    color: #111d30;
+    font: 700 37px/1 Georgia, serif;
+    letter-spacing: -1.5px;
+}
+
+#ov-ventas .ov-logo svg {
+    width: 52px;
+    height: 36px;
+    flex: none;
+}
+
+#ov-ventas .ov-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+}
+
+#ov-ventas .ov-navigation a {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+    min-height: 49px;
+    padding: 0 15px;
+    border-radius: 11px;
+    color: #4b5d79;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+#ov-ventas .ov-navigation a:hover {
+    background: #f0f7f3;
+    color: #08734b;
+}
+
+#ov-ventas .ov-navigation a[aria-current="page"] {
+    background: #e1f1eb;
+    color: #086c46;
+    font-weight: 700;
+}
+
+#ov-ventas .ov-navigation svg {
+    width: 21px;
+    height: 21px;
+    flex: none;
+}
+
+#ov-ventas .ov-side-footer {
+    margin-top: auto;
+    padding: 19px 12px 0;
+    border-top: 1px solid var(--ov-border);
+    color: #91a0b5;
+    font-size: 12px;
+}
+
+/* ==========================================
+   TOPBAR
+========================================== */
+
+#ov-ventas .ov-workspace {
+    min-width: 0;
+}
+
+#ov-ventas .ov-topbar {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    min-height: 92px;
+    padding: 15px 31px;
+    background: #fff;
+    border-bottom: 1px solid var(--ov-border);
+}
+
+#ov-ventas .ov-top-search {
+    position: relative;
+    flex: 1;
+    max-width: 770px;
+    min-width: 80px;
+    margin: 0;
+}
+
+#ov-ventas .ov-top-search > svg {
+    position: absolute;
+    left: 17px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 21px;
+    height: 21px;
+    pointer-events: none;
+    color: #344967;
+}
+
+#ov-ventas .ov-top-search input {
+    width: 100%;
+    height: 52px;
+    padding: 0 78px 0 54px;
+    border: 1px solid #eaf0f5;
+    border-radius: 12px;
+    background: #f6f8fa;
+    color: #263a56;
+    outline: none;
+    font-size: 14px;
+}
+
+#ov-ventas .ov-top-search input::placeholder {
+    color: #8798b0;
+}
+
+#ov-ventas .ov-shortcut {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: white;
+    color: #91a0b5;
+    font-size: 12px;
+    pointer-events: none;
+}
+
+#ov-ventas .ov-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-left: auto;
+}
+
+#ov-ventas .ov-bell {
+    min-width: 40px;
+    display: grid;
+    place-items: center;
+}
+
+#ov-ventas .ov-bell .campanita {
+    position: relative;
+}
+
+#ov-ventas .ov-bell .campanita-boton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 39px;
+    height: 39px;
+    border-radius: 10px;
+    color: #2c405e;
+}
+
+#ov-ventas .ov-bell .campanita-panel {
+    top: 44px;
+    right: 0;
+    z-index: 110;
+}
+
+#ov-ventas .ov-user {
+    position: relative;
+}
+
+#ov-ventas .ov-user-trigger {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 5px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    text-align: left;
+    color: #1b2d47;
+}
+
+#ov-ventas .ov-user-trigger:hover {
+    background: #f4f7f9;
+}
+
+#ov-ventas .ov-avatar {
+    width: 45px;
+    height: 45px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #ddf0e8;
+    color: #078152;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+#ov-ventas .ov-user-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 180px;
+    min-width: 0;
+}
+
+#ov-ventas .ov-user-text strong {
+    font-size: 13px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#ov-ventas .ov-user-text small {
+    color: #7b8aa2;
+    font-size: 12px;
+}
+
+#ov-ventas .ov-user-trigger > svg {
+    width: 17px;
+    height: 17px;
+    flex: none;
+}
+
+#ov-ventas .ov-user-menu {
+    position: absolute;
+    right: 0;
+    top: 59px;
+    z-index: 90;
+    width: 240px;
+    padding: 13px;
+    border: 1px solid var(--ov-border);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 14px 38px #132d4824;
+}
+
+#ov-ventas .ov-user-menu[hidden] {
+    display: none;
+}
+
+#ov-ventas .ov-user-info {
+    padding: 8px 5px 13px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--ov-border);
+    color: #71849d;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+#ov-ventas .ov-user-menu form {
+    margin: 0;
+}
+
+#ov-ventas .ov-user-menu button {
+    width: 100%;
+    padding: 11px;
+    border: 0;
+    border-radius: 8px;
+    background: white;
+    text-align: left;
+    color: #b33341;
+}
+
+#ov-ventas .ov-user-menu button:hover {
+    background: #fff1f3;
+}
+
+#ov-ventas .ov-mobile {
+    display: none;
+    border: 1px solid var(--ov-border);
+    border-radius: 9px;
+    background: white;
+    padding: 9px 12px;
+}
+
+/* ==========================================
+   CONTENIDO
+========================================== */
+
+#ov-ventas .ov-content {
+    width: 100%;
+    max-width: 1700px;
+    margin: auto;
+    padding: 34px 31px 50px;
+}
+
+#ov-ventas .ov-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 25px;
+}
+
+#ov-ventas .ov-heading h1 {
+    margin: 0 0 8px;
+    font-size: clamp(29px, 2.7vw, 37px);
+    line-height: 1.15;
+    color: #122037;
+    letter-spacing: -1.2px;
+    font-weight: 750;
+}
+
+#ov-ventas .ov-heading p {
+    margin: 0;
+    color: #7788a1;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+#ov-ventas .ov-counter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    border: 1px solid #e4eaf0;
+    border-radius: 10px;
+    background: #fff;
+    color: #566b85;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+#ov-ventas .ov-counter strong {
+    font-weight: 750;
+    color: #078858;
+}
+
+/* TARJETA Y FILTROS */
+
+#ov-ventas .ov-table-card {
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--ov-border);
+    border-radius: 14px;
+    box-shadow: 0 8px 23px #172c4509;
+}
+
+#ov-ventas .ov-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding: 23px 24px 20px;
+}
+
+#ov-ventas .ov-table-title h2 {
+    margin: 0 0 6px;
+    color: #13243b;
+    font-size: 23px;
+    font-weight: 730;
+    letter-spacing: -.6px;
+}
+
+#ov-ventas .ov-table-title p {
+    margin: 0;
+    font-size: 13px;
+    color: #8291a7;
+}
+
+#ov-ventas .ov-filters {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+}
+
+#ov-ventas .ov-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+#ov-ventas .ov-filter-field label {
+    font-size: 11px;
+    color: #61738d;
+    font-weight: 650;
+}
+
+#ov-ventas .ov-filter-field input {
+    width: 245px;
+    max-width: 100%;
+    height: 43px;
+    padding: 0 13px;
+    border: 1px solid #e2e9f1;
+    border-radius: 9px;
+    background: #fff;
+    color: #263a55;
+    outline: none;
+    font-size: 12px;
+}
+
+#ov-ventas .ov-filter-field input::placeholder {
+    color: #9aa8ba;
+}
+
+#ov-ventas .ov-filter-submit {
+    height: 43px;
+    padding: 0 20px;
+    border: 1px solid #078858;
+    border-radius: 9px;
+    background: #078858;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+#ov-ventas .ov-filter-submit:hover {
+    background: #056f48;
+}
+
+#ov-ventas .ov-filter-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 43px;
+    padding: 0 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #fff;
+    color: #526783;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#ov-ventas .ov-filter-clear:hover {
+    background: #f5f8fa;
+}
+
+/* TABLA */
+
+#ov-ventas .ov-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
+#ov-ventas .ov-table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+#ov-ventas .ov-table thead {
+    background: #f7fafb;
+}
+
+#ov-ventas .ov-table th {
+    padding: 16px 20px;
+    color: #70819a;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .35px;
+    white-space: nowrap;
+}
+
+#ov-ventas .ov-table td {
+    padding: 17px 20px;
+    border-top: 1px solid #eaf0f4;
+    color: #4c607d;
+    font-size: 13px;
+    vertical-align: middle;
+    line-height: 1.5;
+}
+
+#ov-ventas .ov-table tbody tr:hover {
+    background: #fbfdfc;
+}
+
+#ov-ventas .ov-sale-link {
+    color: #078858;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+}
+
+#ov-ventas .ov-sale-link:hover {
+    color: #045e3d;
+}
+
+#ov-ventas .ov-client {
+    font-weight: 600;
+    color: #344961;
+}
+
+#ov-ventas .ov-store {
+    color: #5f718d;
+}
+
+#ov-ventas .ov-date {
+    white-space: nowrap;
+}
+
+#ov-ventas .ov-quantity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 37px;
+    min-height: 29px;
+    border-radius: 8px;
+    background: #f2f5f8;
+    color: #445a77;
+    font-weight: 650;
+}
+
+#ov-ventas .ov-money {
+    color: #1d3854;
+    font-weight: 700;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+#ov-ventas .ov-detail-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 35px;
+    padding: 0 12px;
+    border: 1px solid #d4eade;
+    border-radius: 8px;
+    background: #edf8f1;
+    color: #078858;
+    text-decoration: none;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+#ov-ventas .ov-detail-button:hover {
+    background: #dff2e8;
+}
+
+#ov-ventas .ov-detail-button svg {
+    width: 15px;
+    height: 15px;
+}
+
+#ov-ventas .ov-empty {
+    padding: 40px 20px !important;
+    color: #8091a7 !important;
+    text-align: center;
+}
+
+#ov-ventas .ov-table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 15px 24px;
+    border-top: 1px solid var(--ov-border);
+    color: #8290a5;
+    font-size: 12px;
+}
+
+#ov-ventas .ov-table-footer a {
+    color: #078858;
+    text-decoration: none;
+    font-weight: 650;
+}
+
+#ov-ventas .ov-table-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 1190px) {
+    #ov-ventas {
+        grid-template-columns: 220px minmax(0,1fr);
+    }
+
+    #ov-ventas .ov-side {
+        padding: 25px 12px;
+    }
+
+    #ov-ventas .ov-content {
+        padding: 25px 20px 40px;
+    }
+
+    #ov-ventas .ov-table-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 790px) {
+    #ov-ventas {
+        display: block;
+    }
+
+    #ov-ventas .ov-side {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 100;
+        width: 260px;
+        height: 100dvh;
+        overflow-y: auto;
+        box-shadow: 12px 0 35px #142e4729;
+    }
+
+    #ov-ventas[data-menu-open="true"] .ov-side {
+        display: flex;
+    }
+
+    #ov-ventas .ov-mobile {
+        display: inline-flex;
+    }
+
+    #ov-ventas .ov-topbar {
+        min-height: 76px;
+        padding: 12px 15px;
+        gap: 10px;
+    }
+
+    #ov-ventas .ov-user-text {
+        display: none;
+    }
+
+    #ov-ventas .ov-content {
+        padding: 24px 15px 35px;
+    }
+}
+
+@media (max-width: 540px) {
+    #ov-ventas .ov-heading {
+        flex-direction: column;
+    }
+
+    #ov-ventas .ov-filters,
+    #ov-ventas .ov-filter-field {
+        width: 100%;
+    }
+
+    #ov-ventas .ov-filter-field input {
+        width: 100%;
+    }
+
+    #ov-ventas .ov-table-header {
+        padding: 21px 16px;
+    }
+
+    #ov-ventas .ov-shortcut {
+        display: none;
+    }
+
+    #ov-ventas .ov-top-search input {
+        padding-left: 43px;
+        padding-right: 12px;
+    }
+
+    #ov-ventas .ov-actions {
+        gap: 5px;
+    }
+
+    #ov-ventas .ov-table-footer {
+        padding: 15px 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #ov-ventas *,
+    #ov-ventas *::before,
+    #ov-ventas *::after {
+        transition: none !important;
+    }
+}
+</style>
+
+
+<section id="ov-ventas"
+         data-menu-open="false"
+         aria-label="Ventas de Orvia">
+
+    <!-- MENU LATERAL -->
+    <aside class="ov-side" id="ov-ventas-sidebar">
+
+        <div class="ov-logo">
+
+            <svg viewBox="0 0 54 38" aria-hidden="true">
+                <defs>
+                    <linearGradient id="ov-ventas-logo-gradient">
+                        <stop stop-color="#4ab783"/>
+                        <stop offset="1" stop-color="#078657"/>
+                    </linearGradient>
+                </defs>
+                <path fill="url(#ov-ventas-logo-gradient)"
+                      d="M4 28c0-8 6-13 14-13h4c5 0 7-2 7-6 0-5 4-8 9-8 6 0 9 5 9 9 0 8-5 13-14 13h-5c-4 0-6 2-6 6 0 5-5 9-10 9-5 0-8-4-8-10z"/>
+            </svg>
+
+            <span>Orvia</span>
+
+        </div>
+
+        <!-- Enlaces originales autorizados por Flask -->
+        <nav id="ov-ventas-navigation"
+             class="ov-navigation"
+             aria-label="Navegación principal"></nav>
+
+        <div class="ov-side-footer">
+            Logística inversa · Orvia
+        </div>
+
+    </aside>
+
+
+    <div class="ov-workspace">
+
+        <!-- TOPBAR -->
+        <header class="ov-topbar">
+
+            <button type="button"
+                    id="ov-ventas-menu"
+                    class="ov-mobile"
+                    aria-expanded="false"
+                    aria-controls="ov-ventas-sidebar"
+                    aria-label="Abrir menú lateral">
+                ☰
+            </button>
+
+            <!-- Búsqueda de ventas mediante Flask -->
+            <form method="get"
+                  action="{{ url_for('ventas.listar') }}"
+                  class="ov-top-search"
+                  role="search">
+
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="1.8"
+                     stroke-linecap="round"
+                     aria-hidden="true">
+                    <circle cx="10" cy="10" r="7"/>
+                    <path d="m15 15 6 6"/>
+                </svg>
+
+                <input type="search"
+                       id="ov-ventas-global-search"
+                       name="q"
+                       value="{{ busqueda|default('', true) }}"
+                       placeholder="Buscar folio de venta..."
+                       aria-label="Buscar ventas por folio"
+                       autocomplete="off">
+
+                <span class="ov-shortcut" aria-hidden="true">
+                    Ctrl K
+                </span>
+
+            </form>
+
+            <div class="ov-actions">
+
+                <!-- Campanita original -->
+                <div class="ov-bell"
+                     id="ov-ventas-bell"></div>
+
+                <!-- Perfil real -->
+                <div class="ov-user">
+
+                    <button type="button"
+                            id="ov-ventas-user-button"
+                            class="ov-user-trigger"
+                            aria-controls="ov-ventas-account"
+                            aria-expanded="false">
+
+                        <span class="ov-avatar"
+                              id="ov-ventas-initials">
+                            OV
+                        </span>
+
+                        <span class="ov-user-text">
+
+                            <strong id="ov-ventas-user-name">
+                                {{ usuario_actual.nombre if usuario_actual else 'Usuario' }}
+                            </strong>
+
+                            <small>
+                                {{ rol_actual|default('Usuario', true) }}
+                            </small>
+
+                        </span>
+
+                        <svg viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="1.8"
+                             aria-hidden="true">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+
+                    </button>
+
+                    <div id="ov-ventas-account"
+                         class="ov-user-menu"
+                         hidden>
+
+                        <div class="ov-user-info">
+                            {{ usuario_actual.nombre if usuario_actual else 'Usuario' }}
+                            <div>
+                                {{ rol_actual|default('Usuario', true) }}
+                            </div>
+                        </div>
+
+                        <!-- Logout original -->
+                        <div id="ov-ventas-logout"></div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- CONTENIDO -->
+        <main class="ov-content">
+
+            <div class="ov-heading">
+
+                <div>
+
+                    <h1>
+                        {{ 'Mis compras' if rol_actual == 'Cliente' else 'Ventas' }}
+                    </h1>
+
+                    <p>
+                        Toda devolución debe partir de una
+                        venta registrada (RN-01).
+                    </p>
+
+                </div>
+
+                <div class="ov-counter">
+
+                    <span>
+                        Ventas en esta consulta
+                    </span>
+
+                    <strong>
+                        {{ ventas|length }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- TABLA PRINCIPAL -->
+            <section class="ov-table-card"
+                     aria-labelledby="ov-ventas-title">
+
+                <div class="ov-table-header">
+
+                    <div class="ov-table-title">
+
+                        <h2 id="ov-ventas-title">
+                            Registro de ventas
+                        </h2>
+
+                        <p>
+                            Consulta las ventas registradas y
+                            accede a sus detalles.
+                        </p>
+
+                    </div>
+
+                    <!-- Mantiene GET y name=q -->
+                    <form method="get"
+                          action="{{ url_for('ventas.listar') }}"
+                          class="ov-filters"
+                          role="search">
+
+                        <div class="ov-filter-field">
+
+                            <label for="ov-ventas-query">
+                                Folio de venta
+                            </label>
+
+                            <input type="text"
+                                   id="ov-ventas-query"
+                                   name="q"
+                                   value="{{ busqueda|default('', true) }}"
+                                   placeholder="VTA-2026-..."
+                                   autocomplete="off">
+
+                        </div>
+
+                        <button type="submit"
+                                class="ov-filter-submit">
+                            Buscar
+                        </button>
+
+                        <a class="ov-filter-clear"
+                           href="{{ url_for('ventas.listar') }}">
+                            Limpiar
+                        </a>
+
+                    </form>
+
+                </div>
+
+
+                <div class="ov-table-scroll">
+
+                    <table class="ov-table">
+
+                        <thead>
+
+                            <tr>
+                                <th scope="col">Folio</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Tienda</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Artículos</th>
+                                <th scope="col">Total</th>
+                                <th scope="col">Acciones</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for v in ventas %}
+
+                            <tr>
+
+                                <td>
+
+                                    <a class="ov-sale-link"
+                                       href="{{ url_for('ventas.detalle', venta_id=v.id) }}">
+
+                                        {{ v.folio_venta }}
+
+                                    </a>
+
+                                </td>
+
+                                <td>
+                                    <span class="ov-client">
+                                        {{ v.cliente }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="ov-store">
+                                        {{ v.tienda }}
+                                    </span>
+                                </td>
+
+                                <td class="ov-date">
+                                    {{ v.fecha_venta.strftime('%d/%m/%Y') }}
+                                </td>
+
+                                <td>
+                                    <span class="ov-quantity">
+                                        {{ v.lineas }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="ov-money">
+                                        $ {{ '%.2f'|format(v.total) }}
+                                    </span>
+                                </td>
+
+                                <td>
+
+                                    <a class="ov-detail-button"
+                                       href="{{ url_for('ventas.detalle', venta_id=v.id) }}"
+                                       aria-label="Ver detalle de {{ v.folio_venta }}">
+
+                                        Ver detalle
+
+                                        <svg viewBox="0 0 24 24"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             stroke-width="1.8"
+                                             stroke-linecap="round"
+                                             stroke-linejoin="round"
+                                             aria-hidden="true">
+                                            <path d="m9 5 7 7-7 7"/>
+                                        </svg>
+
+                                    </a>
+
+                                </td>
+
+                            </tr>
+
+                            {% else %}
+
+                            <tr>
+
+                                <td colspan="7"
+                                    class="ov-empty">
+
+                                    {% if busqueda %}
+
+                                    No encontramos ventas con ese folio.
+
+                                    {% else %}
+
+                                    Sin ventas registradas.
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <div class="ov-table-footer">
+
+                    <span>
+                        Mostrando {{ ventas|length }}
+                        {{ 'compra' if rol_actual == 'Cliente' and ventas|length == 1 else 'compras' if rol_actual == 'Cliente' else 'venta' if ventas|length == 1 else 'ventas' }}
+                        en esta consulta.
+                    </span>
+
+                    {% if busqueda %}
+
+                    <a href="{{ url_for('ventas.listar') }}">
+                        Ver todas las ventas disponibles
+                    </a>
+
+                    {% endif %}
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+</section>
+
+
+<script>
+(function () {
+    "use strict";
+
+    var root = document.getElementById("ov-ventas");
+
+    if (!root) return;
+
+    /* ==========================================
+       NAVEGACION ORIGINAL
+       Mantiene permisos generados en base.html
+    ========================================== */
+
+    var originalNav = document.querySelector("body > nav.menu");
+    var originalHeader = document.querySelector("body > header.barra");
+    var sidebar = document.getElementById("ov-ventas-navigation");
+
+    var icons = {
+        panel: "M3 10l9-7 9 7v11h-6v-7H9v7H3z",
+        ventas: "M4 20V10m6 10V4m6 16v-8m4 8V6",
+        devoluciones: "m12 2 9 5-9 5-9-5 9-5zM3 7v10l9 5 9-5V7M12 12v10",
+        recolecciones: "M3 7h11v10H3zM14 11h4l3 3v3h-7z",
+        inspecciones: "M20 20l-5-5M17 9a8 8 0 1 0-16 0 8 8 0 0 0 16 0z",
+        inventario: "m12 2 9 5-9 5-9-5zM3 12l9 5 9-5M3 17l9 5 9-5",
+        reembolsos: "M3 5h18v14H3zM17 12h3M3 9h18",
+        causas: "M6 3h10l4 4v14H6zM15 3v5h5M9 13h7",
+        costos: "M5 3h14v18H5zM8 8h8M8 12h8M8 16h8",
+        catalogos: "M3 12V4h9l9 9-8 8zM8 8h.01",
+        usuarios: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+        bitacora: "M3 12a9 9 0 1 1 3 7M3 17v-5h5M12 7v5l4 3",
+        servicios: "M12 3a3 3 0 0 0-3 3v1l-2 2h1a3 3 0 0 0 0 6h-1l2 2v1a3 3 0 0 0 6 0v-1l2-2h1a3 3 0 0 0 0-6h-1l-2-2V6a3 3 0 0 0-3-3z"
+    };
+
+    function normalize(value) {
+        return String(value || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim();
+    }
+
+    function makeIcon(pathData) {
+        var ns = "http://www.w3.org/2000/svg";
+
+        var svg = document.createElementNS(ns, "svg");
+        var path = document.createElementNS(ns, "path");
+
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", "currentColor");
+        svg.setAttribute("stroke-linejoin", "round");
+        svg.setAttribute("stroke-linecap", "round");
+        svg.setAttribute("aria-hidden", "true");
+
+        path.setAttribute("d", pathData);
+        svg.appendChild(path);
+
+        return svg;
+    }
+
+    if (originalNav) {
+        originalNav.querySelectorAll("a[href]").forEach(function (link) {
+            var label = link.textContent.trim();
+            var key = normalize(label);
+            var item = document.createElement("a");
+
+            item.href = link.href;
+            item.appendChild(
+                makeIcon(icons[key] || "M4 6h16M4 12h16M4 18h16")
+            );
+
+            var text = document.createElement("span");
+            text.textContent = label;
+            item.appendChild(text);
+
+            if (
+                key === "ventas" ||
+                link.classList.contains("activo")
+            ) {
+                item.setAttribute("aria-current", "page");
+            }
+
+            sidebar.appendChild(item);
+        });
+    }
+
+    /* ==========================================
+       CAMPANITA Y LOGOUT
+       Reutiliza los elementos reales
+    ========================================== */
+
+    if (originalHeader) {
+        var bell = originalHeader.querySelector(".campanita");
+        var logout = originalHeader.querySelector("form[action]");
+
+        if (bell) {
+            document.getElementById("ov-ventas-bell").appendChild(bell);
+        }
+
+        if (logout) {
+            document.getElementById("ov-ventas-logout").appendChild(logout);
+        }
+    }
+
+    /*
+       Solo ocultar la cabecera original cuando
+       los componentes se hayan integrado.
+    */
+
+    if (
+        originalNav &&
+        originalHeader &&
+        sidebar.querySelector("a") &&
+        document.querySelector("#ov-ventas-logout form")
+    ) {
+        document.body.classList.add("ov-ventas-ready");
+    }
+
+    /* ==========================================
+       PERFIL DEL USUARIO
+    ========================================== */
+
+    var username = document.getElementById("ov-ventas-user-name")
+        .textContent.trim();
+
+    var names = username.split(/\s+/);
+
+    var first = (names[0] || "O").charAt(0);
+    var last = (
+        names.length > 1 ? names[names.length - 1] : "V"
+    ).charAt(0);
+
+    document.getElementById("ov-ventas-initials").textContent =
+        (first + last).toUpperCase();
+
+    var userButton = document.getElementById("ov-ventas-user-button");
+    var userMenu = document.getElementById("ov-ventas-account");
+
+    userButton.addEventListener("click", function () {
+        var open = userMenu.hidden;
+
+        userMenu.hidden = !open;
+        userButton.setAttribute("aria-expanded", String(open));
+    });
+
+    document.addEventListener("click", function (event) {
+        if (!event.target.closest("#ov-ventas .ov-user")) {
+            userMenu.hidden = true;
+            userButton.setAttribute("aria-expanded", "false");
+        }
+    });
+
+    /* ==========================================
+       MENU RESPONSIVE
+    ========================================== */
+
+    var menuButton = document.getElementById("ov-ventas-menu");
+
+    menuButton.addEventListener("click", function () {
+        var open = root.getAttribute("data-menu-open") !== "true";
+
+        root.setAttribute("data-menu-open", String(open));
+        menuButton.setAttribute("aria-expanded", String(open));
+    });
+
+    /* ==========================================
+       BUSCADOR
+       Conserva la búsqueda GET original
+    ========================================== */
+
+    var globalSearch = document.getElementById("ov-ventas-global-search");
+    var tableSearch = document.getElementById("ov-ventas-query");
+
+    globalSearch.addEventListener("input", function () {
+        tableSearch.value = globalSearch.value;
+    });
+
+    tableSearch.addEventListener("input", function () {
+        globalSearch.value = tableSearch.value;
+    });
+
+    /* ==========================================
+       ATAJOS DE TECLADO
+    ========================================== */
+
+    document.addEventListener("keydown", function (event) {
+
+        if (event.key === "Escape") {
+            userMenu.hidden = true;
+            userButton.setAttribute("aria-expanded", "false");
+
+            root.setAttribute("data-menu-open", "false");
+            menuButton.setAttribute("aria-expanded", "false");
+        }
+
+        if (
+            (event.ctrlKey || event.metaKey) &&
+            event.key.toLowerCase() === "k"
+        ) {
+            event.preventDefault();
+            globalSearch.focus();
+        }
+
+    });
+
+})();
+</script>
+
 {% endblock %}

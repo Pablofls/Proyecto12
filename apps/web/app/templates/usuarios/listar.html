@@ -1,48 +1,1611 @@
+
 {% extends "base.html" %}
-{% block titulo %}Usuarios{% endblock %}
+{% block titulo %}Usuarios | Orvia{% endblock %}
+
 {% block contenido %}
-<h1>Usuarios</h1>
-<p class="sub">Cuentas del sistema y el rol asignado a cada una (RF-03, RF-04).</p>
 
-{% if rol_actual == 'Administrador' %}
-<div class="acciones" style="margin-top:0;margin-bottom:16px;">
-  <a class="boton" href="{{ url_for('usuarios.nuevo') }}">Nuevo usuario</a>
-</div>
-{% endif %}
+<style>
+/* =====================================================
+   ORVIA · ADMINISTRACIÓN DE USUARIOS
+   Estilos exclusivos de usuarios/listar.html
+===================================================== */
 
-<div class="tabla-envoltura">
-  <table>
-    <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Alta</th><th></th></tr></thead>
-    <tbody>
-    {% for u in usuarios %}
-      <tr>
-        <td>{{ u.nombre }}</td>
-        <td>{{ u.email }}</td>
-        <td><span class="etiqueta azul">{{ u.rol }}</span></td>
-        <td>
-          <span class="etiqueta {{ 'verde' if u.estado == 'activo' else 'roja' }}">{{ u.estado }}</span>
-          {% if u.bloqueado_hasta %}<span class="etiqueta ambar">bloqueada</span>{% endif %}
-        </td>
-        <td>{{ u.fecha_creacion.strftime('%d/%m/%Y') }}</td>
-        <td>
-          {% if rol_actual == 'Administrador' %}
-          <div class="acciones" style="margin:0;">
-            <a class="boton secundario pequeno" href="{{ url_for('usuarios.editar', usuario_id=u.id) }}">Editar</a>
-            {% if u.bloqueado_hasta %}
-            <form method="post" action="{{ url_for('usuarios.desbloquear', usuario_id=u.id) }}">
-              <button class="boton secundario pequeno" type="submit">Desbloquear</button>
-            </form>
-            {% endif %}
-            <form method="post" action="{{ url_for('usuarios.desactivar', usuario_id=u.id) }}"
-                  onsubmit="return confirm('Dar de baja a {{ u.nombre }}?');">
-              <button class="boton peligro pequeno" type="submit">Baja</button>
-            </form>
+body:has(#orvia-usuarios) {
+  margin: 0;
+  background: #f7f9fb;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #14233d;
+}
+
+body:has(#orvia-usuarios) > main {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+body.orvia-usuarios-ready > header.barra,
+body.orvia-usuarios-ready > nav.menu {
+  display: none !important;
+}
+
+#orvia-usuarios,
+#orvia-usuarios * {
+  box-sizing: border-box;
+}
+
+#orvia-usuarios [hidden] {
+  display: none !important;
+}
+
+#orvia-usuarios {
+  --green: #078858;
+  --dark: #14233d;
+  --muted: #7588a2;
+  --line: #e5ebf2;
+
+  display: grid;
+  grid-template-columns: 258px minmax(0, 1fr);
+  min-height: 100vh;
+  background: #f7f9fb;
+  font-size: 14px;
+}
+
+#orvia-usuarios button,
+#orvia-usuarios input,
+#orvia-usuarios select {
+  font: inherit;
+}
+
+#orvia-usuarios button {
+  cursor: pointer;
+}
+
+#orvia-usuarios :is(a,button,input,select):focus-visible {
+  outline: 3px solid #14a16b66;
+  outline-offset: 2px;
+}
+
+/* SIDEBAR */
+
+#orvia-usuarios .ov-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 29px 20px 22px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  z-index: 30;
+}
+
+#orvia-usuarios .ov-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  margin-bottom: 42px;
+  font: bold 37px/1 Georgia, serif;
+  letter-spacing: -1.5px;
+  color: #111d2e;
+}
+
+#orvia-usuarios .ov-logo svg {
+  width: 52px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+#orvia-usuarios .ov-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+#orvia-usuarios .ov-navigation a {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 49px;
+  flex-shrink: 0;
+  padding: 0 15px;
+  border-radius: 11px;
+  color: #4b5e7b;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+#orvia-usuarios .ov-navigation a:hover {
+  background: #f0f7f3;
+  color: #087a4f;
+}
+
+#orvia-usuarios .ov-navigation a[aria-current="page"] {
+  background: #e2f1eb;
+  color: #08724c;
+  font-weight: 700;
+}
+
+#orvia-usuarios .ov-navigation svg {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
+}
+
+#orvia-usuarios .ov-sidebar-footer {
+  margin-top: auto;
+  padding: 19px 12px 0;
+  border-top: 1px solid var(--line);
+  color: #91a0b5;
+  font-size: 12px;
+}
+
+/* TOPBAR */
+
+#orvia-usuarios .ov-workspace {
+  min-width: 0;
+}
+
+#orvia-usuarios .ov-topbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 92px;
+  padding: 15px 31px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+
+#orvia-usuarios .ov-global-search {
+  position: relative;
+  flex: 1;
+  max-width: 770px;
+  min-width: 100px;
+}
+
+#orvia-usuarios .ov-global-search svg {
+  position: absolute;
+  top: 50%;
+  left: 17px;
+  width: 21px;
+  height: 21px;
+  transform: translateY(-50%);
+  color: #344a68;
+  pointer-events: none;
+}
+
+#orvia-usuarios .ov-global-search input {
+  width: 100%;
+  height: 52px;
+  padding: 0 76px 0 53px;
+  border: 1px solid #eaf0f5;
+  border-radius: 12px;
+  background: #f6f8fa;
+  color: #253a55;
+  outline: none;
+}
+
+#orvia-usuarios .ov-global-search input::placeholder {
+  color: #8a9cb4;
+}
+
+#orvia-usuarios .ov-shortcut {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  transform: translateY(-50%);
+  padding: 5px 8px;
+  background: #fff;
+  border-radius: 6px;
+  color: #91a1b6;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+#orvia-usuarios .ov-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
+}
+
+#orvia-usuarios .ov-bell {
+  min-width: 40px;
+  display: grid;
+  place-items: center;
+}
+
+#orvia-usuarios .ov-bell .campanita {
+  position: relative;
+}
+
+#orvia-usuarios .ov-bell .campanita-panel {
+  z-index: 120;
+}
+
+#orvia-usuarios .ov-user {
+  position: relative;
+}
+
+#orvia-usuarios .ov-user-button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 5px;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  color: #1b2e48;
+  text-align: left;
+}
+
+#orvia-usuarios .ov-user-button:hover {
+  background: #f3f7f9;
+}
+
+#orvia-usuarios .ov-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #dcf0e8;
+  color: #078052;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+#orvia-usuarios .ov-user-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 180px;
+}
+
+#orvia-usuarios .ov-user-text strong {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#orvia-usuarios .ov-user-text small {
+  color: #8090a5;
+  font-size: 12px;
+}
+
+#orvia-usuarios .ov-user-button > svg {
+  width: 17px;
+  height: 17px;
+}
+
+#orvia-usuarios .ov-user-menu {
+  position: absolute;
+  top: 59px;
+  right: 0;
+  z-index: 100;
+  width: 240px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 14px 35px #182f4826;
+}
+
+#orvia-usuarios .ov-user-info {
+  padding: 8px 5px 13px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  color: #73849d;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+#orvia-usuarios .ov-user-menu form {
+  margin: 0;
+}
+
+#orvia-usuarios .ov-user-menu button {
+  width: 100%;
+  padding: 11px;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+  color: #b73945;
+  text-align: left;
+}
+
+#orvia-usuarios .ov-user-menu button:hover {
+  background: #fff0f2;
+}
+
+#orvia-usuarios .ov-mobile {
+  display: none;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+}
+
+/* CONTENIDO */
+
+#orvia-usuarios .ov-content {
+  width: 100%;
+  max-width: 1700px;
+  margin: 0 auto;
+  padding: 34px 31px 55px;
+}
+
+#orvia-usuarios .ov-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 25px;
+}
+
+#orvia-usuarios .ov-heading h1 {
+  margin: 0 0 8px;
+  font-size: clamp(29px, 2.7vw, 37px);
+  line-height: 1.2;
+  letter-spacing: -1px;
+  color: #14233d;
+}
+
+#orvia-usuarios .ov-heading p {
+  margin: 0;
+  color: #7a8ca5;
+  font-size: 14px;
+}
+
+#orvia-usuarios .ov-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 19px;
+  border-radius: 9px;
+  background: #078858;
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#orvia-usuarios .ov-add-button:hover {
+  background: #056f48;
+}
+
+#orvia-usuarios .ov-add-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* INDICADORES */
+
+#orvia-usuarios .ov-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+#orvia-usuarios .ov-summary-card {
+  min-height: 126px;
+  padding: 21px 23px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 5px 19px #15294308;
+}
+
+#orvia-usuarios .ov-summary-label {
+  display: block;
+  margin-bottom: 14px;
+  color: #73859e;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+#orvia-usuarios .ov-summary-number {
+  color: #152641;
+  font-size: 31px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+#orvia-usuarios .ov-summary-card.active .ov-summary-number {
+  color: #078858;
+}
+
+#orvia-usuarios .ov-summary-card.inactive .ov-summary-number {
+  color: #bd4b56;
+}
+
+/* TABLA */
+
+#orvia-usuarios .ov-table-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 25px #19304909;
+}
+
+#orvia-usuarios .ov-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 24px;
+}
+
+#orvia-usuarios .ov-table-header h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  letter-spacing: -.5px;
+  color: #152640;
+}
+
+#orvia-usuarios .ov-table-header p {
+  margin: 0;
+  color: #8494a9;
+  font-size: 13px;
+}
+
+#orvia-usuarios .ov-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#orvia-usuarios .ov-filter-search {
+  width: 270px;
+}
+
+#orvia-usuarios .ov-filter-search input,
+#orvia-usuarios .ov-filters select {
+  width: 100%;
+  height: 43px;
+  padding: 0 13px;
+  border: 1px solid #e0e7ef;
+  border-radius: 9px;
+  outline: none;
+  background: #fff;
+  color: #435875;
+  font-size: 12px;
+}
+
+#orvia-usuarios .ov-filters select {
+  width: 165px;
+  cursor: pointer;
+}
+
+#orvia-usuarios .ov-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+#orvia-usuarios .ov-table {
+  width: 100%;
+  min-width: 970px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+#orvia-usuarios .ov-table thead {
+  background: #f6f9fb;
+}
+
+#orvia-usuarios .ov-table th {
+  padding: 15px 19px;
+  color: #71829b;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .45px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+#orvia-usuarios .ov-table td {
+  padding: 15px 19px;
+  border-top: 1px solid #eaf0f4;
+  color: #536680;
+  font-size: 12px;
+  vertical-align: middle;
+  line-height: 1.5;
+}
+
+#orvia-usuarios .ov-table tbody tr:hover {
+  background: #fbfdfc;
+}
+
+#orvia-usuarios .ov-person {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 165px;
+}
+
+#orvia-usuarios .ov-person-avatar {
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #e8f4ef;
+  color: #077b50;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#orvia-usuarios .ov-person-name {
+  color: #273c56;
+  font-weight: 650;
+}
+
+#orvia-usuarios .ov-email {
+  color: #687c97;
+  overflow-wrap: anywhere;
+}
+
+#orvia-usuarios .ov-role {
+  display: inline-flex;
+  align-items: center;
+  min-height: 29px;
+  padding: 6px 11px;
+  border-radius: 20px;
+  background: #eaf1ff;
+  color: #295ea8;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+#orvia-usuarios .ov-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 29px;
+  padding: 6px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+#orvia-usuarios .ov-status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+#orvia-usuarios .ov-status.active {
+  background: #e4f5ec;
+  color: #087f50;
+}
+
+#orvia-usuarios .ov-status.inactive {
+  background: #ffedf0;
+  color: #bc4351;
+}
+
+#orvia-usuarios .ov-locked {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 5px;
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: #fff3df;
+  color: #ac761e;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+#orvia-usuarios .ov-date {
+  white-space: nowrap;
+}
+
+#orvia-usuarios .ov-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  min-width: 200px;
+}
+
+#orvia-usuarios .ov-row-actions form {
+  margin: 0;
+}
+
+#orvia-usuarios .ov-edit,
+#orvia-usuarios .ov-unlock,
+#orvia-usuarios .ov-disable {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+#orvia-usuarios .ov-edit,
+#orvia-usuarios .ov-unlock {
+  background: #f1faf5;
+  border: 1px solid #d1e7db;
+  color: #087d51;
+}
+
+#orvia-usuarios .ov-edit:hover,
+#orvia-usuarios .ov-unlock:hover {
+  background: #e2f5ea;
+}
+
+#orvia-usuarios .ov-disable {
+  background: #fff2f3;
+  border: 1px solid #f2d8dc;
+  color: #b53d49;
+}
+
+#orvia-usuarios .ov-disable:hover {
+  background: #ffe4e8;
+}
+
+#orvia-usuarios .ov-empty {
+  padding: 35px 18px !important;
+  text-align: center;
+  color: #8494a9 !important;
+}
+
+#orvia-usuarios .ov-table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  flex-wrap: wrap;
+  padding: 15px 23px;
+  border-top: 1px solid var(--line);
+  color: #8292a7;
+  font-size: 12px;
+}
+
+#orvia-usuarios .ov-clear {
+  border: 0;
+  background: transparent;
+  color: #078858;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1220px) {
+  #orvia-usuarios {
+    grid-template-columns: 215px minmax(0, 1fr);
+  }
+
+  #orvia-usuarios .ov-sidebar {
+    padding: 25px 12px;
+  }
+
+  #orvia-usuarios .ov-content {
+    padding: 25px 20px 40px;
+  }
+
+  #orvia-usuarios .ov-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #orvia-usuarios .ov-table-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 790px) {
+  #orvia-usuarios {
+    display: block;
+  }
+
+  #orvia-usuarios .ov-sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100dvh;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 12px 0 35px #112d4833;
+  }
+
+  #orvia-usuarios[data-menu-open="true"] .ov-sidebar {
+    display: flex;
+  }
+
+  #orvia-usuarios .ov-mobile {
+    display: inline-flex;
+  }
+
+  #orvia-usuarios .ov-topbar {
+    min-height: 76px;
+    padding: 12px 15px;
+    gap: 10px;
+  }
+
+  #orvia-usuarios .ov-user-text {
+    display: none;
+  }
+
+  #orvia-usuarios .ov-content {
+    padding: 24px 15px 35px;
+  }
+}
+
+@media (max-width: 550px) {
+  #orvia-usuarios .ov-summary {
+    gap: 9px;
+  }
+
+  #orvia-usuarios .ov-summary-card {
+    min-height: 105px;
+    padding: 15px 12px;
+  }
+
+  #orvia-usuarios .ov-summary-label {
+    font-size: 10px;
+  }
+
+  #orvia-usuarios .ov-summary-number {
+    font-size: 23px;
+  }
+
+  #orvia-usuarios .ov-heading {
+    align-items: stretch;
+  }
+
+  #orvia-usuarios .ov-filters,
+  #orvia-usuarios .ov-filter-search,
+  #orvia-usuarios .ov-filters select {
+    width: 100%;
+  }
+
+  #orvia-usuarios .ov-shortcut {
+    display: none;
+  }
+
+  #orvia-usuarios .ov-global-search input {
+    padding-right: 12px;
+    padding-left: 44px;
+  }
+
+  #orvia-usuarios .ov-actions {
+    gap: 5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #orvia-usuarios * {
+    transition: none !important;
+  }
+}
+</style>
+
+
+<section id="orvia-usuarios"
+         data-menu-open="false"
+         aria-label="Administración de usuarios">
+
+  <!-- MENÚ LATERAL -->
+  <aside class="ov-sidebar" id="ov-usuarios-sidebar">
+
+    <div class="ov-logo">
+      <svg viewBox="0 0 54 38" aria-hidden="true">
+        <defs>
+          <linearGradient id="ov-users-gradient">
+            <stop stop-color="#4ab783"/>
+            <stop offset="1" stop-color="#078657"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#ov-users-gradient)"
+              d="M4 28c0-8 6-13 14-13h4c5 0 7-2 7-6 0-5 4-8 9-8 6 0 9 5 9 9 0 8-5 13-14 13h-5c-4 0-6 2-6 6 0 5-5 9-10 9-5 0-8-4-8-10z"/>
+      </svg>
+      <span>Orvia</span>
+    </div>
+
+    <nav class="ov-navigation"
+         id="ov-usuarios-navigation"
+         aria-label="Navegación autorizada">
+    </nav>
+
+    <div class="ov-sidebar-footer">
+      Logística inversa · Orvia
+    </div>
+
+  </aside>
+
+
+  <div class="ov-workspace">
+
+    <!-- BARRA SUPERIOR -->
+    <header class="ov-topbar">
+
+      <button type="button"
+              class="ov-mobile"
+              id="ov-usuarios-mobile"
+              aria-controls="ov-usuarios-sidebar"
+              aria-expanded="false"
+              aria-label="Abrir menú">
+        ☰
+      </button>
+
+      <div class="ov-global-search">
+
+        <svg viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="1.8"
+             stroke-linecap="round"
+             aria-hidden="true">
+          <circle cx="10" cy="10" r="7"/>
+          <path d="m15 15 6 6"/>
+        </svg>
+
+        <input type="search"
+               id="ov-usuarios-global-search"
+               placeholder="Buscar usuario, correo o rol..."
+               aria-label="Buscar usuarios"
+               autocomplete="off">
+
+        <span class="ov-shortcut" aria-hidden="true">
+          Ctrl K
+        </span>
+
+      </div>
+
+      <div class="ov-actions">
+
+        <!-- Campanita original -->
+        <div class="ov-bell"
+             id="ov-usuarios-bell"></div>
+
+        <div class="ov-user">
+
+          <button type="button"
+                  class="ov-user-button"
+                  id="ov-usuarios-profile-button"
+                  aria-expanded="false"
+                  aria-controls="ov-usuarios-profile-menu">
+
+            <span class="ov-avatar"
+                  id="ov-usuarios-initials">OV</span>
+
+            <span class="ov-user-text">
+
+              <strong id="ov-usuarios-name">
+                {{ usuario_actual.nombre if usuario_actual else 'Usuario' }}
+              </strong>
+
+              <small>
+                {{ rol_actual|default('Usuario', true) }}
+              </small>
+
+            </span>
+
+            <svg viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.8"
+                 aria-hidden="true">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+
+          </button>
+
+          <div class="ov-user-menu"
+               id="ov-usuarios-profile-menu"
+               hidden>
+
+            <div class="ov-user-info">
+              {{ usuario_actual.nombre if usuario_actual else 'Usuario' }}
+              <div>
+                {{ rol_actual|default('Usuario', true) }}
+              </div>
+            </div>
+
+            <!-- Cierre de sesión original -->
+            <div id="ov-usuarios-logout"></div>
+
           </div>
-          {% endif %}
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</div>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- CONTENIDO -->
+    <main class="ov-content">
+
+      <!-- ENCABEZADO -->
+      <div class="ov-heading">
+
+        <div>
+          <h1>Usuarios</h1>
+          <p>
+            Cuentas del sistema y roles asignados (RF-03, RF-04).
+          </p>
+        </div>
+
+        {% if rol_actual == 'Administrador' %}
+
+        <a class="ov-add-button"
+           href="{{ url_for('usuarios.nuevo') }}">
+
+          <svg viewBox="0 0 24 24"
+               fill="none"
+               stroke="currentColor"
+               stroke-width="2"
+               stroke-linecap="round"
+               aria-hidden="true">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+
+          Nuevo usuario
+
+        </a>
+
+        {% endif %}
+
+      </div>
+
+
+      <!-- INDICADORES -->
+      <div class="ov-summary">
+
+        <article class="ov-summary-card">
+
+          <span class="ov-summary-label">
+            Total de usuarios
+          </span>
+
+          <strong class="ov-summary-number">
+            {{ usuarios|length }}
+          </strong>
+
+        </article>
+
+        <article class="ov-summary-card active">
+
+          <span class="ov-summary-label">
+            Usuarios activos
+          </span>
+
+          <strong class="ov-summary-number"
+                  id="ov-total-active">
+            0
+          </strong>
+
+        </article>
+
+        <article class="ov-summary-card inactive">
+
+          <span class="ov-summary-label">
+            Usuarios inactivos
+          </span>
+
+          <strong class="ov-summary-number"
+                  id="ov-total-inactive">
+            0
+          </strong>
+
+        </article>
+
+      </div>
+
+
+      <!-- REGISTRO -->
+      <section class="ov-table-card"
+               aria-labelledby="ov-usuarios-table-title">
+
+        <div class="ov-table-header">
+
+          <div>
+            <h2 id="ov-usuarios-table-title">
+              Directorio de usuarios
+            </h2>
+
+            <p>
+              Consulta usuarios, permisos y estado de acceso.
+            </p>
+          </div>
+
+          <div class="ov-filters">
+
+            <label class="ov-filter-search">
+
+              <input type="search"
+                     id="ov-usuarios-search"
+                     placeholder="Buscar nombre, correo o rol..."
+                     aria-label="Filtrar usuarios">
+
+            </label>
+
+            <select id="ov-usuarios-status"
+                    aria-label="Filtrar por estado">
+
+              <option value="all">Todos los estados</option>
+              <option value="activo">Activos</option>
+              <option value="inactivo">Inactivos</option>
+              <option value="bloqueado">Bloqueados</option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+
+        <div class="ov-table-scroll">
+
+          <table class="ov-table"
+                 id="ov-usuarios-table">
+
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Correo electrónico</th>
+                <th scope="col">Rol</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Alta</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {% for u in usuarios %}
+
+              <tr class="ov-user-row"
+                  data-name="{{ u.nombre }}"
+                  data-email="{{ u.email }}"
+                  data-role="{{ u.rol }}"
+                  data-status="{{ u.estado|lower }}"
+                  data-locked="{{ 'true' if u.bloqueado_hasta else 'false' }}">
+
+                <!-- NOMBRE -->
+                <td>
+
+                  <div class="ov-person">
+
+                    <span class="ov-person-avatar"
+                          data-initials="{{ u.nombre }}"
+                          aria-hidden="true">
+                      U
+                    </span>
+
+                    <span class="ov-person-name">
+                      {{ u.nombre }}
+                    </span>
+
+                  </div>
+
+                </td>
+
+                <!-- CORREO -->
+                <td>
+                  <span class="ov-email">
+                    {{ u.email }}
+                  </span>
+                </td>
+
+                <!-- ROL -->
+                <td>
+                  <span class="ov-role">
+                    {{ u.rol }}
+                  </span>
+                </td>
+
+                <!-- ESTADO -->
+                <td>
+
+                  <span class="ov-status {{ 'active' if u.estado == 'activo' else 'inactive' }}">
+                    {{ u.estado }}
+                  </span>
+
+                  {% if u.bloqueado_hasta %}
+
+                  <div>
+                    <span class="ov-locked">
+                      Cuenta bloqueada
+                    </span>
+                  </div>
+
+                  {% endif %}
+
+                </td>
+
+                <!-- FECHA -->
+                <td class="ov-date">
+                  {{ u.fecha_creacion.strftime('%d/%m/%Y') }}
+                </td>
+
+                <!-- ACCIONES -->
+                <td>
+
+                  {% if rol_actual == 'Administrador' %}
+
+                  <div class="ov-row-actions">
+
+                    <!-- EDITAR -->
+                    <a class="ov-edit"
+                       href="{{ url_for('usuarios.editar', usuario_id=u.id) }}">
+                      Editar
+                    </a>
+
+                    <!-- DESBLOQUEAR -->
+                    {% if u.bloqueado_hasta %}
+
+                    <form method="post"
+                          action="{{ url_for('usuarios.desbloquear', usuario_id=u.id) }}">
+
+                      <button type="submit"
+                              class="ov-unlock">
+                        Desbloquear
+                      </button>
+
+                    </form>
+
+                    {% endif %}
+
+                    <!-- BAJA ORIGINAL -->
+                    <form method="post"
+                          action="{{ url_for('usuarios.desactivar', usuario_id=u.id) }}"
+                          data-user="{{ u.nombre }}">
+
+                      <button type="submit"
+                              class="ov-disable"
+                              aria-label="Dar de baja a {{ u.nombre }}">
+                        Baja
+                      </button>
+
+                    </form>
+
+                  </div>
+
+                  {% else %}
+
+                  <span style="color:#9aa8b9;">
+                    Sin acciones disponibles
+                  </span>
+
+                  {% endif %}
+
+                </td>
+
+              </tr>
+
+              {% else %}
+
+              <tr>
+                <td colspan="6" class="ov-empty">
+                  No hay usuarios registrados.
+                </td>
+              </tr>
+
+              {% endfor %}
+
+              <tr id="ov-usuarios-empty" hidden>
+                <td colspan="6" class="ov-empty">
+                  No se encontraron usuarios con esos filtros.
+                </td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        <div class="ov-table-footer">
+
+          <span id="ov-usuarios-count"
+                aria-live="polite">
+            Mostrando {{ usuarios|length }} usuarios.
+          </span>
+
+          <button type="button"
+                  class="ov-clear"
+                  id="ov-usuarios-clear">
+            Limpiar filtros
+          </button>
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+</section>
+
+
+<script>
+(function () {
+  "use strict";
+
+  const root = document.getElementById("orvia-usuarios");
+
+  if (!root) return;
+
+  /* ==========================================
+     MENÚ LATERAL DEL MONOLITO
+     Conserva los enlaces y permisos existentes
+  ========================================== */
+
+  const originalNav =
+    document.querySelector("body > nav.menu");
+
+  const originalHeader =
+    document.querySelector("body > header.barra");
+
+  const sidebar =
+    document.getElementById("ov-usuarios-navigation");
+
+  const icons = {
+    panel: "M3 10l9-7 9 7v11h-6v-7H9v7H3z",
+    ventas: "M4 20V10m6 10V4m6 16v-8m4 8V6",
+    devoluciones: "m12 2 9 5-9 5-9-5 9-5zM3 7v10l9 5 9-5V7M12 12v10",
+    recolecciones: "M3 7h11v10H3zM14 11h4l3 3v3h-7z",
+    inspecciones: "M20 20l-5-5M17 9a8 8 0 1 0-16 0 8 8 0 0 0 16 0z",
+    inventario: "M12 2 3 7l9 5 9-5-9-5zM3 12l9 5 9-5M3 17l9 5 9-5",
+    reembolsos: "M3 5h18v14H3zM17 12h3M3 9h18",
+    causas: "M6 3h10l4 4v14H6zM15 3v5h5M9 13h7",
+    costos: "M5 3h14v18H5zM8 8h8M8 12h8M8 16h8",
+    catalogos: "M3 12V4h9l9 9-8 8zM8 8h.01",
+    usuarios: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+    bitacora: "M3 12a9 9 0 1 1 3 7M3 17v-5h5M12 7v5l4 3",
+    servicios: "M12 3a3 3 0 0 0-3 3v1l-2 2h1a3 3 0 0 0 0 6h-1l2 2v1a3 3 0 0 0 6 0v-1l2-2h1a3 3 0 0 0 0-6h-1l-2-2V6a3 3 0 0 0-3-3z"
+  };
+
+  function normalize(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  }
+
+  function makeIcon(pathData) {
+    const ns = "http://www.w3.org/2000/svg";
+
+    const svg = document.createElementNS(ns, "svg");
+    const path = document.createElementNS(ns, "path");
+
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+
+    path.setAttribute("d", pathData);
+    svg.appendChild(path);
+
+    return svg;
+  }
+
+  if (originalNav) {
+
+    originalNav.querySelectorAll("a[href]").forEach(link => {
+
+      const label = link.textContent.trim();
+      const key = normalize(label);
+
+      const item = document.createElement("a");
+      item.href = link.href;
+
+      item.appendChild(
+        makeIcon(
+          icons[key] || "M4 6h16M4 12h16M4 18h16"
+        )
+      );
+
+      const text = document.createElement("span");
+      text.textContent = label;
+      item.appendChild(text);
+
+      if (key === "usuarios") {
+        item.setAttribute("aria-current", "page");
+      }
+
+      sidebar.appendChild(item);
+    });
+  }
+
+  /* ==========================================
+     CAMPANITA Y LOGOUT ORIGINALES
+  ========================================== */
+
+  if (originalHeader) {
+
+    const bell =
+      originalHeader.querySelector(".campanita");
+
+    const logout =
+      originalHeader.querySelector("form[action]");
+
+    if (bell) {
+      document.getElementById("ov-usuarios-bell")
+        .appendChild(bell);
+    }
+
+    if (logout) {
+      document.getElementById("ov-usuarios-logout")
+        .appendChild(logout);
+    }
+  }
+
+  if (
+    originalNav &&
+    originalHeader &&
+    sidebar.querySelector("a") &&
+    document.querySelector("#ov-usuarios-logout form")
+  ) {
+    document.body.classList.add("orvia-usuarios-ready");
+  }
+
+  /* ==========================================
+     PERFIL DEL USUARIO ACTUAL
+  ========================================== */
+
+  function initials(name) {
+    const words = String(name || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (!words.length) return "OV";
+
+    const first = words[0].charAt(0);
+    const last = words.length > 1
+      ? words[words.length - 1].charAt(0)
+      : "";
+
+    return (first + last).toUpperCase();
+  }
+
+  const currentName =
+    document.getElementById("ov-usuarios-name")
+      .textContent.trim();
+
+  document.getElementById("ov-usuarios-initials")
+    .textContent = initials(currentName);
+
+  root.querySelectorAll("[data-initials]").forEach(avatar => {
+    avatar.textContent = initials(
+      avatar.getAttribute("data-initials")
+    );
+  });
+
+  const profileButton =
+    document.getElementById("ov-usuarios-profile-button");
+
+  const profileMenu =
+    document.getElementById("ov-usuarios-profile-menu");
+
+  profileButton.addEventListener("click", () => {
+    const open = profileMenu.hidden;
+
+    profileMenu.hidden = !open;
+    profileButton.setAttribute(
+      "aria-expanded",
+      String(open)
+    );
+  });
+
+  document.addEventListener("click", event => {
+
+    if (!event.target.closest("#orvia-usuarios .ov-user")) {
+      profileMenu.hidden = true;
+      profileButton.setAttribute("aria-expanded", "false");
+    }
+
+  });
+
+  /* ==========================================
+     MENÚ MÓVIL
+  ========================================== */
+
+  const mobileButton =
+    document.getElementById("ov-usuarios-mobile");
+
+  mobileButton.addEventListener("click", () => {
+
+    const open =
+      root.getAttribute("data-menu-open") !== "true";
+
+    root.setAttribute("data-menu-open", String(open));
+    mobileButton.setAttribute("aria-expanded", String(open));
+
+  });
+
+  /* ==========================================
+     INDICADORES DESDE DATOS REALES DE JINJA
+  ========================================== */
+
+  const rows = Array.from(
+    root.querySelectorAll(".ov-user-row")
+  );
+
+  const activeCount = rows.filter(
+    row => row.dataset.status === "activo"
+  ).length;
+
+  const inactiveCount = rows.length - activeCount;
+
+  document.getElementById("ov-total-active")
+    .textContent = activeCount;
+
+  document.getElementById("ov-total-inactive")
+    .textContent = inactiveCount;
+
+  /* ==========================================
+     BUSCADORES Y FILTRO POR ESTADO
+     Sin modificar la base de datos
+  ========================================== */
+
+  const globalSearch =
+    document.getElementById("ov-usuarios-global-search");
+
+  const tableSearch =
+    document.getElementById("ov-usuarios-search");
+
+  const statusFilter =
+    document.getElementById("ov-usuarios-status");
+
+  const countLabel =
+    document.getElementById("ov-usuarios-count");
+
+  const empty =
+    document.getElementById("ov-usuarios-empty");
+
+  function applyFilters() {
+    const query = normalize(tableSearch.value);
+    const status = statusFilter.value;
+
+    let visible = 0;
+
+    rows.forEach(row => {
+
+      const content = normalize([
+        row.dataset.name,
+        row.dataset.email,
+        row.dataset.role
+      ].join(" "));
+
+      const isLocked = row.dataset.locked === "true";
+      const currentStatus = row.dataset.status;
+
+      const matchesText =
+        !query || content.includes(query);
+
+      let matchesStatus = false;
+
+      if (status === "all") {
+        matchesStatus = true;
+      } else if (status === "bloqueado") {
+        matchesStatus = isLocked;
+      } else {
+        matchesStatus = currentStatus === status;
+      }
+
+      const show = matchesText && matchesStatus;
+
+      row.hidden = !show;
+      row.style.display = show ? "" : "none";
+
+      if (show) visible++;
+    });
+
+    empty.hidden = rows.length === 0 || visible > 0;
+
+    countLabel.textContent =
+      "Mostrando " + visible +
+      " de " + rows.length + " usuarios.";
+  }
+
+  globalSearch.addEventListener("input", () => {
+    tableSearch.value = globalSearch.value;
+    applyFilters();
+  });
+
+  tableSearch.addEventListener("input", () => {
+    globalSearch.value = tableSearch.value;
+    applyFilters();
+  });
+
+  statusFilter.addEventListener("change", applyFilters);
+
+  document.getElementById("ov-usuarios-clear")
+    .addEventListener("click", () => {
+
+      globalSearch.value = "";
+      tableSearch.value = "";
+      statusFilter.value = "all";
+
+      applyFilters();
+    });
+
+  /* ==========================================
+     CONFIRMAR BAJA
+     Mantiene el POST hacia Flask
+  ========================================== */
+
+  root.querySelectorAll(".ov-row-actions form[data-user]")
+    .forEach(form => {
+
+      form.addEventListener("submit", event => {
+
+        const name = form.dataset.user || "este usuario";
+
+        const approved = window.confirm(
+          "¿Deseas dar de baja a " + name + "?\n\n" +
+          "Esta acción modificará el estado de su cuenta."
+        );
+
+        if (!approved) {
+          event.preventDefault();
+        }
+      });
+    });
+
+  /* ==========================================
+     ATAJOS DE TECLADO
+  ========================================== */
+
+  document.addEventListener("keydown", event => {
+
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key.toLowerCase() === "k"
+    ) {
+      event.preventDefault();
+      globalSearch.focus();
+    }
+
+    if (event.key === "Escape") {
+
+      profileMenu.hidden = true;
+      profileButton.setAttribute("aria-expanded", "false");
+
+      root.setAttribute("data-menu-open", "false");
+      mobileButton.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  applyFilters();
+
+})();
+</script>
+
 {% endblock %}
