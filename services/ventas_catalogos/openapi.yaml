@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Orvia - ventas catalogos
+  title: Servicio de ventas y catalogos - Plataforma de devoluciones
   version: 1.0.0
-  description: API del proyecto integrador, respuestas JSON y XML.
+  description: Consulta de ventas y lineas con cantidad disponible, y administracion de los siete catalogos. JSON/XML, JWT y PostgreSQL. RF-05, RF-06.
 servers:
 - url: /
 paths:

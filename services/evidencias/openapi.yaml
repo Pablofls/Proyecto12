@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Orvia - evidencias
+  title: Servicio de evidencias - Plataforma de devoluciones
   version: 1.0.0
-  description: API del proyecto integrador, respuestas JSON y XML.
+  description: Comentarios y archivos de evidencia - referencia en PostgreSQL, metadatos en MongoDB y archivos en un volumen privado con enlaces firmados. JSON/XML y JWT. RF-09, RN-14.
 servers:
 - url: /
 paths:
