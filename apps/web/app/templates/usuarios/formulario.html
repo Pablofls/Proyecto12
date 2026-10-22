@@ -1,48 +1,1213 @@
+
 {% extends "base.html" %}
 {% import "componentes.html" as componentes %}
-{% block titulo %}{{ 'Editar usuario' if usuario else 'Nuevo usuario' }}{% endblock %}
+
+{% block titulo %}{{ 'Editar usuario' if usuario else 'Nuevo usuario' }} | Orvia{% endblock %}
+
 {% block contenido %}
-<h1>{{ 'Editar usuario' if usuario else 'Nuevo usuario' }}</h1>
-<p class="sub">La contrasena se almacena con hash seguro; nunca en texto visible (RNF-07).</p>
 
-<div class="tarjeta">
-<form method="post" class="formulario">
-  <label for="nombre">Nombre</label>
-  <input type="text" id="nombre" name="nombre" required value="{{ usuario.nombre if usuario else '' }}">
+<style>
+body:has(#orvia-user-form) {
+  margin: 0;
+  background: #f7f9fc;
+  color: #14243c;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
 
-  {% if not usuario %}
-  <label for="email">Correo</label>
-  <input type="email" id="email" name="email" required>
-  {% else %}
-  <label>Correo</label>
-  <input type="email" value="{{ usuario.email }}" disabled>
-  {% endif %}
+body:has(#orvia-user-form) > main {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
 
-  <label for="rol_id">Rol</label>
-  <select id="rol_id" name="rol_id" required>
-    {% for r in roles %}
-      <option value="{{ r.id }}" {{ 'selected' if usuario and usuario.rol_id == r.id else '' }}>{{ r.nombre }}</option>
-    {% endfor %}
-  </select>
+body.orvia-form-ready > header.barra,
+body.orvia-form-ready > nav.menu {
+  display: none !important;
+}
 
-  {% if usuario %}
-  <label for="estado">Estado</label>
-  <select id="estado" name="estado">
-    {% for e in ['activo', 'inactivo', 'bloqueado'] %}
-      <option value="{{ e }}" {{ 'selected' if usuario.estado == e else '' }}>{{ e }}</option>
-    {% endfor %}
-  </select>
-  {% endif %}
+#orvia-user-form,
+#orvia-user-form * {
+  box-sizing: border-box;
+}
 
-  {{ componentes.campo_password(
-       "password", "password",
-       "Contrasena" ~ (" (dejar vacio para no cambiarla)" if usuario else ""),
-       requerido=(usuario is none), autocomplete="new-password", minlength=8) }}
+#orvia-user-form [hidden] {
+  display: none !important;
+}
 
-  <div class="acciones">
-    <button class="boton" type="submit">Guardar</button>
-    <a class="boton secundario" href="{{ url_for('usuarios.listar') }}">Cancelar</a>
+#orvia-user-form {
+  display: grid;
+  grid-template-columns: 258px minmax(0, 1fr);
+  min-height: 100vh;
+  background: #f7f9fc;
+  --green: #078858;
+  --line: #e5ebf2;
+  --muted: #8190a6;
+  font-size: 14px;
+}
+
+#orvia-user-form button,
+#orvia-user-form input,
+#orvia-user-form select {
+  font: inherit;
+}
+
+#orvia-user-form button {
+  cursor: pointer;
+}
+
+#orvia-user-form :is(a,button,input,select):focus-visible {
+  outline: 3px solid #07885855;
+  outline-offset: 2px;
+}
+
+/* MENÚ LATERAL */
+
+#orvia-user-form .ov-side {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 20px 22px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  z-index: 30;
+}
+
+#orvia-user-form .ov-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  margin-bottom: 43px;
+  color: #111e31;
+  font: 700 37px/1 Georgia, serif;
+  letter-spacing: -1.5px;
+}
+
+#orvia-user-form .ov-logo svg {
+  width: 52px;
+  height: 36px;
+}
+
+#orvia-user-form .ov-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+#orvia-user-form .ov-nav a {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-height: 49px;
+  flex-shrink: 0;
+  padding: 0 15px;
+  border-radius: 11px;
+  color: #4e607d;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+#orvia-user-form .ov-nav a:hover {
+  background: #f0f7f3;
+  color: #087650;
+}
+
+#orvia-user-form .ov-nav a[aria-current="page"] {
+  background: #e3f2ec;
+  color: #08774e;
+  font-weight: 700;
+}
+
+#orvia-user-form .ov-nav svg {
+  width: 21px;
+  height: 21px;
+  flex: none;
+}
+
+#orvia-user-form .ov-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding: 19px 12px 0;
+  color: #91a0b5;
+  font-size: 12px;
+}
+
+/* TOPBAR */
+
+#orvia-user-form .ov-work {
+  min-width: 0;
+}
+
+#orvia-user-form .ov-top {
+  display: flex;
+  align-items: center;
+  gap: 19px;
+  min-height: 92px;
+  padding: 15px 31px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+
+#orvia-user-form .ov-search {
+  position: relative;
+  flex: 1;
+  max-width: 770px;
+  min-width: 100px;
+}
+
+#orvia-user-form .ov-search input {
+  width: 100%;
+  height: 51px;
+  padding: 0 78px 0 51px;
+  border: 1px solid #e9eff5;
+  border-radius: 12px;
+  background: #f6f8fa;
+  outline: none;
+  color: #233951;
+}
+
+#orvia-user-form .ov-search input::placeholder {
+  color: #899ab1;
+}
+
+#orvia-user-form .ov-search > svg {
+  position: absolute;
+  top: 50%;
+  left: 17px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  color: #354b68;
+}
+
+#orvia-user-form .ov-shortcut {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: white;
+  color: #91a1b6;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+#orvia-user-form .ov-actions {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-left: auto;
+}
+
+#orvia-user-form .ov-bell {
+  min-width: 40px;
+  display: grid;
+  place-items: center;
+}
+
+#orvia-user-form .ov-bell .campanita {
+  position: relative;
+}
+
+#orvia-user-form .ov-bell .campanita-panel {
+  z-index: 120;
+}
+
+#orvia-user-form .ov-profile {
+  position: relative;
+}
+
+#orvia-user-form .ov-profile-button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 5px;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  color: #192c46;
+  text-align: left;
+}
+
+#orvia-user-form .ov-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: #def1e9;
+  color: #087c51;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+#orvia-user-form .ov-profile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 175px;
+}
+
+#orvia-user-form .ov-profile-text strong {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#orvia-user-form .ov-profile-text small {
+  color: #8090a7;
+  font-size: 12px;
+}
+
+#orvia-user-form .ov-profile-menu {
+  position: absolute;
+  right: 0;
+  top: 58px;
+  z-index: 100;
+  width: 240px;
+  padding: 13px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 15px 38px #14294225;
+}
+
+#orvia-user-form .ov-profile-menu form {
+  margin: 0;
+}
+
+#orvia-user-form .ov-profile-menu button {
+  width: 100%;
+  padding: 11px;
+  border: 0;
+  background: #fff;
+  color: #b23c49;
+  text-align: left;
+}
+
+#orvia-user-form .ov-mobile {
+  display: none;
+  padding: 9px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+/* CONTENIDO */
+
+#orvia-user-form .ov-content {
+  max-width: 1350px;
+  margin: 0 auto;
+  padding: 37px 35px 65px;
+}
+
+#orvia-user-form .ov-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 25px;
+  color: #6c7f99;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+#orvia-user-form .ov-back:hover {
+  color: #078858;
+}
+
+#orvia-user-form .ov-heading {
+  margin-bottom: 25px;
+}
+
+#orvia-user-form .ov-heading h1 {
+  margin: 0 0 8px;
+  font-size: clamp(30px, 2.5vw, 38px);
+  letter-spacing: -1px;
+  color: #14233c;
+}
+
+#orvia-user-form .ov-heading p {
+  margin: 0;
+  color: #7d8da5;
+  line-height: 1.6;
+}
+
+/* TARJETA DEL FORMULARIO */
+
+#orvia-user-form .ov-card {
+  width: 100%;
+  max-width: 820px;
+  padding: 32px 35px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  box-shadow: 0 9px 28px #1931490a;
+}
+
+#orvia-user-form .ov-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 23px;
+  margin-bottom: 27px;
+  border-bottom: 1px solid var(--line);
+}
+
+#orvia-user-form .ov-card-icon {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: #087d51;
+  background: #e9f6ef;
+  border-radius: 13px;
+}
+
+#orvia-user-form .ov-card-icon svg {
+  width: 25px;
+  height: 25px;
+}
+
+#orvia-user-form .ov-card-heading h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  color: #192a44;
+}
+
+#orvia-user-form .ov-card-heading p {
+  margin: 0;
+  color: #8796ab;
+  font-size: 12px;
+}
+
+#orvia-user-form .ov-form {
+  display: block;
+  margin: 0;
+}
+
+#orvia-user-form .ov-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 23px 21px;
+}
+
+#orvia-user-form .ov-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+
+#orvia-user-form .ov-field.full {
+  grid-column: 1 / -1;
+}
+
+#orvia-user-form .ov-field > label,
+#orvia-user-form .ov-password-wrap > label {
+  margin: 0;
+  color: #344962;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#orvia-user-form .ov-field > input,
+#orvia-user-form .ov-field > select {
+  width: 100%;
+  height: 49px;
+  padding: 0 14px;
+  border: 1px solid #dfe7ef;
+  border-radius: 10px;
+  background: #fff;
+  color: #233a55;
+  font-size: 13px;
+  outline: none;
+  box-shadow: none;
+}
+
+#orvia-user-form .ov-field > input:focus,
+#orvia-user-form .ov-field > select:focus {
+  border-color: #19a673;
+  box-shadow: 0 0 0 3px #16a46a16;
+}
+
+#orvia-user-form .ov-field > input:disabled {
+  background: #f6f8fa;
+  color: #8291a5;
+  cursor: not-allowed;
+}
+
+#orvia-user-form .ov-field-help {
+  color: #8b99ad;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+#orvia-user-form .ov-password-wrap {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+#orvia-user-form .ov-password-wrap .campo-password {
+  width: 100%;
+  max-width: none;
+}
+
+/* Se respetan controles generados por el macro Jinja */
+#orvia-user-form .ov-password-wrap input[type="password"],
+#orvia-user-form .ov-password-wrap input[type="text"] {
+  min-height: 49px;
+  font-size: 13px;
+}
+
+#orvia-user-form .ov-security {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  margin-top: 25px;
+  border: 1px solid #e6eef2;
+  border-radius: 10px;
+  background: #f8fafb;
+  color: #71849c;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+#orvia-user-form .ov-security svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: #087d51;
+}
+
+#orvia-user-form .ov-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 25px;
+  margin-top: 26px;
+  border-top: 1px solid var(--line);
+}
+
+#orvia-user-form .ov-save {
+  min-height: 45px;
+  padding: 0 22px;
+  border: 1px solid #078858;
+  border-radius: 9px;
+  background: #078858;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#orvia-user-form .ov-save:hover {
+  background: #066d48;
+}
+
+#orvia-user-form .ov-cancel {
+  min-height: 45px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 21px;
+  border: 1px solid #dfe7ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #556a84;
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+#orvia-user-form .ov-cancel:hover {
+  background: #f5f7f9;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1200px) {
+  #orvia-user-form {
+    grid-template-columns: 215px minmax(0, 1fr);
+  }
+
+  #orvia-user-form .ov-side {
+    padding: 25px 12px;
+  }
+
+  #orvia-user-form .ov-content {
+    padding: 27px 23px 45px;
+  }
+}
+
+@media (max-width: 790px) {
+  #orvia-user-form {
+    display: block;
+  }
+
+  #orvia-user-form .ov-side {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    width: 260px;
+    height: 100dvh;
+    overflow-y: auto;
+    box-shadow: 10px 0 35px #142b472c;
+  }
+
+  #orvia-user-form[data-menu-open="true"] .ov-side {
+    display: flex;
+  }
+
+  #orvia-user-form .ov-mobile {
+    display: inline-flex;
+  }
+
+  #orvia-user-form .ov-top {
+    padding: 12px 15px;
+    min-height: 76px;
+    gap: 10px;
+  }
+
+  #orvia-user-form .ov-profile-text {
+    display: none;
+  }
+
+  #orvia-user-form .ov-content {
+    padding: 25px 15px 40px;
+  }
+}
+
+@media (max-width: 560px) {
+  #orvia-user-form .ov-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #orvia-user-form .ov-field.full,
+  #orvia-user-form .ov-password-wrap {
+    grid-column: auto;
+  }
+
+  #orvia-user-form .ov-card {
+    padding: 23px 18px;
+  }
+
+  #orvia-user-form .ov-form-actions > * {
+    flex: 1;
+  }
+
+  #orvia-user-form .ov-shortcut {
+    display: none;
+  }
+
+  #orvia-user-form .ov-search input {
+    padding-right: 12px;
+    padding-left: 43px;
+  }
+
+  #orvia-user-form .ov-actions {
+    gap: 5px;
+  }
+}
+</style>
+
+<section id="orvia-user-form"
+         data-menu-open="false"
+         aria-label="Formulario de usuarios">
+
+  <!-- NAVEGACIÓN -->
+  <aside class="ov-side" id="ov-user-side">
+
+    <div class="ov-logo">
+      <svg viewBox="0 0 54 38" aria-hidden="true">
+        <defs>
+          <linearGradient id="ov-user-logo-gradient">
+            <stop stop-color="#4ab783"/>
+            <stop offset="1" stop-color="#078657"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#ov-user-logo-gradient)"
+          d="M4 28c0-8 6-13 14-13h4c5 0 7-2 7-6 0-5 4-8 9-8 6 0 9 5 9 9 0 8-5 13-14 13h-5c-4 0-6 2-6 6 0 5-5 9-10 9-5 0-8-4-8-10z"/>
+      </svg>
+
+      <span>Orvia</span>
+    </div>
+
+    <nav class="ov-nav"
+         id="ov-user-navigation"
+         aria-label="Navegación principal"></nav>
+
+    <div class="ov-footer">
+      Logística inversa · Orvia
+    </div>
+
+  </aside>
+
+  <!-- ÁREA DE TRABAJO -->
+  <div class="ov-work">
+
+    <!-- TOPBAR -->
+    <header class="ov-top">
+
+      <button type="button"
+              class="ov-mobile"
+              id="ov-user-mobile"
+              aria-controls="ov-user-side"
+              aria-expanded="false"
+              aria-label="Abrir menú lateral">
+        ☰
+      </button>
+
+      <div class="ov-search">
+
+        <svg viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="1.8"
+             aria-hidden="true">
+          <circle cx="10" cy="10" r="7"/>
+          <path d="m15 15 6 6"/>
+        </svg>
+
+        <input type="search"
+               id="ov-user-search"
+               placeholder="Buscar sección de Orvia..."
+               aria-label="Buscar sección"
+               autocomplete="off">
+
+        <span class="ov-shortcut" aria-hidden="true">
+          Ctrl K
+        </span>
+      </div>
+
+      <div class="ov-actions">
+
+        <!-- Notificaciones originales -->
+        <div class="ov-bell"
+             id="ov-user-bell"></div>
+
+        <!-- Perfil -->
+        <div class="ov-profile">
+
+          <button type="button"
+                  id="ov-user-profile-button"
+                  class="ov-profile-button"
+                  aria-controls="ov-user-profile-menu"
+                  aria-expanded="false">
+
+            <span class="ov-avatar"
+                  id="ov-user-initials">OV</span>
+
+            <span class="ov-profile-text">
+              <strong id="ov-user-name">
+                {{ usuario_actual.nombre if usuario_actual else 'Usuario' }}
+              </strong>
+              <small>
+                {{ rol_actual|default('Usuario', true) }}
+              </small>
+            </span>
+
+            <svg width="17" height="17"
+                 viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.8"
+                 aria-hidden="true">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+
+          </button>
+
+          <div id="ov-user-profile-menu"
+               class="ov-profile-menu"
+               hidden>
+
+            <div style="padding:8px 5px 13px;
+                        margin-bottom:8px;
+                        border-bottom:1px solid #e5ebf2;
+                        color:#72849d;
+                        font-size:12px;">
+              {{ usuario_actual.nombre if usuario_actual else 'Usuario' }}
+              <div>{{ rol_actual|default('Usuario', true) }}</div>
+            </div>
+
+            <div id="ov-user-logout"></div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </header>
+
+    <!-- CONTENIDO -->
+    <main class="ov-content">
+
+      <a class="ov-back"
+         href="{{ url_for('usuarios.listar') }}">
+        ← Volver a usuarios
+      </a>
+
+      <div class="ov-heading">
+        <h1>{{ 'Editar usuario' if usuario else 'Nuevo usuario' }}</h1>
+
+        <p>
+          {{ 'Actualiza la información y los permisos de esta cuenta.'
+             if usuario else
+             'Registra una nueva cuenta y asígnale un rol dentro de Orvia.' }}
+        </p>
+      </div>
+
+      <section class="ov-card"
+               aria-labelledby="ov-user-form-heading">
+
+        <div class="ov-card-heading">
+
+          <span class="ov-card-icon">
+            <svg viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.8"
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 aria-hidden="true">
+              <circle cx="9" cy="8" r="4"/>
+              <path d="M2 21v-2a7 7 0 0 1 14 0v2M19 8v8M15 12h8"/>
+            </svg>
+          </span>
+
+          <div>
+            <h2 id="ov-user-form-heading">
+              Información de la cuenta
+            </h2>
+
+            <p>
+              Completa los campos para
+              {{ 'actualizar' if usuario else 'crear' }}
+              el usuario.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- FORMULARIO POST ORIGINAL DE FLASK -->
+        <form method="post"
+              class="ov-form"
+              id="ov-user-account-form">
+
+          <div class="ov-fields">
+
+            <!-- NOMBRE -->
+            <div class="ov-field">
+
+              <label for="nombre">Nombre completo</label>
+
+              <input type="text"
+                     id="nombre"
+                     name="nombre"
+                     required
+                     maxlength="180"
+                     autocomplete="name"
+                     placeholder="Nombre y apellidos"
+                     value="{{ usuario.nombre if usuario else '' }}">
+
+            </div>
+
+            <!-- CORREO -->
+            <div class="ov-field">
+
+              <label for="email">Correo electrónico</label>
+
+              {% if not usuario %}
+
+                <input type="email"
+                       id="email"
+                       name="email"
+                       required
+                       autocomplete="off"
+                       placeholder="usuario@empresa.com">
+
+              {% else %}
+
+                <input type="email"
+                       id="email"
+                       value="{{ usuario.email }}"
+                       disabled
+                       aria-describedby="ov-email-info">
+
+                <span class="ov-field-help"
+                      id="ov-email-info">
+                  El correo no se puede modificar desde esta pantalla.
+                </span>
+
+              {% endif %}
+
+            </div>
+
+            <!-- ROL -->
+            <div class="ov-field">
+
+              <label for="rol_id">Rol del usuario</label>
+
+              <select id="rol_id"
+                      name="rol_id"
+                      required>
+
+                {% for r in roles %}
+
+                  <option value="{{ r.id }}"
+                    {{ 'selected' if usuario and usuario.rol_id == r.id else '' }}>
+                    {{ r.nombre }}
+                  </option>
+
+                {% endfor %}
+
+              </select>
+
+              <span class="ov-field-help">
+                Determina los permisos y secciones disponibles.
+              </span>
+
+            </div>
+
+            <!-- ESTADO EN EDICIÓN -->
+            {% if usuario %}
+
+            <div class="ov-field">
+
+              <label for="estado">Estado de la cuenta</label>
+
+              <select id="estado"
+                      name="estado">
+
+                {% for e in ['activo', 'inactivo', 'bloqueado'] %}
+
+                  <option value="{{ e }}"
+                    {{ 'selected' if usuario.estado == e else '' }}>
+                    {{ e|capitalize }}
+                  </option>
+
+                {% endfor %}
+
+              </select>
+
+              <span class="ov-field-help">
+                Controla la disponibilidad de la cuenta.
+              </span>
+
+            </div>
+
+            {% endif %}
+
+            <!-- CONTRASEÑA ORIGINAL DEL MONOLITO -->
+            <div class="ov-password-wrap">
+
+              {{ componentes.campo_password(
+                   "password",
+                   "password",
+                   "Contraseña" ~ (" (opcional)" if usuario else ""),
+                   requerido=(usuario is none),
+                   autocomplete="new-password",
+                   minlength=8
+              ) }}
+
+              <span class="ov-field-help">
+
+                {% if usuario %}
+
+                  Deja este campo vacío para conservar la
+                  contraseña actual. Escribe una nueva solo
+                  si deseas reemplazarla.
+
+                {% else %}
+
+                  Utiliza una contraseña de al menos
+                  8 caracteres.
+
+                {% endif %}
+
+              </span>
+
+            </div>
+
+          </div>
+
+          <!-- INFORMACIÓN DE SEGURIDAD -->
+          <div class="ov-security">
+
+            <svg viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.8"
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 aria-hidden="true">
+
+              <rect x="5" y="10" width="14" height="11" rx="2"/>
+              <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/>
+
+            </svg>
+
+            <span>
+              Las contraseñas se almacenan mediante
+              un hash seguro y no se muestran en texto
+              visible en la plataforma (RNF-07).
+            </span>
+
+          </div>
+
+          <!-- ACCIONES -->
+          <div class="ov-form-actions">
+
+            <a class="ov-cancel"
+               href="{{ url_for('usuarios.listar') }}">
+              Cancelar
+            </a>
+
+            <button type="submit"
+                    class="ov-save"
+                    id="ov-user-submit">
+
+              {{ 'Guardar cambios' if usuario else 'Crear usuario' }}
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </section>
+
+    </main>
   </div>
-</form>
-</div>
+</section>
+
+
+<script>
+(function () {
+  "use strict";
+
+  const root = document.getElementById("orvia-user-form");
+  if (!root) return;
+
+  const originalNav = document.querySelector("body > nav.menu");
+  const originalHeader = document.querySelector("body > header.barra");
+  const sidebar = document.getElementById("ov-user-navigation");
+
+  /* Iconos de navegación */
+  const icons = {
+    panel: "M3 10l9-7 9 7v11h-6v-7H9v7H3z",
+    ventas: "M4 20V10m6 10V4m6 16v-8m4 8V6",
+    devoluciones: "m12 2 9 5-9 5-9-5 9-5zM3 7v10l9 5 9-5V7M12 12v10",
+    recolecciones: "M3 7h11v10H3zM14 11h4l3 3v3h-7z",
+    inspecciones: "M20 20l-5-5M17 9a8 8 0 1 0-16 0 8 8 0 0 0 16 0z",
+    inventario: "M12 2 3 7l9 5 9-5-9-5zM3 12l9 5 9-5M3 17l9 5 9-5",
+    reembolsos: "M3 5h18v14H3zM17 12h3M3 9h18",
+    causas: "M6 3h10l4 4v14H6zM15 3v5h5M9 13h7",
+    costos: "M5 3h14v18H5zM8 8h8M8 12h8M8 16h8",
+    catalogos: "M3 12V4h9l9 9-8 8zM8 8h.01",
+    usuarios: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+    bitacora: "M3 12a9 9 0 1 1 3 7M3 17v-5h5M12 7v5l4 3",
+    servicios: "M12 3a3 3 0 0 0-3 3v1l-2 2h1a3 3 0 0 0 0 6h-1l-2-2h1a3 3 0 0 0 0-6h-1l-2-2V6a3 3 0 0 0-3-3z"
+  };
+
+  function normalize(text) {
+    return String(text || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  }
+
+  function createIcon(data) {
+    const namespace = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(namespace, "svg");
+    const path = document.createElementNS(namespace, "path");
+
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+
+    path.setAttribute("d", data);
+    svg.appendChild(path);
+
+    return svg;
+  }
+
+  /* Copiar navegación autorizada de base.html */
+  if (originalNav) {
+    originalNav.querySelectorAll("a[href]").forEach(link => {
+
+      const label = link.textContent.trim();
+      const key = normalize(label);
+
+      const item = document.createElement("a");
+
+      item.href = link.href;
+
+      item.appendChild(
+        createIcon(
+          icons[key] || "M4 6h16M4 12h16M4 18h16"
+        )
+      );
+
+      const span = document.createElement("span");
+      span.textContent = label;
+      item.appendChild(span);
+
+      if (key === "usuarios") {
+        item.setAttribute("aria-current", "page");
+      }
+
+      sidebar.appendChild(item);
+    });
+  }
+
+  /* Reutilizar campanita y cierre de sesión */
+  if (originalHeader) {
+    const bell = originalHeader.querySelector(".campanita");
+    const logout = originalHeader.querySelector("form[action]");
+
+    if (bell) {
+      document.getElementById("ov-user-bell").appendChild(bell);
+    }
+
+    if (logout) {
+      document.getElementById("ov-user-logout").appendChild(logout);
+    }
+  }
+
+  if (
+    originalNav &&
+    originalHeader &&
+    sidebar.querySelector("a") &&
+    document.querySelector("#ov-user-logout form")
+  ) {
+    document.body.classList.add("orvia-form-ready");
+  }
+
+  /* Nombre e iniciales */
+  const fullName = document.getElementById("ov-user-name")
+    .textContent.trim();
+
+  const words = fullName.split(/\s+/);
+
+  document.getElementById("ov-user-initials").textContent =
+    (
+      (words[0] || "O").charAt(0) +
+      (words.length > 1
+        ? words[words.length - 1]
+        : "V").charAt(0)
+    ).toUpperCase();
+
+  /* Perfil */
+  const profileButton =
+    document.getElementById("ov-user-profile-button");
+
+  const profileMenu =
+    document.getElementById("ov-user-profile-menu");
+
+  profileButton.addEventListener("click", () => {
+    const open = profileMenu.hidden;
+
+    profileMenu.hidden = !open;
+
+    profileButton.setAttribute(
+      "aria-expanded",
+      String(open)
+    );
+  });
+
+  document.addEventListener("click", event => {
+    if (!event.target.closest("#orvia-user-form .ov-profile")) {
+      profileMenu.hidden = true;
+      profileButton.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  /* Menú móvil */
+  const mobileButton = document.getElementById("ov-user-mobile");
+
+  mobileButton.addEventListener("click", () => {
+    const open =
+      root.dataset.menuOpen !== "true";
+
+    root.dataset.menuOpen = String(open);
+    mobileButton.setAttribute("aria-expanded", String(open));
+  });
+
+  /* Búsqueda de secciones en navegación */
+  const search = document.getElementById("ov-user-search");
+
+  search.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+
+    const query = normalize(search.value);
+
+    if (!query) return;
+
+    const links = Array.from(sidebar.querySelectorAll("a"));
+
+    const match = links.find(link =>
+      normalize(link.textContent).includes(query)
+    );
+
+    if (match) {
+      event.preventDefault();
+      window.location.assign(match.href);
+    }
+  });
+
+  /* Evitar envíos duplicados */
+  const form = document.getElementById("ov-user-account-form");
+  const submit = document.getElementById("ov-user-submit");
+
+  form.addEventListener("submit", function () {
+    if (!form.checkValidity()) return;
+
+    submit.disabled = true;
+    submit.textContent = "Guardando...";
+  });
+
+  /* Atajos */
+  document.addEventListener("keydown", event => {
+
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key.toLowerCase() === "k"
+    ) {
+      event.preventDefault();
+      search.focus();
+    }
+
+    if (event.key === "Escape") {
+      profileMenu.hidden = true;
+      profileButton.setAttribute("aria-expanded", "false");
+
+      root.dataset.menuOpen = "false";
+      mobileButton.setAttribute("aria-expanded", "false");
+    }
+  });
+})();
+</script>
+
 {% endblock %}
