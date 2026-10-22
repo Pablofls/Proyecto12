@@ -818,10 +818,10 @@ respuestas se pueden contrastar con las filas de [`postgresql.txt`](evidencias/b
 | Login invalido: datos incompletos (400), credenciales (401), tipo de contenido (415), XML mal formado o fuera del XSD (400) | [005](evidencias/ejecuciones/auth.md#005_auth_post_login_400), [006](evidencias/ejecuciones/auth.md#006_auth_post_login_401), [007](evidencias/ejecuciones/auth.md#007_auth_post_login_415), [008](evidencias/ejecuciones/auth.md#008_auth_post_login_400_xml), [009](evidencias/ejecuciones/auth.md#009_auth_post_login_400_xml) | El 401 no revela si el correo existe (RNF-16) |
 | Sesion actual con token valido y sin token (401) | [010](evidencias/ejecuciones/auth.md#010_auth_get_sesion_200), [011](evidencias/ejecuciones/auth.md#011_auth_get_sesion_200_xml), [012](evidencias/ejecuciones/auth.md#012_auth_get_sesion_401), [013](evidencias/ejecuciones/auth.md#013_auth_get_sesion_401) | — |
 | Refresh | [014](evidencias/ejecuciones/auth.md#014_auth_post_refresh_200), [015](evidencias/ejecuciones/auth.md#015_auth_post_refresh_401), [016](evidencias/ejecuciones/auth.md#016_auth_post_refresh_400) | El 401 (`token_invalido`) es un access token usado como refresh |
-| Logout y reuso del token (401 `token_revocado`) | [019](evidencias/ejecuciones/auth.md#019_auth_post_logout_200), [020](evidencias/ejecuciones/auth.md#020_auth_get_sesion_401), [021](evidencias/ejecuciones/auth.md#021_auth_post_refresh_401), [023](evidencias/ejecuciones/auth.md#023_auth_get_sesion_401) | La clave `jwt_revocado:*` dura 15 min y ya no existia al capturar `redis.txt`; el efecto lo comprueban E2E-11 e INT-AUTH-2 ([`PRUEBAS.md`](PRUEBAS.md)) |
+| Logout y reuso del token (401 `token_revocado`) | [019](evidencias/ejecuciones/auth.md#019_auth_post_logout_200), [020](evidencias/ejecuciones/auth.md#020_auth_get_sesion_401), [021](evidencias/ejecuciones/auth.md#021_auth_post_refresh_401), [023](evidencias/ejecuciones/auth.md#023_auth_get_sesion_401) | La clave `jwt_revocado:<jti>` existe en Redis con TTL de 898 s ([`jwt_revocado.txt`](evidencias/bases/jwt_revocado.txt)): logout 200 y el mismo token 401 `token_revocado` |
 | Cierre global de sesiones por Administrador (403, 404, 200) | [017](evidencias/ejecuciones/auth.md#017_auth_delete_usuarios_id_sesiones_403), [018](evidencias/ejecuciones/auth.md#018_auth_delete_usuarios_id_sesiones_404), [022](evidencias/ejecuciones/auth.md#022_auth_delete_usuarios_id_sesiones_200) | `sesiones_cerradas: 1` en la respuesta |
 | Rate limit (429 con `demasiadas_peticiones`) | Salida E2E, caso SEG-23: [`salida_2026-10-21.txt`](pruebas/salida_2026-10-21.txt) lineas 301 a 312 | Las dos ultimas peticiones respondieron 429 ("Limite de 10 peticiones en 60 s"). Sin caso en Newman |
-| Bloqueo al quinto intento (423) | **pendiente** | `intentos:*`, `bloqueo:*` y `usuarios.bloqueado_hasta`; solo hay prueba con dobles (`test_bloqueo_tras_intentos_fallidos`) |
+| Bloqueo al quinto intento (423) | [`bloqueo_423.txt`](evidencias/bases/bloqueo_423.txt) | Cinco 401 `credenciales_invalidas` y el sexto 423 `cuenta_bloqueada`; Redis `intentos:<correo>`=5 y `bloqueo:<correo>` con TTL 899 s; la cuenta se desbloquea al terminar |
 
 <details>
 <summary>Auth: peticion y respuesta copiadas tal cual (tokens y contrasenas ya ocultos en la fuente)</summary>
@@ -1998,21 +1998,21 @@ Content-Type: application/json
 | ID | Que debia capturarse | Estado | Donde esta |
 |---|---|---|---|
 | EV-01 | `docker compose ps` con los 12 contenedores | Hecha | [`docker.txt`](evidencias/bases/docker.txt); apartado 15 |
-| EV-02 | Firewall de GCP y consola de la VM | **Pendiente** | Tabla del apartado 19.3 |
-| EV-03 | Login real, `sesion_api` con TTL y `jwt_revocado` | Parcial: login, sesion y TTL hechos; la clave `jwt_revocado` no se alcanzo a capturar (dura 15 min) | 13.1; [`redis.txt`](evidencias/bases/redis.txt) |
+| EV-02 | Firewall de GCP y consola de la VM | Hecha (solo `gcloud`; sin captura de la consola web) | [`gcp.txt`](evidencias/bases/gcp.txt) |
+| EV-03 | Login real, `sesion_api` con TTL y `jwt_revocado` | Hecha | 13.1; [`redis.txt`](evidencias/bases/redis.txt); [`jwt_revocado.txt`](evidencias/bases/jwt_revocado.txt) |
 | EV-04 | Flujo E2E completo | Hecha como salida de texto (sin capturas de pantalla) | Apartado 17.1; [`salida_2026-10-21.txt`](pruebas/salida_2026-10-21.txt) |
 | EV-05 | Mismo `correlation_id` en dos servicios desde una accion del web | **Pendiente** | Tabla del apartado 19.3 |
-| EV-06 | Esquema real de PostgreSQL y migraciones aplicadas | Parcial: filas del proceso y `schema_migrations` (ultima `013`); falta listar las 13 migraciones y `\dt` | [`postgresql.txt`](evidencias/bases/postgresql.txt) |
+| EV-06 | Esquema real de PostgreSQL y migraciones aplicadas | Hecha: las 13 migraciones y `\dt` | [`migraciones.txt`](evidencias/bases/migraciones.txt); [`postgresql.txt`](evidencias/bases/postgresql.txt) |
 | EV-07 | Colecciones, indices y documentos de MongoDB | Hecha | [`mongodb.txt`](evidencias/bases/mongodb.txt); apartado 8.2 |
 | EV-08 | Claves de Redis con TTL | Hecha | [`redis.txt`](evidencias/bases/redis.txt) |
 | EV-09 | XML real por servicio y un `xml_no_cumple_xsd` | Hecha | Apartado 10 |
 | EV-10 a EV-17 | Peticion y respuesta de cada servicio y efecto en BD | Hecha, salvo los escenarios marcados `pendiente` en 13.1 a 13.8 y las capturas de Swagger | 13.1 a 13.8 |
-| EV-20 | Pruebas unitarias | Parcial: 119 passed en la laptop; la salida dentro de los contenedores de la VM no esta capturada | Apartado 16; [`resultado_2026-10-21_local.md`](pruebas/resultado_2026-10-21_local.md) |
+| EV-20 | Pruebas unitarias | Hecha: 119 en la laptop y 84 dentro de los contenedores de la VM | Apartado 16; [`unitarias_contenedores.txt`](evidencias/bases/unitarias_contenedores.txt) |
 | EV-21 | Pruebas de integracion `INTEGRACION=1` | Hecha: 8 servicios, 34 pruebas | Apartado 16; [`salida_2026-10-21_servicios.txt`](pruebas/salida_2026-10-21_servicios.txt) |
 | EV-22 | Caida de PostgreSQL, MongoDB y Redis | **Pendiente** | Tabla del apartado 19.3 |
 | EV-23 | Concurrencia y archivo mayor a 10 MB | **Pendiente** | Tabla del apartado 19.3 |
 | EV-24 | Prueba de XXE | Hecha | Apartado 16.2 |
-| EV-25 | Build y arranque de Compose | Parcial: `ps`, estado y nueve `/health` hechos; falta la salida del build | Apartado 15 |
+| EV-25 | Build y arranque de Compose | Hecha | Apartado 15; [`build.txt`](evidencias/bases/build.txt) |
 | EV-26 | Panel `/integracion/servicios` 8 de 8 | **Pendiente** | Tabla del apartado 19.3 |
 | EV-27 | Capturas del web | **Pendiente** | Tabla del apartado 19.3 |
 | EV-28 | Suite E2E y su resultado | Hecha: 100 passed in 5.84 s | Apartado 17.1 |
@@ -2151,9 +2151,8 @@ servicios en 8001 a 8008), copiados tal cual:
 8008: 200
 ```
 
-> **EVIDENCIA PENDIENTE [EV-25]:** la salida del propio `docker compose up -d
-> --build`; solo se capturo el estado posterior. Como obtenerla: apartado 19.3.
-> <!-- EVIDENCIA PENDIENTE: EV-25 salida del build -->
+**Evidencia EV-25.** Salida real del propio `docker compose up -d --build` y del estado
+posterior en [`evidencias/bases/build.txt`](evidencias/bases/build.txt) (22 de octubre).
 
 ## 16. Pruebas unitarias y de integracion
 
@@ -2193,12 +2192,15 @@ requieren servidores. Conteo por archivo, tal como lo reporta `pytest -v` en
 | E2E (`tests/e2e/`): proceso de 11 pasos mas el 6b (campanita), seguridad y errores, JSON/XML y rate limit | 100 | **100 passed in 5.84 s** |
 
 Los 119 unitarios se corrieron en la laptop del equipo (Python 3.13, sin bases
-de datos); el resultado en la VM, dentro de los contenedores, no esta capturado.
+de datos) y, ademas, dentro de los contenedores de la VM.
 
-> **Evidencia EV-20 (parcial).** Salida de `pytest -v` con los 119 casos en
-> [`pruebas/resultado_2026-10-21_local.md`](pruebas/resultado_2026-10-21_local.md).
-> **Pendiente:** la misma corrida dentro de los contenedores de la VM (apartado
-> 19.3).
+**Evidencia EV-20.** Local: 119 casos en
+[`pruebas/resultado_2026-10-21_local.md`](pruebas/resultado_2026-10-21_local.md). En la VM,
+`pytest` dentro de cada contenedor de servicio
+([`evidencias/bases/unitarias_contenedores.txt`](evidencias/bases/unitarias_contenedores.txt)):
+auth 27, ventas-catalogos 8, devoluciones 24, evidencias 3, logistica 5, inspecciones 5,
+reembolsos-costos 8 y analisis-auditoria 4 (84 passed; los casos `skipped` son las pruebas
+de integracion, que solo corren con `INTEGRACION=1`). Con los 37 del web suman 121; los 119 de la corrida local son anteriores a las dos pruebas del monto maximo de reembolso.
 
 **Evidencia EV-21.** Salida real de la VM, tomada de
 [`pruebas/salida_2026-10-21.txt`](pruebas/salida_2026-10-21.txt) (bloque
@@ -2430,18 +2432,12 @@ Despues se versionan por Pull Request (`docs/evidencias/capturas/` esta vacia).
 
 | ID | Que falta | Quien | Comando o pantalla |
 |---|---|---|---|
-| EV-02 | Firewall de GCP y consola de la VM | Quien tenga la consola de GCP | Compute Engine > Instancias de VM y Red de VPC > Reglas de firewall (captura); o `gcloud compute instances list` y `gcloud compute firewall-rules list` |
 | EV-05 | Mismo `correlation_id` en dos servicios desde una accion del web | Quien tenga VM y navegador | Con el web en modo microservicios, autorizar una devolucion desde `http://<ip-vm>:8000`; tomar el `correlation_id` de la ultima fila de `bitacora` y buscarlo con `docker compose logs --since 10m devoluciones logistica \| grep <id>` |
 | EV-22 | Caida de PostgreSQL, MongoDB y Redis | Quien tenga la VM | `docker compose stop postgres`, luego `curl -s localhost:8002/health` y una peticion de negocio; `docker compose start postgres`; repetir con `mongo` y `redis`; con `docker compose stop logistica`, abrir `/integracion/servicios` |
 | EV-23 | Concurrencia y archivo mayor a 10 MB | Quien tenga la VM | Dos `curl -X POST .../reembolsos` lanzados con `&` y `wait` sobre la misma devolucion; `head -c 11000000 /dev/zero > grande.png` y subirlo por multipart a `:8007/api/v1/evidencias` (esperado: 413) |
 | EV-26 | Panel `/integracion/servicios` con 8 de 8 | Quien tenga navegador | Entrar como Administrador a `http://<ip-vm>:8000/integracion/servicios` y capturar |
 | EV-27 | Capturas del web: login con la insignia "API distribuida", panel de causas con Highcharts, bitacora | Quien tenga navegador | Pantallas del web en `http://<ip-vm>:8000` |
 | EV-10 a EV-17 | Capturas de Swagger (`:8001/docs` a `:8008/docs`) | Quien tenga navegador | Abrir cada `/docs` y capturar; el checklist esta en [`evidencias/CHECKLIST_CAPTURAS.md`](evidencias/CHECKLIST_CAPTURAS.md) |
-| 13.1 | 423 al quinto intento fallido | Quien tenga la VM | Seis `curl -X POST localhost:8001/api/v1/auth/login` con una cuenta demo y contrasena incorrecta; el bloqueo expira solo |
-| EV-03 | Clave `jwt_revocado:*` en Redis | Quien tenga la VM | Tras un logout, dentro de los 15 min: `docker compose exec redis redis-cli --scan --pattern 'devoluciones:jwt_revocado:*'` |
-| EV-06 | Esquema y las 13 migraciones aplicadas | Quien tenga la VM | `docker compose exec app python scripts/migrate.py --estado` y `\dt` en `psql` |
-| EV-20 | Unitarias dentro de los contenedores | Quien tenga la VM | `docker compose run --rm --no-deps auth python -m pytest -v` (uno por servicio) |
-| EV-25 | Salida del build | Quien tenga la VM | `docker compose up -d --build 2>&1 \| tee build.txt` |
 | 13.7 | Enlace firmado vencido | Quien tenga la VM | Pedir un enlace, esperar 15 min y descargarlo (esperado 401) |
 | 13.8 | Pareto antes de sincronizar (409 `analisis_sin_datos`) | Quien tenga la VM | Solo con la coleccion de analisis vacia; si no se obtiene, queda cubierto por la prueba de division por cero |
 | 13.3, 13.4 | Capturas de los casos que solo cubren la suite (devolucion no autorizada, cadena de frio, mas de 30 min, NaN) | Quien tenga la VM | Agregarlos a la coleccion de Postman de cada servicio |

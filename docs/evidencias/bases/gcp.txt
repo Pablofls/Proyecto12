@@ -1,0 +1,20 @@
+# EV-02: VM y reglas de firewall de GCP
+
+Capturado el 2026-10-22 con `gcloud` desde la laptop del equipo. Salida real; se omiten las
+reglas de otros proyectos de la misma cuenta y se sustituyen la IP externa de la VM por
+`{{vm_host}}` y el rango de origen por una descripcion.
+
+>>> gcloud compute instances list
+NAME       ZONE                   MACHINE_TYPE   PREEMPTIBLE  INTERNAL_IP  EXTERNAL_IP    STATUS
+maquina01  northamerica-south1-c  e2-standard-2               10.224.0.2   {{vm_host}}    RUNNING
+
+>>> gcloud compute firewall-rules list --format="table(name,direction,priority,sourceRanges.list():label=SRC,allowed[].map().firewall_rule().list():label=ALLOW)"
+NAME                          DIRECTION  PRIORITY  SRC                                    ALLOW
+permitir-8000-devoluciones    INGRESS    1000      0.0.0.0/0                              tcp:8000
+permitir-servicios-8001-8008  INGRESS    1000      (IP /32 del equipo que presenta)       tcp:8001-8008
+default-allow-ssh             INGRESS    65534     0.0.0.0/0                              tcp:22
+
+Lectura: el web (8000) es publico; los ocho microservicios (8001 a 8008) solo aceptan al equipo
+autorizado (RNF-03: los clientes no llegan directo a las bases; PostgreSQL y Redis no tienen regla
+y solo escuchan en 127.0.0.1 de la VM). Si la demo se hace desde otra red, hay que actualizar el
+rango: gcloud compute firewall-rules update permitir-servicios-8001-8008 --source-ranges=<IP>/32
