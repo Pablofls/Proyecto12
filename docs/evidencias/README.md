@@ -254,3 +254,23 @@ directorio **no se sirve por HTTP** (`curl -i http://<IP>:8007/uploads/` respond
    generador sin avisar al equipo.
 3. Marca `[x]` en `CHECKLIST_CAPTURAS.md` y commitea las imagenes en tu rama (`pablo/...`, `roberto/...`, etc.) con mensaje
    `docs(evidencias): capturas de <servicio> (RNF-05, RF-31)`.
+
+## Volcar la corrida de Newman a la evidencia (sin capturas a mano)
+
+Despues de correr cada coleccion con Newman y `--reporter-json-export ~/evidencias_vm/<coleccion>.json`
+(ver la seccion 1), desde la raiz del repo:
+
+```bash
+python3 docs/postman/volcar_ejecuciones.py ~/evidencias_vm
+```
+
+Genera `docs/evidencias/ejecuciones/<coleccion>.md` con cada peticion y su respuesta real (metodo, URL,
+headers, body, codigo, cuerpo, tiempo y verificaciones), con los JWT, el campo `password` y la IP de la VM
+ocultos, y reemplaza en `docs/EVIDENCIAS.md` y en el checklist los marcadores de los casos ejecutados por un
+enlace a su transcripcion. Es repetible; si regeneras `EVIDENCIAS.md` con `generar_colecciones.py`, vuelve a
+correr este script. No sube los JSON de Newman ni los environments exportados (llevan tokens): se quedan en
+`~/evidencias_vm`.
+
+La carpeta `06` de auth (bloqueo 423 y limite 429) no se corre en la primera pasada y sus dos casos siguen como
+`CAPTURA PENDIENTE`.
+
