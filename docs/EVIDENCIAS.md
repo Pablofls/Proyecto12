@@ -4,7 +4,7 @@
 
 Cada endpoint sigue la plantilla del apartado 5: URL y metodo, objetivo, parametros, headers, body, respuesta, codigo, explicacion, evidencia en PostgreSQL / MongoDB / Redis, error controlado y captura.
 
-**Que es real y que esta pendiente.** URL, metodo, headers, body y la explicacion salen del codigo del servicio y de su `openapi.yaml`. La **respuesta** y la **captura** solo existen despues de ejecutar en la VM: hasta entonces estan marcadas `<!-- CAPTURA PENDIENTE: id -->`. Ninguna respuesta de este archivo fue ejecutada. Como capturarlas: [docs/evidencias/README.md](evidencias/README.md); lista de archivos esperados: [docs/evidencias/CHECKLIST_CAPTURAS.md](evidencias/CHECKLIST_CAPTURAS.md).
+**Que es real y que esta pendiente.** URL, metodo, headers, body y la explicacion salen del codigo del servicio y de su `openapi.yaml`. La **respuesta** y la **captura** solo existen despues de ejecutar en la VM: hasta entonces estan marcadas `<!-- CAPTURA PENDIENTE: id -->`. Las respuestas marcadas `ejecucion real` salen de una corrida de Newman contra la VM (transcripciones en `docs/evidencias/ejecuciones/`); las que siguen en `CAPTURA PENDIENTE` no se han ejecutado todavia. Como capturarlas: [docs/evidencias/README.md](evidencias/README.md); lista de archivos esperados: [docs/evidencias/CHECKLIST_CAPTURAS.md](evidencias/CHECKLIST_CAPTURAS.md).
 
 Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environment.json`.
 
@@ -42,14 +42,14 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 001_auth_get_health_200 -->
+[ejecucion real](evidencias/ejecuciones/auth.md#001_auth_get_health_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 1 | health 200 | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 001_auth_get_health_200 -->` |
-| 2 | health 200 XML | XML | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 002_auth_get_health_200_xml -->` |
+| 1 | health 200 | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/auth.md#001_auth_get_health_200)` |
+| 2 | health 200 XML | XML | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/auth.md#002_auth_get_health_200_xml)` |
 
 ### POST /api/v1/auth/login
 
@@ -79,19 +79,19 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 003_auth_post_login_200 -->
+[ejecucion real](evidencias/ejecuciones/auth.md#003_auth_post_login_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 3 | login 200 exitoso | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 003_auth_post_login_200 -->` |
-| 4 | login 200 XML (admin) | XML | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 004_auth_post_login_200_xml -->` |
-| 5 | login 400 datos invalidos | JSON | ninguno | 400 | validacion | `<!-- CAPTURA PENDIENTE: 005_auth_post_login_400 -->` |
-| 6 | login 401 credenciales invalidas | JSON | ninguno | 401 | credenciales_invalidas | `<!-- CAPTURA PENDIENTE: 006_auth_post_login_401 -->` |
-| 7 | login 415 formato no soportado | JSON | ninguno | 415 | formato_no_soportado | `<!-- CAPTURA PENDIENTE: 007_auth_post_login_415 -->` |
-| 8 | login 400 XML mal formado | XML | ninguno | 400 | xml_invalido | `<!-- CAPTURA PENDIENTE: 008_auth_post_login_400_xml -->` |
-| 9 | login 400 XML no cumple XSD | XML | ninguno | 400 | xml_no_cumple_xsd | `<!-- CAPTURA PENDIENTE: 009_auth_post_login_400_xml -->` |
+| 3 | login 200 exitoso | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/auth.md#003_auth_post_login_200)` |
+| 4 | login 200 XML (admin) | XML | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/auth.md#004_auth_post_login_200_xml)` |
+| 5 | login 400 datos invalidos | JSON | ninguno | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/auth.md#005_auth_post_login_400)` |
+| 6 | login 401 credenciales invalidas | JSON | ninguno | 401 | credenciales_invalidas | `[ejecucion real](evidencias/ejecuciones/auth.md#006_auth_post_login_401)` |
+| 7 | login 415 formato no soportado | JSON | ninguno | 415 | formato_no_soportado | `[ejecucion real](evidencias/ejecuciones/auth.md#007_auth_post_login_415)` |
+| 8 | login 400 XML mal formado | XML | ninguno | 400 | xml_invalido | `[ejecucion real](evidencias/ejecuciones/auth.md#008_auth_post_login_400_xml)` |
+| 9 | login 400 XML no cumple XSD | XML | ninguno | 400 | xml_no_cumple_xsd | `[ejecucion real](evidencias/ejecuciones/auth.md#009_auth_post_login_400_xml)` |
 | 24 | login 423 cuenta bloqueada | JSON | ninguno | 423 | cuenta_bloqueada | `<!-- CAPTURA PENDIENTE: 024_auth_post_login_423 -->` |
 | 25 | login 429 rate limit | JSON | ninguno | 429 | demasiadas_peticiones | `<!-- CAPTURA PENDIENTE: 025_auth_post_login_429 -->` |
 
@@ -124,18 +124,18 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 010_auth_get_sesion_200 -->
+[ejecucion real](evidencias/ejecuciones/auth.md#010_auth_get_sesion_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 10 | sesion 200 exitoso | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 010_auth_get_sesion_200 -->` |
-| 11 | sesion 200 XML | XML | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 011_auth_get_sesion_200_xml -->` |
-| 12 | sesion 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 012_auth_get_sesion_401 -->` |
-| 13 | sesion 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `<!-- CAPTURA PENDIENTE: 013_auth_get_sesion_401 -->` |
-| 20 | sesion 401 token revocado | JSON | Analista de Devoluciones | 401 | token_revocado | `<!-- CAPTURA PENDIENTE: 020_auth_get_sesion_401 -->` |
-| 23 | sesion 401 sesion inactiva | JSON | Analista de Devoluciones | 401 | sesion_inactiva | `<!-- CAPTURA PENDIENTE: 023_auth_get_sesion_401 -->` |
+| 10 | sesion 200 exitoso | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/auth.md#010_auth_get_sesion_200)` |
+| 11 | sesion 200 XML | XML | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/auth.md#011_auth_get_sesion_200_xml)` |
+| 12 | sesion 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/auth.md#012_auth_get_sesion_401)` |
+| 13 | sesion 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `[ejecucion real](evidencias/ejecuciones/auth.md#013_auth_get_sesion_401)` |
+| 20 | sesion 401 token revocado | JSON | Analista de Devoluciones | 401 | token_revocado | `[ejecucion real](evidencias/ejecuciones/auth.md#020_auth_get_sesion_401)` |
+| 23 | sesion 401 sesion inactiva | JSON | Analista de Devoluciones | 401 | sesion_inactiva | `[ejecucion real](evidencias/ejecuciones/auth.md#023_auth_get_sesion_401)` |
 
 **Errores controlados:**
 
@@ -171,16 +171,16 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 014_auth_post_refresh_200 -->
+[ejecucion real](evidencias/ejecuciones/auth.md#014_auth_post_refresh_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 14 | refresh 200 exitoso | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 014_auth_post_refresh_200 -->` |
-| 15 | refresh 401 con access token | JSON | ninguno | 401 | token_invalido | `<!-- CAPTURA PENDIENTE: 015_auth_post_refresh_401 -->` |
-| 16 | refresh 400 sin refresh_token | JSON | ninguno | 400 | validacion | `<!-- CAPTURA PENDIENTE: 016_auth_post_refresh_400 -->` |
-| 21 | refresh 401 sesion inactiva | JSON | ninguno | 401 | sesion_inactiva | `<!-- CAPTURA PENDIENTE: 021_auth_post_refresh_401 -->` |
+| 14 | refresh 200 exitoso | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/auth.md#014_auth_post_refresh_200)` |
+| 15 | refresh 401 con access token | JSON | ninguno | 401 | token_invalido | `[ejecucion real](evidencias/ejecuciones/auth.md#015_auth_post_refresh_401)` |
+| 16 | refresh 400 sin refresh_token | JSON | ninguno | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/auth.md#016_auth_post_refresh_400)` |
+| 21 | refresh 401 sesion inactiva | JSON | ninguno | 401 | sesion_inactiva | `[ejecucion real](evidencias/ejecuciones/auth.md#021_auth_post_refresh_401)` |
 
 **Errores controlados:**
 
@@ -207,15 +207,15 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 022_auth_delete_usuarios_id_sesiones_200 -->
+[ejecucion real](evidencias/ejecuciones/auth.md#022_auth_delete_usuarios_id_sesiones_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 22 | cerrar sesiones 200 admin | JSON | Administrador | 200 | - | `<!-- CAPTURA PENDIENTE: 022_auth_delete_usuarios_id_sesiones_200 -->` |
-| 17 | cerrar sesiones 403 rol sin permiso | JSON | Analista de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 017_auth_delete_usuarios_id_sesiones_403 -->` |
-| 18 | cerrar sesiones 404 usuario inexistente | JSON | Administrador | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 018_auth_delete_usuarios_id_sesiones_404 -->` |
+| 22 | cerrar sesiones 200 admin | JSON | Administrador | 200 | - | `[ejecucion real](evidencias/ejecuciones/auth.md#022_auth_delete_usuarios_id_sesiones_200)` |
+| 17 | cerrar sesiones 403 rol sin permiso | JSON | Analista de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/auth.md#017_auth_delete_usuarios_id_sesiones_403)` |
+| 18 | cerrar sesiones 404 usuario inexistente | JSON | Administrador | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/auth.md#018_auth_delete_usuarios_id_sesiones_404)` |
 
 **Errores controlados:**
 
@@ -247,13 +247,13 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 019_auth_post_logout_200 -->
+[ejecucion real](evidencias/ejecuciones/auth.md#019_auth_post_logout_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 19 | logout 200 exitoso | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 019_auth_post_logout_200 -->` |
+| 19 | logout 200 exitoso | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/auth.md#019_auth_post_logout_200)` |
 
 ## devoluciones
 
@@ -278,13 +278,13 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 026_devoluciones_get_health_200 -->
+[ejecucion real](evidencias/ejecuciones/devoluciones.md#026_devoluciones_get_health_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 26 | health 200 | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 026_devoluciones_get_health_200 -->` |
+| 26 | health 200 | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#026_devoluciones_get_health_200)` |
 
 ### POST /api/v1/devoluciones
 
@@ -316,20 +316,20 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 028_devoluciones_post_raiz_201 -->
+[ejecucion real](evidencias/ejecuciones/devoluciones.md#028_devoluciones_post_raiz_201)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 28 | registrar 201 exitoso | JSON | Cliente (dueno de la compra) | 201 | - | `<!-- CAPTURA PENDIENTE: 028_devoluciones_post_raiz_201 -->` |
-| 29 | registrar 201 XML | XML | Cliente (dueno de la compra) | 201 | - | `<!-- CAPTURA PENDIENTE: 029_devoluciones_post_raiz_201_xml -->` |
-| 27 | registrar 409 cantidad excedida | JSON | Cliente (dueno de la compra) | 409 | cantidad_excedida | `<!-- CAPTURA PENDIENTE: 027_devoluciones_post_raiz_409 -->` |
-| 30 | registrar 400 datos invalidos | JSON | Cliente (dueno de la compra) | 400 | validacion | `<!-- CAPTURA PENDIENTE: 030_devoluciones_post_raiz_400 -->` |
-| 31 | registrar 400 XML no cumple XSD | XML | Cliente (dueno de la compra) | 400 | xml_no_cumple_xsd | `<!-- CAPTURA PENDIENTE: 031_devoluciones_post_raiz_400_xml -->` |
-| 32 | registrar 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 032_devoluciones_post_raiz_401 -->` |
-| 33 | registrar 403 compra de otro cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 033_devoluciones_post_raiz_403 -->` |
-| 34 | registrar 404 linea inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 034_devoluciones_post_raiz_404 -->` |
+| 28 | registrar 201 exitoso | JSON | Cliente (dueno de la compra) | 201 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#028_devoluciones_post_raiz_201)` |
+| 29 | registrar 201 XML | XML | Cliente (dueno de la compra) | 201 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#029_devoluciones_post_raiz_201_xml)` |
+| 27 | registrar 409 cantidad excedida | JSON | Cliente (dueno de la compra) | 409 | cantidad_excedida | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#027_devoluciones_post_raiz_409)` |
+| 30 | registrar 400 datos invalidos | JSON | Cliente (dueno de la compra) | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#030_devoluciones_post_raiz_400)` |
+| 31 | registrar 400 XML no cumple XSD | XML | Cliente (dueno de la compra) | 400 | xml_no_cumple_xsd | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#031_devoluciones_post_raiz_400_xml)` |
+| 32 | registrar 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#032_devoluciones_post_raiz_401)` |
+| 33 | registrar 403 compra de otro cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#033_devoluciones_post_raiz_403)` |
+| 34 | registrar 404 linea inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#034_devoluciones_post_raiz_404)` |
 
 **Errores controlados:**
 
@@ -359,17 +359,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 035_devoluciones_get_raiz_200 -->
+[ejecucion real](evidencias/ejecuciones/devoluciones.md#035_devoluciones_get_raiz_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 35 | listar 200 cliente paginado | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 035_devoluciones_get_raiz_200 -->` |
-| 36 | listar 200 analista filtro XML | XML | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 036_devoluciones_get_raiz_200_xml -->` |
-| 37 | listar 400 estado invalido | JSON | Analista de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 037_devoluciones_get_raiz_400 -->` |
-| 38 | listar 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 038_devoluciones_get_raiz_401 -->` |
-| 39 | listar 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `<!-- CAPTURA PENDIENTE: 039_devoluciones_get_raiz_401 -->` |
+| 35 | listar 200 cliente paginado | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#035_devoluciones_get_raiz_200)` |
+| 36 | listar 200 analista filtro XML | XML | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#036_devoluciones_get_raiz_200_xml)` |
+| 37 | listar 400 estado invalido | JSON | Analista de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#037_devoluciones_get_raiz_400)` |
+| 38 | listar 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#038_devoluciones_get_raiz_401)` |
+| 39 | listar 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#039_devoluciones_get_raiz_401)` |
 
 **Errores controlados:**
 
@@ -396,17 +396,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 040_devoluciones_get_id_200 -->
+[ejecucion real](evidencias/ejecuciones/devoluciones.md#040_devoluciones_get_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 40 | detalle 200 exitoso | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 040_devoluciones_get_id_200 -->` |
-| 50 | detalle 200 historial completo | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 050_devoluciones_get_id_200 -->` |
-| 41 | detalle 403 otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 041_devoluciones_get_id_403 -->` |
-| 42 | detalle 404 inexistente | JSON | Analista de Devoluciones | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 042_devoluciones_get_id_404 -->` |
-| 52 | detalle 404 cancelada | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 052_devoluciones_get_id_404 -->` |
+| 40 | detalle 200 exitoso | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#040_devoluciones_get_id_200)` |
+| 50 | detalle 200 historial completo | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#050_devoluciones_get_id_200)` |
+| 41 | detalle 403 otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#041_devoluciones_get_id_403)` |
+| 42 | detalle 404 inexistente | JSON | Analista de Devoluciones | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#042_devoluciones_get_id_404)` |
+| 52 | detalle 404 cancelada | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#052_devoluciones_get_id_404)` |
 
 **Errores controlados:**
 
@@ -442,17 +442,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 045_devoluciones_patch_id_resolucion_200 -->
+[ejecucion real](evidencias/ejecuciones/devoluciones.md#045_devoluciones_patch_id_resolucion_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 45 | resolver 200 pedir informacion | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 045_devoluciones_patch_id_resolucion_200 -->` |
-| 48 | resolver 200 autorizar XML | XML | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 048_devoluciones_patch_id_resolucion_200_xml -->` |
-| 43 | resolver 403 cliente sin permiso | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 043_devoluciones_patch_id_resolucion_403 -->` |
-| 44 | resolver 400 rechazo sin justificacion | JSON | Analista de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 044_devoluciones_patch_id_resolucion_400 -->` |
-| 49 | resolver 409 ya resuelta | JSON | Analista de Devoluciones | 409 | estado_no_permite | `<!-- CAPTURA PENDIENTE: 049_devoluciones_patch_id_resolucion_409 -->` |
+| 45 | resolver 200 pedir informacion | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#045_devoluciones_patch_id_resolucion_200)` |
+| 48 | resolver 200 autorizar XML | XML | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#048_devoluciones_patch_id_resolucion_200_xml)` |
+| 43 | resolver 403 cliente sin permiso | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#043_devoluciones_patch_id_resolucion_403)` |
+| 44 | resolver 400 rechazo sin justificacion | JSON | Analista de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#044_devoluciones_patch_id_resolucion_400)` |
+| 49 | resolver 409 ya resuelta | JSON | Analista de Devoluciones | 409 | estado_no_permite | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#049_devoluciones_patch_id_resolucion_409)` |
 
 **Errores controlados:**
 
@@ -489,13 +489,13 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 046_devoluciones_put_id_200 -->
+[ejecucion real](evidencias/ejecuciones/devoluciones.md#046_devoluciones_put_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 46 | corregir 200 PUT | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 046_devoluciones_put_id_200 -->` |
+| 46 | corregir 200 PUT | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#046_devoluciones_put_id_200)` |
 
 ### DELETE /api/v1/devoluciones/{id}
 
@@ -516,14 +516,14 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 051_devoluciones_delete_id_200 -->
+[ejecucion real](evidencias/ejecuciones/devoluciones.md#051_devoluciones_delete_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 51 | cancelar 200 exitoso | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 051_devoluciones_delete_id_200 -->` |
-| 47 | cancelar 409 ya revisada | JSON | Cliente (dueno de la compra) | 409 | estado_no_permite | `<!-- CAPTURA PENDIENTE: 047_devoluciones_delete_id_409 -->` |
+| 51 | cancelar 200 exitoso | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#051_devoluciones_delete_id_200)` |
+| 47 | cancelar 409 ya revisada | JSON | Cliente (dueno de la compra) | 409 | estado_no_permite | `[ejecucion real](evidencias/ejecuciones/devoluciones.md#047_devoluciones_delete_id_409)` |
 
 **Errores controlados:**
 
@@ -552,13 +552,13 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 053_logistica_get_health_200 -->
+[ejecucion real](evidencias/ejecuciones/logistica.md#053_logistica_get_health_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 53 | health 200 | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 053_logistica_get_health_200 -->` |
+| 53 | health 200 | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/logistica.md#053_logistica_get_health_200)` |
 
 ### POST /api/v1/logistica/recolecciones
 
@@ -589,21 +589,21 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 061_logistica_post_recolecciones_201 -->
+[ejecucion real](evidencias/ejecuciones/logistica.md#061_logistica_post_recolecciones_201)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 61 | programar 201 exitoso | JSON | Coordinador de Logistica | 201 | - | `<!-- CAPTURA PENDIENTE: 061_logistica_post_recolecciones_201 -->` |
-| 54 | programar 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 054_logistica_post_recolecciones_401 -->` |
-| 55 | programar 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `<!-- CAPTURA PENDIENTE: 055_logistica_post_recolecciones_401 -->` |
-| 56 | programar 403 centro sin permiso | JSON | Encargado del Centro de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 056_logistica_post_recolecciones_403 -->` |
-| 57 | programar 400 devolucion_id invalido | JSON | Coordinador de Logistica | 400 | validacion | `<!-- CAPTURA PENDIENTE: 057_logistica_post_recolecciones_400 -->` |
-| 58 | programar 404 devolucion inexistente | JSON | Coordinador de Logistica | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 058_logistica_post_recolecciones_404 -->` |
-| 59 | programar 400 fecha en el pasado | JSON | Coordinador de Logistica | 400 | validacion | `<!-- CAPTURA PENDIENTE: 059_logistica_post_recolecciones_400 -->` |
-| 60 | programar 400 XML no cumple XSD | XML | Coordinador de Logistica | 400 | xml_no_cumple_xsd | `<!-- CAPTURA PENDIENTE: 060_logistica_post_recolecciones_400_xml -->` |
-| 62 | programar 409 ya programada | JSON | Coordinador de Logistica | 409 | estado_no_permite | `<!-- CAPTURA PENDIENTE: 062_logistica_post_recolecciones_409 -->` |
+| 61 | programar 201 exitoso | JSON | Coordinador de Logistica | 201 | - | `[ejecucion real](evidencias/ejecuciones/logistica.md#061_logistica_post_recolecciones_201)` |
+| 54 | programar 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/logistica.md#054_logistica_post_recolecciones_401)` |
+| 55 | programar 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `[ejecucion real](evidencias/ejecuciones/logistica.md#055_logistica_post_recolecciones_401)` |
+| 56 | programar 403 centro sin permiso | JSON | Encargado del Centro de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/logistica.md#056_logistica_post_recolecciones_403)` |
+| 57 | programar 400 devolucion_id invalido | JSON | Coordinador de Logistica | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/logistica.md#057_logistica_post_recolecciones_400)` |
+| 58 | programar 404 devolucion inexistente | JSON | Coordinador de Logistica | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/logistica.md#058_logistica_post_recolecciones_404)` |
+| 59 | programar 400 fecha en el pasado | JSON | Coordinador de Logistica | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/logistica.md#059_logistica_post_recolecciones_400)` |
+| 60 | programar 400 XML no cumple XSD | XML | Coordinador de Logistica | 400 | xml_no_cumple_xsd | `[ejecucion real](evidencias/ejecuciones/logistica.md#060_logistica_post_recolecciones_400_xml)` |
+| 62 | programar 409 ya programada | JSON | Coordinador de Logistica | 409 | estado_no_permite | `[ejecucion real](evidencias/ejecuciones/logistica.md#062_logistica_post_recolecciones_409)` |
 
 **Errores controlados:**
 
@@ -635,17 +635,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 063_logistica_get_recolecciones_200 -->
+[ejecucion real](evidencias/ejecuciones/logistica.md#063_logistica_get_recolecciones_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 63 | listar 200 coordinador | JSON | Coordinador de Logistica | 200 | - | `<!-- CAPTURA PENDIENTE: 063_logistica_get_recolecciones_200 -->` |
-| 64 | listar 200 centro XML con filtro | XML | Encargado del Centro de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 064_logistica_get_recolecciones_200_xml -->` |
-| 65 | listar 400 estado invalido | JSON | Coordinador de Logistica | 400 | validacion | `<!-- CAPTURA PENDIENTE: 065_logistica_get_recolecciones_400 -->` |
-| 66 | listar 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 066_logistica_get_recolecciones_403 -->` |
-| 67 | listar 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 067_logistica_get_recolecciones_401 -->` |
+| 63 | listar 200 coordinador | JSON | Coordinador de Logistica | 200 | - | `[ejecucion real](evidencias/ejecuciones/logistica.md#063_logistica_get_recolecciones_200)` |
+| 64 | listar 200 centro XML con filtro | XML | Encargado del Centro de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/logistica.md#064_logistica_get_recolecciones_200_xml)` |
+| 65 | listar 400 estado invalido | JSON | Coordinador de Logistica | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/logistica.md#065_logistica_get_recolecciones_400)` |
+| 66 | listar 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/logistica.md#066_logistica_get_recolecciones_403)` |
+| 67 | listar 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/logistica.md#067_logistica_get_recolecciones_401)` |
 
 **Errores controlados:**
 
@@ -681,18 +681,18 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 072_logistica_patch_recolecciones_id_asignacion_200_xml -->
+[ejecucion real](evidencias/ejecuciones/logistica.md#072_logistica_patch_recolecciones_id_asignacion_200_xml)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 72 | asignar 200 XML | XML | Coordinador de Logistica | 200 | - | `<!-- CAPTURA PENDIENTE: 072_logistica_patch_recolecciones_id_asignacion_200_xml -->` |
-| 68 | asignar 403 centro sin permiso | JSON | Encargado del Centro de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 068_logistica_patch_recolecciones_id_asignacion_403 -->` |
-| 69 | asignar 400 ruta invalida | JSON | Coordinador de Logistica | 400 | validacion | `<!-- CAPTURA PENDIENTE: 069_logistica_patch_recolecciones_id_asignacion_400 -->` |
-| 70 | asignar 400 ruta inexistente | JSON | Coordinador de Logistica | 400 | validacion | `<!-- CAPTURA PENDIENTE: 070_logistica_patch_recolecciones_id_asignacion_400 -->` |
-| 71 | asignar 404 recoleccion inexistente | JSON | Coordinador de Logistica | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 071_logistica_patch_recolecciones_id_asignacion_404 -->` |
-| 76 | asignar 409 ya inicio | JSON | Coordinador de Logistica | 409 | estado_no_permite | `<!-- CAPTURA PENDIENTE: 076_logistica_patch_recolecciones_id_asignacion_409 -->` |
+| 72 | asignar 200 XML | XML | Coordinador de Logistica | 200 | - | `[ejecucion real](evidencias/ejecuciones/logistica.md#072_logistica_patch_recolecciones_id_asignacion_200_xml)` |
+| 68 | asignar 403 centro sin permiso | JSON | Encargado del Centro de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/logistica.md#068_logistica_patch_recolecciones_id_asignacion_403)` |
+| 69 | asignar 400 ruta invalida | JSON | Coordinador de Logistica | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/logistica.md#069_logistica_patch_recolecciones_id_asignacion_400)` |
+| 70 | asignar 400 ruta inexistente | JSON | Coordinador de Logistica | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/logistica.md#070_logistica_patch_recolecciones_id_asignacion_400)` |
+| 71 | asignar 404 recoleccion inexistente | JSON | Coordinador de Logistica | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/logistica.md#071_logistica_patch_recolecciones_id_asignacion_404)` |
+| 76 | asignar 409 ya inicio | JSON | Coordinador de Logistica | 409 | estado_no_permite | `[ejecucion real](evidencias/ejecuciones/logistica.md#076_logistica_patch_recolecciones_id_asignacion_409)` |
 
 **Errores controlados:**
 
@@ -729,16 +729,16 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 075_logistica_patch_recolecciones_id_estado_200 -->
+[ejecucion real](evidencias/ejecuciones/logistica.md#075_logistica_patch_recolecciones_id_estado_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 75 | estado 200 en_transito | JSON | Coordinador de Logistica | 200 | - | `<!-- CAPTURA PENDIENTE: 075_logistica_patch_recolecciones_id_estado_200 -->` |
-| 77 | estado 200 completada XML | XML | Coordinador de Logistica | 200 | - | `<!-- CAPTURA PENDIENTE: 077_logistica_patch_recolecciones_id_estado_200_xml -->` |
-| 73 | estado 409 transicion invalida | JSON | Coordinador de Logistica | 409 | transicion_invalida | `<!-- CAPTURA PENDIENTE: 073_logistica_patch_recolecciones_id_estado_409 -->` |
-| 74 | estado 404 inexistente | JSON | Coordinador de Logistica | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 074_logistica_patch_recolecciones_id_estado_404 -->` |
+| 75 | estado 200 en_transito | JSON | Coordinador de Logistica | 200 | - | `[ejecucion real](evidencias/ejecuciones/logistica.md#075_logistica_patch_recolecciones_id_estado_200)` |
+| 77 | estado 200 completada XML | XML | Coordinador de Logistica | 200 | - | `[ejecucion real](evidencias/ejecuciones/logistica.md#077_logistica_patch_recolecciones_id_estado_200_xml)` |
+| 73 | estado 409 transicion invalida | JSON | Coordinador de Logistica | 409 | transicion_invalida | `[ejecucion real](evidencias/ejecuciones/logistica.md#073_logistica_patch_recolecciones_id_estado_409)` |
+| 74 | estado 404 inexistente | JSON | Coordinador de Logistica | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/logistica.md#074_logistica_patch_recolecciones_id_estado_404)` |
 
 **Errores controlados:**
 
@@ -773,18 +773,18 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 082_logistica_post_recepciones_201 -->
+[ejecucion real](evidencias/ejecuciones/logistica.md#082_logistica_post_recepciones_201)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 82 | recepcion 201 exitoso | JSON | Encargado del Centro de Devoluciones | 201 | - | `<!-- CAPTURA PENDIENTE: 082_logistica_post_recepciones_201 -->` |
-| 78 | recepcion 403 coordinador | JSON | Coordinador de Logistica | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 078_logistica_post_recepciones_403 -->` |
-| 79 | recepcion 400 devolucion invalida | JSON | Encargado del Centro de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 079_logistica_post_recepciones_400 -->` |
-| 80 | recepcion 404 inexistente | JSON | Encargado del Centro de Devoluciones | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 080_logistica_post_recepciones_404 -->` |
-| 81 | recepcion 400 booleano invalido | JSON | Encargado del Centro de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 081_logistica_post_recepciones_400 -->` |
-| 83 | recepcion 409 duplicada | JSON | Encargado del Centro de Devoluciones | 409 | recepcion_duplicada | `<!-- CAPTURA PENDIENTE: 083_logistica_post_recepciones_409 -->` |
+| 82 | recepcion 201 exitoso | JSON | Encargado del Centro de Devoluciones | 201 | - | `[ejecucion real](evidencias/ejecuciones/logistica.md#082_logistica_post_recepciones_201)` |
+| 78 | recepcion 403 coordinador | JSON | Coordinador de Logistica | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/logistica.md#078_logistica_post_recepciones_403)` |
+| 79 | recepcion 400 devolucion invalida | JSON | Encargado del Centro de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/logistica.md#079_logistica_post_recepciones_400)` |
+| 80 | recepcion 404 inexistente | JSON | Encargado del Centro de Devoluciones | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/logistica.md#080_logistica_post_recepciones_404)` |
+| 81 | recepcion 400 booleano invalido | JSON | Encargado del Centro de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/logistica.md#081_logistica_post_recepciones_400)` |
+| 83 | recepcion 409 duplicada | JSON | Encargado del Centro de Devoluciones | 409 | recepcion_duplicada | `[ejecucion real](evidencias/ejecuciones/logistica.md#083_logistica_post_recepciones_409)` |
 
 **Errores controlados:**
 
@@ -817,13 +817,13 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 084_inspecciones_get_health_200 -->
+[ejecucion real](evidencias/ejecuciones/inspecciones.md#084_inspecciones_get_health_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 84 | health 200 | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 084_inspecciones_get_health_200 -->` |
+| 84 | health 200 | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#084_inspecciones_get_health_200)` |
 
 ### POST /api/v1/inspecciones
 
@@ -859,21 +859,21 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 092_inspecciones_post_raiz_201 -->
+[ejecucion real](evidencias/ejecuciones/inspecciones.md#092_inspecciones_post_raiz_201)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 92 | registrar 201 exitoso | JSON | Inspector | 201 | - | `<!-- CAPTURA PENDIENTE: 092_inspecciones_post_raiz_201 -->` |
-| 85 | registrar 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 085_inspecciones_post_raiz_401 -->` |
-| 86 | registrar 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 086_inspecciones_post_raiz_403 -->` |
-| 87 | registrar 400 devolucion_id invalido | JSON | Inspector | 400 | validacion | `<!-- CAPTURA PENDIENTE: 087_inspecciones_post_raiz_400 -->` |
-| 88 | registrar 404 devolucion inexistente | JSON | Inspector | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 088_inspecciones_post_raiz_404 -->` |
-| 89 | registrar 400 XML no cumple XSD | XML | Inspector | 400 | xml_no_cumple_xsd | `<!-- CAPTURA PENDIENTE: 089_inspecciones_post_raiz_400_xml -->` |
-| 90 | registrar 400 empaque sin describir | JSON | Inspector | 400 | validacion | `<!-- CAPTURA PENDIENTE: 090_inspecciones_post_raiz_400 -->` |
-| 91 | registrar 400 booleano invalido | JSON | Inspector | 400 | validacion | `<!-- CAPTURA PENDIENTE: 091_inspecciones_post_raiz_400 -->` |
-| 93 | registrar 409 duplicada | JSON | Inspector | 409 | inspeccion_duplicada | `<!-- CAPTURA PENDIENTE: 093_inspecciones_post_raiz_409 -->` |
+| 92 | registrar 201 exitoso | JSON | Inspector | 201 | - | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#092_inspecciones_post_raiz_201)` |
+| 85 | registrar 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#085_inspecciones_post_raiz_401)` |
+| 86 | registrar 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#086_inspecciones_post_raiz_403)` |
+| 87 | registrar 400 devolucion_id invalido | JSON | Inspector | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#087_inspecciones_post_raiz_400)` |
+| 88 | registrar 404 devolucion inexistente | JSON | Inspector | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#088_inspecciones_post_raiz_404)` |
+| 89 | registrar 400 XML no cumple XSD | XML | Inspector | 400 | xml_no_cumple_xsd | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#089_inspecciones_post_raiz_400_xml)` |
+| 90 | registrar 400 empaque sin describir | JSON | Inspector | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#090_inspecciones_post_raiz_400)` |
+| 91 | registrar 400 booleano invalido | JSON | Inspector | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#091_inspecciones_post_raiz_400)` |
+| 93 | registrar 409 duplicada | JSON | Inspector | 409 | inspeccion_duplicada | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#093_inspecciones_post_raiz_409)` |
 
 **Errores controlados:**
 
@@ -905,17 +905,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 094_inspecciones_get_id_200 -->
+[ejecucion real](evidencias/ejecuciones/inspecciones.md#094_inspecciones_get_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 94 | detalle 200 inspector | JSON | Inspector | 200 | - | `<!-- CAPTURA PENDIENTE: 094_inspecciones_get_id_200 -->` |
-| 95 | detalle 200 analista XML | XML | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 095_inspecciones_get_id_200_xml -->` |
-| 96 | detalle 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 096_inspecciones_get_id_403 -->` |
-| 97 | detalle 404 inexistente | JSON | Inspector | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 097_inspecciones_get_id_404 -->` |
-| 98 | detalle 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `<!-- CAPTURA PENDIENTE: 098_inspecciones_get_id_401 -->` |
+| 94 | detalle 200 inspector | JSON | Inspector | 200 | - | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#094_inspecciones_get_id_200)` |
+| 95 | detalle 200 analista XML | XML | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#095_inspecciones_get_id_200_xml)` |
+| 96 | detalle 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#096_inspecciones_get_id_403)` |
+| 97 | detalle 404 inexistente | JSON | Inspector | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#097_inspecciones_get_id_404)` |
+| 98 | detalle 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#098_inspecciones_get_id_401)` |
 
 **Errores controlados:**
 
@@ -950,16 +950,16 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 102_inspecciones_patch_id_200_xml -->
+[ejecucion real](evidencias/ejecuciones/inspecciones.md#102_inspecciones_patch_id_200_xml)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 102 | actualizar 200 XML | XML | Inspector | 200 | - | `<!-- CAPTURA PENDIENTE: 102_inspecciones_patch_id_200_xml -->` |
-| 99 | actualizar 400 sin cambios | JSON | Inspector | 400 | validacion | `<!-- CAPTURA PENDIENTE: 099_inspecciones_patch_id_400 -->` |
-| 100 | actualizar 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 100_inspecciones_patch_id_403 -->` |
-| 101 | actualizar 404 inexistente | JSON | Inspector | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 101_inspecciones_patch_id_404 -->` |
+| 102 | actualizar 200 XML | XML | Inspector | 200 | - | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#102_inspecciones_patch_id_200_xml)` |
+| 99 | actualizar 400 sin cambios | JSON | Inspector | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#099_inspecciones_patch_id_400)` |
+| 100 | actualizar 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#100_inspecciones_patch_id_403)` |
+| 101 | actualizar 404 inexistente | JSON | Inspector | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#101_inspecciones_patch_id_404)` |
 
 **Errores controlados:**
 
@@ -995,17 +995,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 106_inspecciones_post_id_disposicion_201_xml -->
+[ejecucion real](evidencias/ejecuciones/inspecciones.md#106_inspecciones_post_id_disposicion_201_xml)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 106 | disposicion 201 XML | XML | Analista de Devoluciones | 201 | - | `<!-- CAPTURA PENDIENTE: 106_inspecciones_post_id_disposicion_201_xml -->` |
-| 103 | disposicion 403 inspector | JSON | Inspector | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 103_inspecciones_post_id_disposicion_403 -->` |
-| 104 | disposicion 400 destino invalido | JSON | Analista de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 104_inspecciones_post_id_disposicion_400 -->` |
-| 105 | disposicion 404 inexistente | JSON | Analista de Devoluciones | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 105_inspecciones_post_id_disposicion_404 -->` |
-| 107 | disposicion 409 duplicada | JSON | Analista de Devoluciones | 409 | disposicion_duplicada | `<!-- CAPTURA PENDIENTE: 107_inspecciones_post_id_disposicion_409 -->` |
+| 106 | disposicion 201 XML | XML | Analista de Devoluciones | 201 | - | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#106_inspecciones_post_id_disposicion_201_xml)` |
+| 103 | disposicion 403 inspector | JSON | Inspector | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#103_inspecciones_post_id_disposicion_403)` |
+| 104 | disposicion 400 destino invalido | JSON | Analista de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#104_inspecciones_post_id_disposicion_400)` |
+| 105 | disposicion 404 inexistente | JSON | Analista de Devoluciones | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#105_inspecciones_post_id_disposicion_404)` |
+| 107 | disposicion 409 duplicada | JSON | Analista de Devoluciones | 409 | disposicion_duplicada | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#107_inspecciones_post_id_disposicion_409)` |
 
 **Errores controlados:**
 
@@ -1039,15 +1039,15 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 110_inspecciones_post_inventario_id_etiqueta_201 -->
+[ejecucion real](evidencias/ejecuciones/inspecciones.md#110_inspecciones_post_inventario_id_etiqueta_201)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 110 | etiqueta 201 exitoso | JSON | Encargado del Centro de Devoluciones | 201 | - | `<!-- CAPTURA PENDIENTE: 110_inspecciones_post_inventario_id_etiqueta_201 -->` |
-| 108 | etiqueta 403 inspector | JSON | Inspector | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 108_inspecciones_post_inventario_id_etiqueta_403 -->` |
-| 109 | etiqueta 404 inexistente | JSON | Encargado del Centro de Devoluciones | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 109_inspecciones_post_inventario_id_etiqueta_404 -->` |
+| 110 | etiqueta 201 exitoso | JSON | Encargado del Centro de Devoluciones | 201 | - | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#110_inspecciones_post_inventario_id_etiqueta_201)` |
+| 108 | etiqueta 403 inspector | JSON | Inspector | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#108_inspecciones_post_inventario_id_etiqueta_403)` |
+| 109 | etiqueta 404 inexistente | JSON | Encargado del Centro de Devoluciones | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/inspecciones.md#109_inspecciones_post_inventario_id_etiqueta_404)` |
 
 **Errores controlados:**
 
@@ -1077,13 +1077,13 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 111_reembolsos_costos_get_health_200 -->
+[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#111_reembolsos_costos_get_health_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 111 | health 200 | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 111_reembolsos_costos_get_health_200 -->` |
+| 111 | health 200 | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#111_reembolsos_costos_get_health_200)` |
 
 ### POST /api/v1/reembolsos-costos/costos
 
@@ -1114,22 +1114,22 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 120_reembolsos_costos_post_costos_201 -->
+[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#120_reembolsos_costos_post_costos_201)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 120 | costo 201 transporte JSON | JSON | Coordinador de Logistica | 201 | - | `<!-- CAPTURA PENDIENTE: 120_reembolsos_costos_post_costos_201 -->` |
-| 121 | costo 201 almacenamiento XML | XML | Encargado del Centro de Devoluciones | 201 | - | `<!-- CAPTURA PENDIENTE: 121_reembolsos_costos_post_costos_201_xml -->` |
-| 112 | costo 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 112_reembolsos_costos_post_costos_401 -->` |
-| 113 | costo 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 113_reembolsos_costos_post_costos_403 -->` |
-| 114 | costo 403 etapa de otro rol | JSON | Coordinador de Logistica | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 114_reembolsos_costos_post_costos_403 -->` |
-| 115 | costo 400 monto negativo | JSON | Coordinador de Logistica | 400 | validacion | `<!-- CAPTURA PENDIENTE: 115_reembolsos_costos_post_costos_400 -->` |
-| 116 | costo 400 etapa invalida | JSON | Coordinador de Logistica | 400 | validacion | `<!-- CAPTURA PENDIENTE: 116_reembolsos_costos_post_costos_400 -->` |
-| 117 | costo 400 devolucion_id invalido | JSON | Coordinador de Logistica | 400 | validacion | `<!-- CAPTURA PENDIENTE: 117_reembolsos_costos_post_costos_400 -->` |
-| 118 | costo 400 XML no cumple XSD | XML | Coordinador de Logistica | 400 | xml_no_cumple_xsd | `<!-- CAPTURA PENDIENTE: 118_reembolsos_costos_post_costos_400_xml -->` |
-| 119 | costo 404 devolucion inexistente | JSON | Coordinador de Logistica | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 119_reembolsos_costos_post_costos_404 -->` |
+| 120 | costo 201 transporte JSON | JSON | Coordinador de Logistica | 201 | - | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#120_reembolsos_costos_post_costos_201)` |
+| 121 | costo 201 almacenamiento XML | XML | Encargado del Centro de Devoluciones | 201 | - | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#121_reembolsos_costos_post_costos_201_xml)` |
+| 112 | costo 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#112_reembolsos_costos_post_costos_401)` |
+| 113 | costo 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#113_reembolsos_costos_post_costos_403)` |
+| 114 | costo 403 etapa de otro rol | JSON | Coordinador de Logistica | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#114_reembolsos_costos_post_costos_403)` |
+| 115 | costo 400 monto negativo | JSON | Coordinador de Logistica | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#115_reembolsos_costos_post_costos_400)` |
+| 116 | costo 400 etapa invalida | JSON | Coordinador de Logistica | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#116_reembolsos_costos_post_costos_400)` |
+| 117 | costo 400 devolucion_id invalido | JSON | Coordinador de Logistica | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#117_reembolsos_costos_post_costos_400)` |
+| 118 | costo 400 XML no cumple XSD | XML | Coordinador de Logistica | 400 | xml_no_cumple_xsd | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#118_reembolsos_costos_post_costos_400_xml)` |
+| 119 | costo 404 devolucion inexistente | JSON | Coordinador de Logistica | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#119_reembolsos_costos_post_costos_404)` |
 
 **Errores controlados:**
 
@@ -1172,20 +1172,20 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 128_reembolsos_costos_post_reembolsos_201 -->
+[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#128_reembolsos_costos_post_reembolsos_201)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 128 | reembolso 201 aprobado | JSON | Encargado de Reembolsos | 201 | - | `<!-- CAPTURA PENDIENTE: 128_reembolsos_costos_post_reembolsos_201 -->` |
-| 122 | reembolso 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 122_reembolsos_costos_post_reembolsos_403 -->` |
-| 123 | reembolso 400 estado invalido | JSON | Encargado de Reembolsos | 400 | validacion | `<!-- CAPTURA PENDIENTE: 123_reembolsos_costos_post_reembolsos_400 -->` |
-| 124 | reembolso 400 metodo invalido | JSON | Encargado de Reembolsos | 400 | validacion | `<!-- CAPTURA PENDIENTE: 124_reembolsos_costos_post_reembolsos_400 -->` |
-| 125 | reembolso 400 devolucion_id invalido | JSON | Encargado de Reembolsos | 400 | validacion | `<!-- CAPTURA PENDIENTE: 125_reembolsos_costos_post_reembolsos_400 -->` |
-| 126 | reembolso 404 devolucion inexistente | JSON | Encargado de Reembolsos | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 126_reembolsos_costos_post_reembolsos_404 -->` |
-| 127 | reembolso 409 monto excedido | JSON | Encargado de Reembolsos | 409 | monto_excedido | `<!-- CAPTURA PENDIENTE: 127_reembolsos_costos_post_reembolsos_409 -->` |
-| 129 | reembolso 409 duplicado XML | XML | Encargado de Reembolsos | 409 | reembolso_duplicado | `<!-- CAPTURA PENDIENTE: 129_reembolsos_costos_post_reembolsos_409_xml -->` |
+| 128 | reembolso 201 aprobado | JSON | Encargado de Reembolsos | 201 | - | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#128_reembolsos_costos_post_reembolsos_201)` |
+| 122 | reembolso 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#122_reembolsos_costos_post_reembolsos_403)` |
+| 123 | reembolso 400 estado invalido | JSON | Encargado de Reembolsos | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#123_reembolsos_costos_post_reembolsos_400)` |
+| 124 | reembolso 400 metodo invalido | JSON | Encargado de Reembolsos | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#124_reembolsos_costos_post_reembolsos_400)` |
+| 125 | reembolso 400 devolucion_id invalido | JSON | Encargado de Reembolsos | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#125_reembolsos_costos_post_reembolsos_400)` |
+| 126 | reembolso 404 devolucion inexistente | JSON | Encargado de Reembolsos | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#126_reembolsos_costos_post_reembolsos_404)` |
+| 127 | reembolso 409 monto excedido | JSON | Encargado de Reembolsos | 409 | monto_excedido | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#127_reembolsos_costos_post_reembolsos_409)` |
+| 129 | reembolso 409 duplicado XML | XML | Encargado de Reembolsos | 409 | reembolso_duplicado | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#129_reembolsos_costos_post_reembolsos_409_xml)` |
 
 **Errores controlados:**
 
@@ -1216,16 +1216,16 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 130_reembolsos_costos_get_reembolsos_200 -->
+[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#130_reembolsos_costos_get_reembolsos_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 130 | reembolsos 200 lista | JSON | Encargado de Reembolsos | 200 | - | `<!-- CAPTURA PENDIENTE: 130_reembolsos_costos_get_reembolsos_200 -->` |
-| 131 | reembolsos 200 analista XML | XML | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 131_reembolsos_costos_get_reembolsos_200_xml -->` |
-| 132 | reembolsos 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 132_reembolsos_costos_get_reembolsos_403 -->` |
-| 133 | reembolsos 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `<!-- CAPTURA PENDIENTE: 133_reembolsos_costos_get_reembolsos_401 -->` |
+| 130 | reembolsos 200 lista | JSON | Encargado de Reembolsos | 200 | - | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#130_reembolsos_costos_get_reembolsos_200)` |
+| 131 | reembolsos 200 analista XML | XML | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#131_reembolsos_costos_get_reembolsos_200_xml)` |
+| 132 | reembolsos 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#132_reembolsos_costos_get_reembolsos_403)` |
+| 133 | reembolsos 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#133_reembolsos_costos_get_reembolsos_401)` |
 
 **Errores controlados:**
 
@@ -1251,16 +1251,16 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 134_reembolsos_costos_get_costos_id_200 -->
+[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#134_reembolsos_costos_get_costos_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 134 | costos 200 desglose | JSON | Encargado de Reembolsos | 200 | - | `<!-- CAPTURA PENDIENTE: 134_reembolsos_costos_get_costos_id_200 -->` |
-| 135 | costos 200 analista XML | XML | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 135_reembolsos_costos_get_costos_id_200_xml -->` |
-| 136 | costos 403 centro | JSON | Encargado del Centro de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 136_reembolsos_costos_get_costos_id_403 -->` |
-| 137 | costos 404 devolucion inexistente | JSON | Encargado de Reembolsos | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 137_reembolsos_costos_get_costos_id_404 -->` |
+| 134 | costos 200 desglose | JSON | Encargado de Reembolsos | 200 | - | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#134_reembolsos_costos_get_costos_id_200)` |
+| 135 | costos 200 analista XML | XML | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#135_reembolsos_costos_get_costos_id_200_xml)` |
+| 136 | costos 403 centro | JSON | Encargado del Centro de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#136_reembolsos_costos_get_costos_id_403)` |
+| 137 | costos 404 devolucion inexistente | JSON | Encargado de Reembolsos | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/reembolsos_costos.md#137_reembolsos_costos_get_costos_id_404)` |
 
 **Errores controlados:**
 
@@ -1290,13 +1290,13 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 138_ventas_catalogos_get_health_200 -->
+[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#138_ventas_catalogos_get_health_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 138 | health 200 | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 138_ventas_catalogos_get_health_200 -->` |
+| 138 | health 200 | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#138_ventas_catalogos_get_health_200)` |
 
 ### GET /api/v1/ventas
 
@@ -1317,17 +1317,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 139_ventas_catalogos_get_raiz_200 -->
+[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#139_ventas_catalogos_get_raiz_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 139 | ventas 200 cliente paginado | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 139_ventas_catalogos_get_raiz_200 -->` |
-| 140 | ventas 200 analista XML | XML | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 140_ventas_catalogos_get_raiz_200_xml -->` |
-| 141 | ventas 400 paginacion invalida | JSON | Cliente (dueno de la compra) | 400 | validacion | `<!-- CAPTURA PENDIENTE: 141_ventas_catalogos_get_raiz_400 -->` |
-| 142 | ventas 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 142_ventas_catalogos_get_raiz_401 -->` |
-| 143 | ventas 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `<!-- CAPTURA PENDIENTE: 143_ventas_catalogos_get_raiz_401 -->` |
+| 139 | ventas 200 cliente paginado | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#139_ventas_catalogos_get_raiz_200)` |
+| 140 | ventas 200 analista XML | XML | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#140_ventas_catalogos_get_raiz_200_xml)` |
+| 141 | ventas 400 paginacion invalida | JSON | Cliente (dueno de la compra) | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#141_ventas_catalogos_get_raiz_400)` |
+| 142 | ventas 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#142_ventas_catalogos_get_raiz_401)` |
+| 143 | ventas 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#143_ventas_catalogos_get_raiz_401)` |
 
 **Errores controlados:**
 
@@ -1354,16 +1354,16 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 144_ventas_catalogos_get_id_200 -->
+[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#144_ventas_catalogos_get_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 144 | venta 200 detalle | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 144_ventas_catalogos_get_id_200 -->` |
-| 145 | venta 200 detalle XML | XML | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 145_ventas_catalogos_get_id_200_xml -->` |
-| 146 | venta 403 de otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 146_ventas_catalogos_get_id_403 -->` |
-| 147 | venta 404 inexistente | JSON | Analista de Devoluciones | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 147_ventas_catalogos_get_id_404 -->` |
+| 144 | venta 200 detalle | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#144_ventas_catalogos_get_id_200)` |
+| 145 | venta 200 detalle XML | XML | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#145_ventas_catalogos_get_id_200_xml)` |
+| 146 | venta 403 de otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#146_ventas_catalogos_get_id_403)` |
+| 147 | venta 404 inexistente | JSON | Analista de Devoluciones | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#147_ventas_catalogos_get_id_404)` |
 
 **Errores controlados:**
 
@@ -1389,14 +1389,14 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 148_ventas_catalogos_get_catalogos_200 -->
+[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#148_ventas_catalogos_get_catalogos_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 148 | catalogos 200 lista | JSON | Administrador | 200 | - | `<!-- CAPTURA PENDIENTE: 148_ventas_catalogos_get_catalogos_200 -->` |
-| 149 | catalogos 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 149_ventas_catalogos_get_catalogos_403 -->` |
+| 148 | catalogos 200 lista | JSON | Administrador | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#148_ventas_catalogos_get_catalogos_200)` |
+| 149 | catalogos 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#149_ventas_catalogos_get_catalogos_403)` |
 
 **Errores controlados:**
 
@@ -1421,18 +1421,18 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 150_ventas_catalogos_get_catalogos_nombre_200 -->
+[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#150_ventas_catalogos_get_catalogos_nombre_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 150 | catalogo motivos 200 cliente | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 150_ventas_catalogos_get_catalogos_nombre_200 -->` |
-| 151 | catalogo motivos 200 XML con inactivos | XML | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 151_ventas_catalogos_get_catalogos_nombre_200_xml -->` |
-| 154 | catalogo rutas 200 | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 154_ventas_catalogos_get_catalogos_nombre_200 -->` |
-| 155 | catalogo transportistas 200 | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 155_ventas_catalogos_get_catalogos_nombre_200 -->` |
-| 152 | catalogo productos 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 152_ventas_catalogos_get_catalogos_nombre_403 -->` |
-| 153 | catalogo inexistente 404 | JSON | Administrador | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 153_ventas_catalogos_get_catalogos_nombre_404 -->` |
+| 150 | catalogo motivos 200 cliente | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#150_ventas_catalogos_get_catalogos_nombre_200)` |
+| 151 | catalogo motivos 200 XML con inactivos | XML | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#151_ventas_catalogos_get_catalogos_nombre_200_xml)` |
+| 154 | catalogo rutas 200 | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#154_ventas_catalogos_get_catalogos_nombre_200)` |
+| 155 | catalogo transportistas 200 | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#155_ventas_catalogos_get_catalogos_nombre_200)` |
+| 152 | catalogo productos 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#152_ventas_catalogos_get_catalogos_nombre_403)` |
+| 153 | catalogo inexistente 404 | JSON | Administrador | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#153_ventas_catalogos_get_catalogos_nombre_404)` |
 
 **Errores controlados:**
 
@@ -1458,14 +1458,14 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 156_ventas_catalogos_get_catalogos_nombre_registro_id_200 -->
+[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#156_ventas_catalogos_get_catalogos_nombre_registro_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 156 | registro 200 detalle | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 156_ventas_catalogos_get_catalogos_nombre_registro_id_200 -->` |
-| 157 | registro 404 inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 157_ventas_catalogos_get_catalogos_nombre_registro_id_404 -->` |
+| 156 | registro 200 detalle | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#156_ventas_catalogos_get_catalogos_nombre_registro_id_200)` |
+| 157 | registro 404 inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#157_ventas_catalogos_get_catalogos_nombre_registro_id_404)` |
 
 **Errores controlados:**
 
@@ -1499,19 +1499,19 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 158_ventas_catalogos_post_catalogos_nombre_201 -->
+[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#158_ventas_catalogos_post_catalogos_nombre_201)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 158 | alta 201 JSON | JSON | Administrador | 201 | - | `<!-- CAPTURA PENDIENTE: 158_ventas_catalogos_post_catalogos_nombre_201 -->` |
-| 159 | alta 201 XML | XML | Administrador | 201 | - | `<!-- CAPTURA PENDIENTE: 159_ventas_catalogos_post_catalogos_nombre_201_xml -->` |
-| 160 | alta 400 sin nombre | JSON | Administrador | 400 | validacion | `<!-- CAPTURA PENDIENTE: 160_ventas_catalogos_post_catalogos_nombre_400 -->` |
-| 161 | alta 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 161_ventas_catalogos_post_catalogos_nombre_401 -->` |
-| 162 | alta 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 162_ventas_catalogos_post_catalogos_nombre_403 -->` |
-| 163 | alta 404 catalogo inexistente | JSON | Administrador | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 163_ventas_catalogos_post_catalogos_nombre_404 -->` |
-| 164 | alta 409 referencia inactiva | JSON | Administrador | 409 | referencia_inactiva | `<!-- CAPTURA PENDIENTE: 164_ventas_catalogos_post_catalogos_nombre_409 -->` |
+| 158 | alta 201 JSON | JSON | Administrador | 201 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#158_ventas_catalogos_post_catalogos_nombre_201)` |
+| 159 | alta 201 XML | XML | Administrador | 201 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#159_ventas_catalogos_post_catalogos_nombre_201_xml)` |
+| 160 | alta 400 sin nombre | JSON | Administrador | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#160_ventas_catalogos_post_catalogos_nombre_400)` |
+| 161 | alta 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#161_ventas_catalogos_post_catalogos_nombre_401)` |
+| 162 | alta 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#162_ventas_catalogos_post_catalogos_nombre_403)` |
+| 163 | alta 404 catalogo inexistente | JSON | Administrador | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#163_ventas_catalogos_post_catalogos_nombre_404)` |
+| 164 | alta 409 referencia inactiva | JSON | Administrador | 409 | referencia_inactiva | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#164_ventas_catalogos_post_catalogos_nombre_409)` |
 
 **Errores controlados:**
 
@@ -1549,15 +1549,15 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 165_ventas_catalogos_put_catalogos_nombre_registro_id_200 -->
+[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#165_ventas_catalogos_put_catalogos_nombre_registro_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 165 | edicion 200 PUT | JSON | Administrador | 200 | - | `<!-- CAPTURA PENDIENTE: 165_ventas_catalogos_put_catalogos_nombre_registro_id_200 -->` |
-| 166 | edicion 400 tipo invalido | JSON | Administrador | 400 | validacion | `<!-- CAPTURA PENDIENTE: 166_ventas_catalogos_put_catalogos_nombre_registro_id_400 -->` |
-| 167 | edicion 404 inexistente | JSON | Administrador | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 167_ventas_catalogos_put_catalogos_nombre_registro_id_404 -->` |
+| 165 | edicion 200 PUT | JSON | Administrador | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#165_ventas_catalogos_put_catalogos_nombre_registro_id_200)` |
+| 166 | edicion 400 tipo invalido | JSON | Administrador | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#166_ventas_catalogos_put_catalogos_nombre_registro_id_400)` |
+| 167 | edicion 404 inexistente | JSON | Administrador | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#167_ventas_catalogos_put_catalogos_nombre_registro_id_404)` |
 
 **Errores controlados:**
 
@@ -1591,15 +1591,15 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 168_ventas_catalogos_patch_catalogos_nombre_id_estado_200 -->
+[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#168_ventas_catalogos_patch_catalogos_nombre_id_estado_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 168 | estado 200 desactivar | JSON | Administrador | 200 | - | `<!-- CAPTURA PENDIENTE: 168_ventas_catalogos_patch_catalogos_nombre_id_estado_200 -->` |
-| 169 | estado 400 booleano invalido | JSON | Administrador | 400 | validacion | `<!-- CAPTURA PENDIENTE: 169_ventas_catalogos_patch_catalogos_nombre_id_estado_400 -->` |
-| 170 | estado 404 inexistente | JSON | Administrador | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 170_ventas_catalogos_patch_catalogos_nombre_id_estado_404 -->` |
+| 168 | estado 200 desactivar | JSON | Administrador | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#168_ventas_catalogos_patch_catalogos_nombre_id_estado_200)` |
+| 169 | estado 400 booleano invalido | JSON | Administrador | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#169_ventas_catalogos_patch_catalogos_nombre_id_estado_400)` |
+| 170 | estado 404 inexistente | JSON | Administrador | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#170_ventas_catalogos_patch_catalogos_nombre_id_estado_404)` |
 
 **Errores controlados:**
 
@@ -1625,14 +1625,14 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 171_ventas_catalogos_delete_catalogos_nombre_registro_id_200 -->
+[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#171_ventas_catalogos_delete_catalogos_nombre_registro_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 171 | baja 200 desactivar | JSON | Administrador | 200 | - | `<!-- CAPTURA PENDIENTE: 171_ventas_catalogos_delete_catalogos_nombre_registro_id_200 -->` |
-| 172 | baja 404 inexistente | JSON | Administrador | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 172_ventas_catalogos_delete_catalogos_nombre_registro_id_404 -->` |
+| 171 | baja 200 desactivar | JSON | Administrador | 200 | - | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#171_ventas_catalogos_delete_catalogos_nombre_registro_id_200)` |
+| 172 | baja 404 inexistente | JSON | Administrador | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/ventas_catalogos.md#172_ventas_catalogos_delete_catalogos_nombre_registro_id_404)` |
 
 **Errores controlados:**
 
@@ -1661,13 +1661,13 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 173_evidencias_get_health_200 -->
+[ejecucion real](evidencias/ejecuciones/evidencias.md#173_evidencias_get_health_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 173 | health 200 | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 173_evidencias_get_health_200 -->` |
+| 173 | health 200 | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#173_evidencias_get_health_200)` |
 
 ### POST /api/v1/evidencias
 
@@ -1699,28 +1699,28 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 174_evidencias_post_raiz_201 -->
+[ejecucion real](evidencias/ejecuciones/evidencias.md#174_evidencias_post_raiz_201)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 174 | alta 201 comentario JSON | JSON | Cliente (dueno de la compra) | 201 | - | `<!-- CAPTURA PENDIENTE: 174_evidencias_post_raiz_201 -->` |
-| 175 | alta 201 comentario XML | XML | Cliente (dueno de la compra) | 201 | - | `<!-- CAPTURA PENDIENTE: 175_evidencias_post_raiz_201_xml -->` |
-| 176 | alta 201 archivo PNG | JSON | Cliente (dueno de la compra) | 201 | - | `<!-- CAPTURA PENDIENTE: 176_evidencias_post_raiz_201 -->` |
-| 208 | alta 201 inspector en etapa inspeccion | JSON | Inspector | 201 | - | `<!-- CAPTURA PENDIENTE: 208_evidencias_post_raiz_201 -->` |
-| 177 | alta 400 comentario vacio | JSON | Cliente (dueno de la compra) | 400 | validacion | `<!-- CAPTURA PENDIENTE: 177_evidencias_post_raiz_400 -->` |
-| 178 | alta 400 tipo no permitido en JSON | JSON | Cliente (dueno de la compra) | 400 | validacion | `<!-- CAPTURA PENDIENTE: 178_evidencias_post_raiz_400 -->` |
-| 179 | alta 400 etapa invalida | JSON | Cliente (dueno de la compra) | 400 | validacion | `<!-- CAPTURA PENDIENTE: 179_evidencias_post_raiz_400 -->` |
-| 180 | alta 400 multipart sin archivo | JSON | Cliente (dueno de la compra) | 400 | validacion | `<!-- CAPTURA PENDIENTE: 180_evidencias_post_raiz_400 -->` |
-| 181 | alta 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 181_evidencias_post_raiz_401 -->` |
-| 182 | alta 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `<!-- CAPTURA PENDIENTE: 182_evidencias_post_raiz_401 -->` |
-| 183 | alta 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 183_evidencias_post_raiz_403 -->` |
-| 184 | alta 403 otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 184_evidencias_post_raiz_403 -->` |
-| 185 | alta 403 inspector sin inspeccion | JSON | Inspector | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 185_evidencias_post_raiz_403 -->` |
-| 186 | alta 404 devolucion inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 186_evidencias_post_raiz_404 -->` |
-| 187 | alta 409 etapa no permitida al cliente | JSON | Cliente (dueno de la compra) | 409 | estado_no_permite | `<!-- CAPTURA PENDIENTE: 187_evidencias_post_raiz_409 -->` |
-| 188 | alta 415 archivo no soportado | JSON | Cliente (dueno de la compra) | 415 | formato_no_soportado | `<!-- CAPTURA PENDIENTE: 188_evidencias_post_raiz_415 -->` |
+| 174 | alta 201 comentario JSON | JSON | Cliente (dueno de la compra) | 201 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#174_evidencias_post_raiz_201)` |
+| 175 | alta 201 comentario XML | XML | Cliente (dueno de la compra) | 201 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#175_evidencias_post_raiz_201_xml)` |
+| 176 | alta 201 archivo PNG | JSON | Cliente (dueno de la compra) | 201 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#176_evidencias_post_raiz_201)` |
+| 208 | alta 201 inspector en etapa inspeccion | JSON | Inspector | 201 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#208_evidencias_post_raiz_201)` |
+| 177 | alta 400 comentario vacio | JSON | Cliente (dueno de la compra) | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/evidencias.md#177_evidencias_post_raiz_400)` |
+| 178 | alta 400 tipo no permitido en JSON | JSON | Cliente (dueno de la compra) | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/evidencias.md#178_evidencias_post_raiz_400)` |
+| 179 | alta 400 etapa invalida | JSON | Cliente (dueno de la compra) | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/evidencias.md#179_evidencias_post_raiz_400)` |
+| 180 | alta 400 multipart sin archivo | JSON | Cliente (dueno de la compra) | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/evidencias.md#180_evidencias_post_raiz_400)` |
+| 181 | alta 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/evidencias.md#181_evidencias_post_raiz_401)` |
+| 182 | alta 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `[ejecucion real](evidencias/ejecuciones/evidencias.md#182_evidencias_post_raiz_401)` |
+| 183 | alta 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/evidencias.md#183_evidencias_post_raiz_403)` |
+| 184 | alta 403 otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/evidencias.md#184_evidencias_post_raiz_403)` |
+| 185 | alta 403 inspector sin inspeccion | JSON | Inspector | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/evidencias.md#185_evidencias_post_raiz_403)` |
+| 186 | alta 404 devolucion inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/evidencias.md#186_evidencias_post_raiz_404)` |
+| 187 | alta 409 etapa no permitida al cliente | JSON | Cliente (dueno de la compra) | 409 | estado_no_permite | `[ejecucion real](evidencias/ejecuciones/evidencias.md#187_evidencias_post_raiz_409)` |
+| 188 | alta 415 archivo no soportado | JSON | Cliente (dueno de la compra) | 415 | formato_no_soportado | `[ejecucion real](evidencias/ejecuciones/evidencias.md#188_evidencias_post_raiz_415)` |
 
 **Errores controlados:**
 
@@ -1756,17 +1756,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 189_evidencias_get_raiz_200 -->
+[ejecucion real](evidencias/ejecuciones/evidencias.md#189_evidencias_get_raiz_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 189 | listar 200 cliente | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 189_evidencias_get_raiz_200 -->` |
-| 190 | listar 200 analista XML | XML | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 190_evidencias_get_raiz_200_xml -->` |
-| 191 | listar 400 sin devolucion_id | JSON | Cliente (dueno de la compra) | 400 | validacion | `<!-- CAPTURA PENDIENTE: 191_evidencias_get_raiz_400 -->` |
-| 192 | listar 403 otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 192_evidencias_get_raiz_403 -->` |
-| 193 | listar 404 devolucion inexistente | JSON | Analista de Devoluciones | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 193_evidencias_get_raiz_404 -->` |
+| 189 | listar 200 cliente | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#189_evidencias_get_raiz_200)` |
+| 190 | listar 200 analista XML | XML | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#190_evidencias_get_raiz_200_xml)` |
+| 191 | listar 400 sin devolucion_id | JSON | Cliente (dueno de la compra) | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/evidencias.md#191_evidencias_get_raiz_400)` |
+| 192 | listar 403 otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/evidencias.md#192_evidencias_get_raiz_403)` |
+| 193 | listar 404 devolucion inexistente | JSON | Analista de Devoluciones | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/evidencias.md#193_evidencias_get_raiz_404)` |
 
 **Errores controlados:**
 
@@ -1793,15 +1793,15 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 194_evidencias_get_id_200 -->
+[ejecucion real](evidencias/ejecuciones/evidencias.md#194_evidencias_get_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 194 | detalle 200 con metadatos | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 194_evidencias_get_id_200 -->` |
-| 195 | detalle 404 inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 195_evidencias_get_id_404 -->` |
-| 196 | detalle 403 otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 196_evidencias_get_id_403 -->` |
+| 194 | detalle 200 con metadatos | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#194_evidencias_get_id_200)` |
+| 195 | detalle 404 inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/evidencias.md#195_evidencias_get_id_404)` |
+| 196 | detalle 403 otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/evidencias.md#196_evidencias_get_id_403)` |
 
 **Errores controlados:**
 
@@ -1827,14 +1827,14 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 197_evidencias_get_id_enlace_200 -->
+[ejecucion real](evidencias/ejecuciones/evidencias.md#197_evidencias_get_id_enlace_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 197 | enlace 200 firmado | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 197_evidencias_get_id_enlace_200 -->` |
-| 198 | enlace 409 comentario sin archivo | JSON | Cliente (dueno de la compra) | 409 | sin_archivo | `<!-- CAPTURA PENDIENTE: 198_evidencias_get_id_enlace_409 -->` |
+| 197 | enlace 200 firmado | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#197_evidencias_get_id_enlace_200)` |
+| 198 | enlace 409 comentario sin archivo | JSON | Cliente (dueno de la compra) | 409 | sin_archivo | `[ejecucion real](evidencias/ejecuciones/evidencias.md#198_evidencias_get_id_enlace_409)` |
 
 **Errores controlados:**
 
@@ -1859,13 +1859,13 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 199_evidencias_get_evidencia_id_archivo_200 -->
+[ejecucion real](evidencias/ejecuciones/evidencias.md#199_evidencias_get_evidencia_id_archivo_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 199 | archivo 200 con enlace firmado | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 199_evidencias_get_evidencia_id_archivo_200 -->` |
+| 199 | archivo 200 con enlace firmado | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#199_evidencias_get_evidencia_id_archivo_200)` |
 
 ### GET /api/v1/evidencias/{id}/archivo
 
@@ -1886,15 +1886,15 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 200_evidencias_get_id_archivo_200 -->
+[ejecucion real](evidencias/ejecuciones/evidencias.md#200_evidencias_get_id_archivo_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 200 | archivo 200 con Bearer | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 200_evidencias_get_id_archivo_200 -->` |
-| 201 | archivo 401 sin firma ni token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 201_evidencias_get_id_archivo_401 -->` |
-| 202 | archivo 404 inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 202_evidencias_get_id_archivo_404 -->` |
+| 200 | archivo 200 con Bearer | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#200_evidencias_get_id_archivo_200)` |
+| 201 | archivo 401 sin firma ni token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/evidencias.md#201_evidencias_get_id_archivo_401)` |
+| 202 | archivo 404 inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/evidencias.md#202_evidencias_get_id_archivo_404)` |
 
 **Errores controlados:**
 
@@ -1920,17 +1920,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 205_evidencias_delete_id_200 -->
+[ejecucion real](evidencias/ejecuciones/evidencias.md#205_evidencias_delete_id_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 205 | retiro 200 exitoso | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 205_evidencias_delete_id_200 -->` |
-| 203 | retiro 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 203_evidencias_delete_id_403 -->` |
-| 204 | retiro 403 otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 204_evidencias_delete_id_403 -->` |
-| 206 | retiro 404 ya retirada | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 206_evidencias_delete_id_404 -->` |
-| 207 | retiro 404 inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `<!-- CAPTURA PENDIENTE: 207_evidencias_delete_id_404 -->` |
+| 205 | retiro 200 exitoso | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/evidencias.md#205_evidencias_delete_id_200)` |
+| 203 | retiro 403 analista | JSON | Analista de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/evidencias.md#203_evidencias_delete_id_403)` |
+| 204 | retiro 403 otro cliente | JSON | Cliente distinto al dueno | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/evidencias.md#204_evidencias_delete_id_403)` |
+| 206 | retiro 404 ya retirada | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/evidencias.md#206_evidencias_delete_id_404)` |
+| 207 | retiro 404 inexistente | JSON | Cliente (dueno de la compra) | 404 | no_encontrado | `[ejecucion real](evidencias/ejecuciones/evidencias.md#207_evidencias_delete_id_404)` |
 
 **Errores controlados:**
 
@@ -1962,13 +1962,13 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 209_analisis_auditoria_get_health_200 -->
+[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#209_analisis_auditoria_get_health_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 209 | health 200 | JSON | ninguno | 200 | - | `<!-- CAPTURA PENDIENTE: 209_analisis_auditoria_get_health_200 -->` |
+| 209 | health 200 | JSON | ninguno | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#209_analisis_auditoria_get_health_200)` |
 
 ### POST /api/v1/analisis/clasificar-motivo
 
@@ -1997,17 +1997,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 210_analisis_auditoria_post_clasificar_motivo_200 -->
+[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#210_analisis_auditoria_post_clasificar_motivo_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 210 | clasificar 200 cliente | JSON | Cliente (dueno de la compra) | 200 | - | `<!-- CAPTURA PENDIENTE: 210_analisis_auditoria_post_clasificar_motivo_200 -->` |
-| 211 | clasificar 200 analista XML | XML | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 211_analisis_auditoria_post_clasificar_motivo_200_xml -->` |
-| 212 | clasificar 400 descripcion corta | JSON | Cliente (dueno de la compra) | 400 | validacion | `<!-- CAPTURA PENDIENTE: 212_analisis_auditoria_post_clasificar_motivo_400 -->` |
-| 213 | clasificar 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 213_analisis_auditoria_post_clasificar_motivo_401 -->` |
-| 214 | clasificar 403 centro | JSON | Encargado del Centro de Devoluciones | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 214_analisis_auditoria_post_clasificar_motivo_403 -->` |
+| 210 | clasificar 200 cliente | JSON | Cliente (dueno de la compra) | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#210_analisis_auditoria_post_clasificar_motivo_200)` |
+| 211 | clasificar 200 analista XML | XML | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#211_analisis_auditoria_post_clasificar_motivo_200_xml)` |
+| 212 | clasificar 400 descripcion corta | JSON | Cliente (dueno de la compra) | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#212_analisis_auditoria_post_clasificar_motivo_400)` |
+| 213 | clasificar 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#213_analisis_auditoria_post_clasificar_motivo_401)` |
+| 214 | clasificar 403 centro | JSON | Encargado del Centro de Devoluciones | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#214_analisis_auditoria_post_clasificar_motivo_403)` |
 
 **Errores controlados:**
 
@@ -2040,15 +2040,15 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 217_analisis_auditoria_post_sincronizar_200 -->
+[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#217_analisis_auditoria_post_sincronizar_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 217 | sincronizar 200 exitoso | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 217_analisis_auditoria_post_sincronizar_200 -->` |
-| 215 | sincronizar 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 215_analisis_auditoria_post_sincronizar_403 -->` |
-| 216 | sincronizar 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 216_analisis_auditoria_post_sincronizar_401 -->` |
+| 217 | sincronizar 200 exitoso | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#217_analisis_auditoria_post_sincronizar_200)` |
+| 215 | sincronizar 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#215_analisis_auditoria_post_sincronizar_403)` |
+| 216 | sincronizar 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#216_analisis_auditoria_post_sincronizar_401)` |
 
 **Errores controlados:**
 
@@ -2074,20 +2074,20 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 218_analisis_auditoria_get_pareto_200 -->
+[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#218_analisis_auditoria_get_pareto_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 218 | pareto 200 miss | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 218_analisis_auditoria_get_pareto_200 -->` |
-| 219 | pareto 200 hit | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 219_analisis_auditoria_get_pareto_200 -->` |
-| 220 | pareto 200 XML por proveedor y costo | XML | Administrador | 200 | - | `<!-- CAPTURA PENDIENTE: 220_analisis_auditoria_get_pareto_200_xml -->` |
-| 221 | pareto 400 dimension desconocida | JSON | Analista de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 221_analisis_auditoria_get_pareto_400 -->` |
-| 222 | pareto 400 fecha invalida | JSON | Analista de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 222_analisis_auditoria_get_pareto_400 -->` |
-| 223 | pareto 400 rango invertido | JSON | Analista de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 223_analisis_auditoria_get_pareto_400 -->` |
-| 224 | pareto 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 224_analisis_auditoria_get_pareto_403 -->` |
-| 225 | pareto 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `<!-- CAPTURA PENDIENTE: 225_analisis_auditoria_get_pareto_401 -->` |
+| 218 | pareto 200 miss | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#218_analisis_auditoria_get_pareto_200)` |
+| 219 | pareto 200 hit | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#219_analisis_auditoria_get_pareto_200)` |
+| 220 | pareto 200 XML por proveedor y costo | XML | Administrador | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#220_analisis_auditoria_get_pareto_200_xml)` |
+| 221 | pareto 400 dimension desconocida | JSON | Analista de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#221_analisis_auditoria_get_pareto_400)` |
+| 222 | pareto 400 fecha invalida | JSON | Analista de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#222_analisis_auditoria_get_pareto_400)` |
+| 223 | pareto 400 rango invertido | JSON | Analista de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#223_analisis_auditoria_get_pareto_400)` |
+| 224 | pareto 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#224_analisis_auditoria_get_pareto_403)` |
+| 225 | pareto 401 token invalido | JSON | Token invalido (cadena sin firma) | 401 | token_invalido | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#225_analisis_auditoria_get_pareto_401)` |
 
 **Errores controlados:**
 
@@ -2116,14 +2116,14 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 226_analisis_auditoria_get_resumen_200 -->
+[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#226_analisis_auditoria_get_resumen_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 226 | resumen 200 | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 226_analisis_auditoria_get_resumen_200 -->` |
-| 227 | resumen 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 227_analisis_auditoria_get_resumen_403 -->` |
+| 226 | resumen 200 | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#226_analisis_auditoria_get_resumen_200)` |
+| 227 | resumen 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#227_analisis_auditoria_get_resumen_403)` |
 
 **Errores controlados:**
 
@@ -2148,15 +2148,15 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 228_analisis_auditoria_get_alertas_fraude_200 -->
+[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#228_analisis_auditoria_get_alertas_fraude_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 228 | alertas 200 | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 228_analisis_auditoria_get_alertas_fraude_200 -->` |
-| 229 | alertas 200 XML | XML | Administrador | 200 | - | `<!-- CAPTURA PENDIENTE: 229_analisis_auditoria_get_alertas_fraude_200_xml -->` |
-| 230 | alertas 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 230_analisis_auditoria_get_alertas_fraude_403 -->` |
+| 228 | alertas 200 | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#228_analisis_auditoria_get_alertas_fraude_200)` |
+| 229 | alertas 200 XML | XML | Administrador | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#229_analisis_auditoria_get_alertas_fraude_200_xml)` |
+| 230 | alertas 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#230_analisis_auditoria_get_alertas_fraude_403)` |
 
 **Errores controlados:**
 
@@ -2181,17 +2181,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 231_analisis_auditoria_get_eventos_200 -->
+[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#231_analisis_auditoria_get_eventos_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 231 | eventos 200 paginado | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 231_analisis_auditoria_get_eventos_200 -->` |
-| 232 | eventos 200 XML | XML | Administrador | 200 | - | `<!-- CAPTURA PENDIENTE: 232_analisis_auditoria_get_eventos_200_xml -->` |
-| 233 | eventos 400 correlation_id largo | JSON | Analista de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 233_analisis_auditoria_get_eventos_400 -->` |
-| 234 | eventos 400 paginacion invalida | JSON | Analista de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 234_analisis_auditoria_get_eventos_400 -->` |
-| 235 | eventos 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 235_analisis_auditoria_get_eventos_403 -->` |
+| 231 | eventos 200 paginado | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#231_analisis_auditoria_get_eventos_200)` |
+| 232 | eventos 200 XML | XML | Administrador | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#232_analisis_auditoria_get_eventos_200_xml)` |
+| 233 | eventos 400 correlation_id largo | JSON | Analista de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#233_analisis_auditoria_get_eventos_400)` |
+| 234 | eventos 400 paginacion invalida | JSON | Analista de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#234_analisis_auditoria_get_eventos_400)` |
+| 235 | eventos 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#235_analisis_auditoria_get_eventos_403)` |
 
 **Errores controlados:**
 
@@ -2218,17 +2218,17 @@ Las variables `{{...}}` son las del environment `docs/postman/vm.postman_environ
 
 **Respuesta (caso exitoso):**
 
-<!-- CAPTURA PENDIENTE: 236_analisis_auditoria_get_auditoria_200 -->
+[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#236_analisis_auditoria_get_auditoria_200)
 
 **Casos de la coleccion** (cada uno con su captura):
 
 | # | Caso | Formato | Rol | Codigo | error.tipo | Captura |
 |---|---|---|---|---|---|---|
-| 236 | bitacora 200 paginada | JSON | Analista de Devoluciones | 200 | - | `<!-- CAPTURA PENDIENTE: 236_analisis_auditoria_get_auditoria_200 -->` |
-| 237 | bitacora 200 filtro XML | XML | Administrador | 200 | - | `<!-- CAPTURA PENDIENTE: 237_analisis_auditoria_get_auditoria_200_xml -->` |
-| 238 | bitacora 400 filtro largo | JSON | Analista de Devoluciones | 400 | validacion | `<!-- CAPTURA PENDIENTE: 238_analisis_auditoria_get_auditoria_400 -->` |
-| 239 | bitacora 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `<!-- CAPTURA PENDIENTE: 239_analisis_auditoria_get_auditoria_403 -->` |
-| 240 | bitacora 401 sin token | JSON | ninguno | 401 | no_autenticado | `<!-- CAPTURA PENDIENTE: 240_analisis_auditoria_get_auditoria_401 -->` |
+| 236 | bitacora 200 paginada | JSON | Analista de Devoluciones | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#236_analisis_auditoria_get_auditoria_200)` |
+| 237 | bitacora 200 filtro XML | XML | Administrador | 200 | - | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#237_analisis_auditoria_get_auditoria_200_xml)` |
+| 238 | bitacora 400 filtro largo | JSON | Analista de Devoluciones | 400 | validacion | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#238_analisis_auditoria_get_auditoria_400)` |
+| 239 | bitacora 403 cliente | JSON | Cliente (dueno de la compra) | 403 | sin_permiso | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#239_analisis_auditoria_get_auditoria_403)` |
+| 240 | bitacora 401 sin token | JSON | ninguno | 401 | no_autenticado | `[ejecucion real](evidencias/ejecuciones/analisis_auditoria.md#240_analisis_auditoria_get_auditoria_401)` |
 
 **Errores controlados:**
 
