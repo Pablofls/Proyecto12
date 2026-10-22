@@ -1,76 +1,13 @@
 {
   "info": {
-    "name": "Devoluciones - auth (v1)",
-    "description": "Evidencias request/response del microservicio auth. Antes de correr: pon base_url (IP actual de la VM) y password_demo en el *Current value* de las variables (el Current value no se exporta ni se comparte).",
+    "name": "Autenticacion (auth) - v1",
+    "description": "Evidencias request/response del servicio auth (puerto 8001). Requiere el environment vm.postman_environment.json con vm_host, password_demo y, si aplica, los ids de las colecciones previas. Orden de corrida y capturas: docs/evidencias/README.md.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "http://IP-DE-LA-VM:8001"
-    },
-    {
-      "key": "email_analista",
-      "value": "josue.analista@demo.mx"
-    },
-    {
-      "key": "email_admin",
-      "value": "pablo.admin@demo.mx"
-    },
-    {
-      "key": "email_bloqueo",
-      "value": "sofia.cliente@demo.mx"
-    },
-    {
-      "key": "password_demo",
-      "value": ""
-    },
-    {
-      "key": "access_token",
-      "value": ""
-    },
-    {
-      "key": "refresh_token",
-      "value": ""
-    },
-    {
-      "key": "admin_token",
-      "value": ""
-    },
-    {
-      "key": "analista_id",
-      "value": ""
-    },
-    {
-      "key": "token_falso",
-      "value": "esto-no-es-un-token"
-    }
-  ],
   "item": [
     {
       "name": "00 Salud y contratos",
       "item": [
-        {
-          "name": "contrato login.xsd 200",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/contratos/login.xsd",
-            "description": "Seccion 6: el contrato XSD publicado por el servicio."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"Es un XSD\", () => pm.expect(pm.response.text()).to.include(\"xs:schema\"));"
-                ]
-              }
-            }
-          ]
-        },
         {
           "name": "health 200",
           "request": {
@@ -81,8 +18,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/health",
-            "description": "RNF-22: estado del servicio y de PostgreSQL/Redis."
+            "url": "{{auth_url}}/health",
+            "description": "RNF-22, RF-32: el servicio responde y reporta el estado de sus dependencias."
           },
           "event": [
             {
@@ -92,7 +29,8 @@
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
-                  "pm.test(\"estado ok\", () => pm.expect(pm.response.json().estado).to.eql(\"ok\"));"
+                  "pm.test(\"postgresql ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.postgresql.ok === true).to.be.true; });",
+                  "pm.test(\"redis ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.redis.ok === true).to.be.true; });"
                 ]
               }
             }
@@ -108,8 +46,8 @@
                 "value": "application/xml"
               }
             ],
-            "url": "{{base_url}}/health",
-            "description": "Mismo recurso negociado en XML con Accept."
+            "url": "{{auth_url}}/health",
+            "description": "Mismo health en XML (Accept: application/xml)."
           },
           "event": [
             {
@@ -119,7 +57,34 @@
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
-                  "pm.test(\"Content-Type XML\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"xml\"));"
+                  "pm.test(\"estado ok\", () => { const X = xml2Json(pm.response.text()); pm.expect(X.respuesta.estado === \"ok\").to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "contrato login.xsd 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/contratos/login.xsd",
+            "description": "Los contratos XSD se publican en el propio servicio."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"es un esquema XSD\", () => pm.expect(pm.response.text()).to.include(\"xs:schema\"));"
                 ]
               }
             }
@@ -131,7 +96,7 @@
       "name": "01 Login",
       "item": [
         {
-          "name": "login analista 200 exitoso",
+          "name": "login 200 exitoso",
           "request": {
             "method": "POST",
             "header": [
@@ -144,8 +109,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/login",
-            "description": "RF-01, HU-01: emite access y refresh token y crea devoluciones:sesion_api:<sid> en Redis. Guarda los tokens en variables de la coleccion.",
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "RF-01, HU-01: el analista inicia sesion y recibe access_token y refresh_token (JWT).",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{email_analista}}\",\n  \"password\": \"{{password_demo}}\"\n}",
@@ -164,18 +129,18 @@
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
-                  "const r = pm.response.json();",
-                  "pm.collectionVariables.set(\"access_token\", r.access_token);",
-                  "pm.collectionVariables.set(\"refresh_token\", r.refresh_token);",
-                  "pm.collectionVariables.set(\"analista_id\", r.usuario.id);",
-                  "pm.test(\"rol Analista\", () => pm.expect(r.usuario.rol).to.eql(\"Analista de Devoluciones\"));"
+                  "pm.test(\"emite el par de tokens\", () => { const J = pm.response.json(); pm.expect(J.token_type === \"Bearer\" && !!J.access_token && !!J.refresh_token && J.expires_in > 0).to.be.true; });",
+                  "pm.test(\"el rol viaja en la respuesta\", () => { const J = pm.response.json(); pm.expect(J.usuario.rol === \"Analista de Devoluciones\").to.be.true; });",
+                  "pm.environment.set(\"token_analista\", pm.response.json().access_token);",
+                  "pm.environment.set(\"refresh_token\", pm.response.json().refresh_token);",
+                  "pm.environment.set(\"analista_id\", pm.response.json().usuario.id);"
                 ]
               }
             }
           ]
         },
         {
-          "name": "login admin 200 XML",
+          "name": "login 200 XML (admin)",
           "request": {
             "method": "POST",
             "header": [
@@ -188,8 +153,8 @@
                 "value": "application/xml"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/login",
-            "description": "Contrato XML: cuerpo y respuesta en XML. Guarda el token del Administrador.",
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "El mismo login con cuerpo y respuesta XML validados contra login.xsd.",
             "body": {
               "mode": "raw",
               "raw": "<login>\n  <email>{{email_admin}}</email>\n  <password>{{password_demo}}</password>\n</login>",
@@ -208,9 +173,8 @@
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
-                  "const r = xml2Json(pm.response.text()).respuesta;",
-                  "pm.collectionVariables.set(\"admin_token\", r.access_token);",
-                  "pm.test(\"rol Administrador\", () => pm.expect(r.usuario.rol).to.eql(\"Administrador\"));"
+                  "pm.test(\"trae access_token\", () => { const X = xml2Json(pm.response.text()); pm.expect(!!X.respuesta.access_token).to.be.true; });",
+                  "pm.environment.set(\"token_admin\", xml2Json(pm.response.text()).respuesta.access_token);"
                 ]
               }
             }
@@ -230,8 +194,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/login",
-            "description": "Validacion de entrada: correo con formato invalido y password vacio.",
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Validacion: correo mal formado y contrasena vacia.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"no-es-correo\",\n  \"password\": \"\"\n}",
@@ -270,11 +234,11 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/login",
-            "description": "RNF-16: mensaje generico, no revela si el correo existe.",
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "RNF-16: el mensaje es generico, no revela si el correo existe. Se usa un correo inexistente para no bloquear usuarios reales.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email_analista}}\",\n  \"password\": \"contrasena-incorrecta\"\n}",
+              "raw": "{\n  \"email\": \"nadie@demo.mx\",\n  \"password\": \"incorrecta\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -310,14 +274,14 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/login",
+            "url": "{{auth_url}}/api/v1/auth/login",
             "description": "Content-Type distinto de JSON/XML.",
             "body": {
               "mode": "raw",
-              "raw": "email=josue&password=x",
+              "raw": "email=x",
               "options": {
                 "raw": {
-                  "language": "text"
+                  "language": "json"
                 }
               }
             }
@@ -350,11 +314,11 @@
                 "value": "application/xml"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/login",
-            "description": "Recepcion de XML: un documento mal formado se rechaza con error estandar en XML.",
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "XML que no esta bien formado.",
             "body": {
               "mode": "raw",
-              "raw": "<login><email>{{email_analista}}</email><password>x</login>",
+              "raw": "<login><email>x</login>",
               "options": {
                 "raw": {
                   "language": "xml"
@@ -369,7 +333,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
-                  "pm.test(\"error.tipo = xml_invalido\", () => pm.expect(xml2Json(pm.response.text()).error.tipo).to.eql(\"xml_invalido\"));"
+                  "pm.test(\"error.tipo = xml_invalido\", () => pm.expect(xml2Json(pm.response.text()).error.tipo).to.eql(\"xml_invalido\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
                 ]
               }
             }
@@ -389,11 +354,11 @@
                 "value": "application/xml"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/login",
-            "description": "Contrato login.xsd: el XML esta bien formado pero usa <correo> en lugar de <email>. Se rechaza con la linea y el problema.",
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "XML bien formado al que le falta password (login.xsd).",
             "body": {
               "mode": "raw",
-              "raw": "<login>\n  <correo>{{email_analista}}</correo>\n  <password>x</password>\n</login>",
+              "raw": "<login>\n  <email>{{email_analista}}</email>\n</login>",
               "options": {
                 "raw": {
                   "language": "xml"
@@ -408,7 +373,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
-                  "pm.test(\"error.tipo = xml_no_cumple_xsd\", () => pm.expect(xml2Json(pm.response.text()).error.tipo).to.eql(\"xml_no_cumple_xsd\"));"
+                  "pm.test(\"error.tipo = xml_no_cumple_xsd\", () => pm.expect(xml2Json(pm.response.text()).error.tipo).to.eql(\"xml_no_cumple_xsd\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
                 ]
               }
             }
@@ -426,15 +392,15 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "value": "Bearer {{token_analista}}"
               },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/sesion",
-            "description": "Valida JWT + sesion en Redis; devuelve el TTL restante de la sesion."
+            "url": "{{auth_url}}/api/v1/auth/sesion",
+            "description": "Datos de la sesion vigente y segundos que le quedan."
           },
           "event": [
             {
@@ -443,7 +409,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"trae sesion_id y usuario\", () => { const J = pm.response.json(); pm.expect(!!J.sesion_id && !!J.usuario.id).to.be.true; });"
                 ]
               }
             }
@@ -456,15 +423,15 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "value": "Bearer {{token_analista}}"
               },
               {
                 "key": "Accept",
                 "value": "application/xml"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/sesion",
-            "description": "Misma operacion con respuesta XML."
+            "url": "{{auth_url}}/api/v1/auth/sesion",
+            "description": "Respuesta en XML."
           },
           "event": [
             {
@@ -473,7 +440,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"trae sesion_id\", () => { const X = xml2Json(pm.response.text()); pm.expect(!!X.respuesta.sesion_id).to.be.true; });"
                 ]
               }
             }
@@ -489,8 +457,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/sesion",
-            "description": "Endpoint protegido sin header Authorization."
+            "url": "{{auth_url}}/api/v1/auth/sesion",
+            "description": "Endpoint protegido sin Authorization."
           },
           "event": [
             {
@@ -520,8 +488,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/sesion",
-            "description": "Token con firma falsa."
+            "url": "{{auth_url}}/api/v1/auth/sesion",
+            "description": "RNF-07: un JWT sin firma valida se rechaza."
           },
           "event": [
             {
@@ -556,8 +524,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/refresh",
-            "description": "Nuevo access token con el refresh token de la misma sesion.",
+            "url": "{{auth_url}}/api/v1/auth/refresh",
+            "description": "Cambia el refresh_token por un access_token nuevo.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}",
@@ -576,7 +544,8 @@
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
-                  "pm.collectionVariables.set(\"access_token\", pm.response.json().access_token);"
+                  "pm.test(\"access nuevo\", () => { const J = pm.response.json(); pm.expect(!!J.access_token).to.be.true; });",
+                  "pm.environment.set(\"token_analista\", pm.response.json().access_token);"
                 ]
               }
             }
@@ -596,11 +565,11 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/refresh",
+            "url": "{{auth_url}}/api/v1/auth/refresh",
             "description": "Un access token no sirve como refresh (claim typ).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refresh_token\": \"{{access_token}}\"\n}",
+              "raw": "{\n  \"refresh_token\": \"{{token_analista}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -636,8 +605,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/refresh",
-            "description": "Campo obligatorio ausente.",
+            "url": "{{auth_url}}/api/v1/auth/refresh",
+            "description": "Falta el campo obligatorio.",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -674,15 +643,15 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "value": "Bearer {{token_analista}}"
               },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/usuarios/{{analista_id}}/sesiones",
-            "description": "RNF-09: el Analista no puede cerrar sesiones de otros."
+            "url": "{{auth_url}}/api/v1/auth/usuarios/{{analista_id}}/sesiones",
+            "description": "RNF-09: solo el Administrador cierra sesiones ajenas."
           },
           "event": [
             {
@@ -705,15 +674,15 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
+                "value": "Bearer {{token_admin}}"
               },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/usuarios/999999/sesiones",
-            "description": "Registro inexistente."
+            "url": "{{auth_url}}/api/v1/auth/usuarios/999999/sesiones",
+            "description": "Usuario que no existe."
           },
           "event": [
             {
@@ -741,15 +710,28 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/logout",
-            "description": "Agrega devoluciones:jwt_revocado:<jti> con TTL y borra la sesion."
+            "url": "{{auth_url}}/api/v1/auth/logout",
+            "description": "RNF-08: revoca el token y cierra la sesion.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "event": [
             {
@@ -771,15 +753,15 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "value": "Bearer {{token_analista}}"
               },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/sesion",
-            "description": "El mismo token despues del logout."
+            "url": "{{auth_url}}/api/v1/auth/sesion",
+            "description": "El mismo token ya no sirve tras el logout."
           },
           "event": [
             {
@@ -809,8 +791,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/refresh",
-            "description": "El refresh token muere con la sesion.",
+            "url": "{{auth_url}}/api/v1/auth/refresh",
+            "description": "El refresh de una sesion cerrada tampoco sirve.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}",
@@ -836,7 +818,7 @@
           ]
         },
         {
-          "name": "login analista 200 (nueva sesion)",
+          "name": "login 200 nueva sesion",
           "request": {
             "method": "POST",
             "header": [
@@ -849,8 +831,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/login",
-            "description": "Nueva sesion para demostrar el cierre por el administrador.",
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Nueva sesion del analista para la prueba siguiente.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{email_analista}}\",\n  \"password\": \"{{password_demo}}\"\n}",
@@ -869,7 +851,8 @@
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
-                  "pm.collectionVariables.set(\"access_token\", pm.response.json().access_token);"
+                  "pm.environment.set(\"token_analista\", pm.response.json().access_token);",
+                  "pm.environment.set(\"analista_id\", pm.response.json().usuario.id);"
                 ]
               }
             }
@@ -882,15 +865,15 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
+                "value": "Bearer {{token_admin}}"
               },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/usuarios/{{analista_id}}/sesiones",
-            "description": "RNF-08: el Administrador cierra todas las sesiones del Analista."
+            "url": "{{auth_url}}/api/v1/auth/usuarios/{{analista_id}}/sesiones",
+            "description": "RNF-08: el administrador cierra todas las sesiones de un usuario sin esperar a que expiren."
           },
           "event": [
             {
@@ -899,7 +882,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"cerro al menos una\", () => { const J = pm.response.json(); pm.expect(J.sesiones_cerradas >= 1).to.be.true; });"
                 ]
               }
             }
@@ -912,15 +896,15 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{access_token}}"
+                "value": "Bearer {{token_analista}}"
               },
               {
                 "key": "Accept",
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/sesion",
-            "description": "El token del Analista deja de servir de inmediato."
+            "url": "{{auth_url}}/api/v1/auth/sesion",
+            "description": "El token sigue firmado pero su sesion ya no existe en Redis."
           },
           "event": [
             {
@@ -939,8 +923,7 @@
       ]
     },
     {
-      "name": "06 Casos limite (correr aparte)",
-      "description": "Correr con el Collection Runner, cada request por separado y esperando 60 s entre ellos. El de bloqueo deja la cuenta {{email_bloqueo}} bloqueada 15 minutos.",
+      "name": "06 Casos limite (correr aparte, bloquea una cuenta 15 min)",
       "item": [
         {
           "name": "login 423 cuenta bloqueada",
@@ -956,8 +939,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/login",
-            "description": "RNF-12: tras 5 intentos fallidos la cuenta se bloquea 15 min (devoluciones:bloqueo:<email> en Redis y usuarios.bloqueado_hasta).",
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "RNF-12: tras 5 intentos fallidos la cuenta se bloquea 15 min; la peticion se repite sola hasta recibir 423. Usa email_bloqueo (Sofia) para no bloquear a los usuarios de las demas colecciones. Para desbloquear antes: `redis-cli DEL devoluciones:bloqueo:<correo> devoluciones:intentos:<correo>` y `UPDATE usuarios SET bloqueado_hasta = NULL WHERE email = '<correo>';`.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{email_bloqueo}}\",\n  \"password\": \"contrasena-incorrecta\"\n}",
@@ -974,11 +957,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const n = Number(pm.collectionVariables.get(\"intentos_bloqueo\") || 0) + 1;",
-                  "pm.collectionVariables.set(\"intentos_bloqueo\", n);",
-                  "if (pm.response.code === 423 || n >= 7) {",
+                  "const n = Number(pm.environment.get(\"intentos_bloqueo\") || 0) + 1;",
+                  "pm.environment.set(\"intentos_bloqueo\", n);",
+                  "if (pm.response.code === 423 || n >= 12) {",
                   "  pm.test(\"HTTP 423 tras \" + n + \" intentos\", () => pm.response.to.have.status(423));",
-                  "  pm.collectionVariables.set(\"intentos_bloqueo\", 0);",
+                  "  pm.environment.set(\"intentos_bloqueo\", 0);",
                   "} else {",
                   "  postman.setNextRequest(pm.info.requestName);",
                   "}"
@@ -1001,8 +984,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/v1/auth/login",
-            "description": "RNF-13: mas de 10 logins por minuto desde la misma IP (devoluciones:limite:<ip>:login con TTL 60 s). Revisar header Retry-After.",
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "RNF-13: mas de 10 logins por minuto desde la misma IP; se repite sola hasta recibir 429 y se revisa Retry-After.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"nadie@demo.mx\",\n  \"password\": \"x\"\n}",
@@ -1019,11 +1002,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const n = Number(pm.collectionVariables.get(\"intentos_limite\") || 0) + 1;",
-                  "pm.collectionVariables.set(\"intentos_limite\", n);",
+                  "const n = Number(pm.environment.get(\"intentos_limite\") || 0) + 1;",
+                  "pm.environment.set(\"intentos_limite\", n);",
                   "if (pm.response.code === 429 || n >= 12) {",
                   "  pm.test(\"HTTP 429 tras \" + n + \" intentos\", () => pm.response.to.have.status(429));",
-                  "  pm.collectionVariables.set(\"intentos_limite\", 0);",
+                  "  pm.environment.set(\"intentos_limite\", 0);",
                   "} else {",
                   "  postman.setNextRequest(pm.info.requestName);",
                   "}"
