@@ -1,0 +1,1430 @@
+{
+  "info": {
+    "name": "Ventas y catalogos (ventas_catalogos) - v1",
+    "description": "Evidencias request/response del servicio ventas_catalogos (puerto 8006). Requiere el environment vm.postman_environment.json con vm_host, password_demo y, si aplica, los ids de las colecciones previas. Orden de corrida y capturas: docs/evidencias/README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Preparacion (tokens)",
+      "item": [
+        {
+          "name": "health 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/health",
+            "description": "RNF-22, RF-32: el servicio responde y reporta el estado de sus dependencias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"postgresql ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.postgresql.ok === true).to.be.true; });",
+                  "pm.test(\"redis ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.redis.ok === true).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login cliente (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Cliente (dueno de la compra) y lo guarda en token_cliente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_cliente}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_cliente\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login otro (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Cliente distinto al dueno y lo guarda en token_otro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_otro}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_otro\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login analista (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Analista de Devoluciones y lo guarda en token_analista.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_analista}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_analista\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login admin (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Administrador y lo guarda en token_admin.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_admin}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_admin\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 Ventas",
+      "item": [
+        {
+          "name": "ventas 200 cliente paginado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/ventas?pagina=1&por_pagina=5",
+            "description": "Un cliente solo ve sus compras. Guarda venta_id para el detalle."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"trae paginacion\", () => { const J = pm.response.json(); pm.expect(J.paginacion.por_pagina === 5 && J.datos.length > 0).to.be.true; });",
+                  "pm.environment.set(\"venta_id\", pm.response.json().datos[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ventas 200 analista XML",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/ventas?pagina=1&por_pagina=5",
+            "description": "Un rol interno ve todas las ventas; respuesta XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ventas 400 paginacion invalida",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/ventas?por_pagina=0",
+            "description": "por_pagina fuera de rango (1 a 100)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ventas 401 sin token",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/ventas",
+            "description": "Endpoint protegido sin Authorization."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = no_autenticado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_autenticado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ventas 401 token invalido",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_falso}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/ventas",
+            "description": "JWT sin firma valida."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = token_invalido\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"token_invalido\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "venta 200 detalle",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/ventas/{{venta_id}}",
+            "description": "Lineas de la venta con unidades ya devueltas y disponibles."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"trae lineas\", () => { const J = pm.response.json(); pm.expect(J.lineas.length > 0 && J.lineas[0].disponible !== undefined).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "venta 200 detalle XML",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/ventas/{{venta_id}}",
+            "description": "Mismo detalle en XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "venta 403 de otro cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_otro}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/ventas/{{venta_id}}",
+            "description": "La venta no pertenece al cliente que consulta."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "venta 404 inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/ventas/999999",
+            "description": "Venta inexistente."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Catalogos (lectura)",
+      "item": [
+        {
+          "name": "catalogos 200 lista",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos",
+            "description": "Nombres de los siete catalogos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"siete catalogos\", () => { const J = pm.response.json(); pm.expect(J.catalogos.length === 7).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "catalogos 403 cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos",
+            "description": "Solo Administrador y Analista listan catalogos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "catalogo motivos 200 cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos?pagina=1&por_pagina=5",
+            "description": "El cliente solo lee motivos (para solicitar devoluciones). Guarda un id para el detalle."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"trae datos\", () => { const J = pm.response.json(); pm.expect(J.datos.length > 0).to.be.true; });",
+                  "pm.environment.set(\"catalogo_registro_id\", pm.response.json().datos[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "catalogo motivos 200 XML con inactivos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos?solo_activos=false",
+            "description": "Un rol interno puede ver inactivos; XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "catalogo productos 403 cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/productos",
+            "description": "El cliente no consulta otros catalogos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "catalogo inexistente 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/inexistente",
+            "description": "El nombre no esta en la lista blanca de catalogos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "catalogo rutas 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/rutas?por_pagina=1",
+            "description": "Guarda ruta_id para la coleccion de logistica."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"ruta_id\", pm.response.json().datos[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "catalogo transportistas 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/transportistas?por_pagina=1",
+            "description": "Guarda transportista_id para logistica."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"transportista_id\", pm.response.json().datos[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "registro 200 detalle",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos/{{catalogo_registro_id}}",
+            "description": "Un registro del catalogo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "registro 404 inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos/999999",
+            "description": "Registro inexistente."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Catalogos (escritura, Administrador)",
+      "item": [
+        {
+          "name": "alta 201 JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos",
+            "description": "Alta de un motivo de prueba.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Motivo Postman {{$timestamp}}\",\n  \"descripcion\": \"Alta de prueba desde Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"Location\", () => pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/v1/catalogos/motivos/\"));",
+                  "pm.environment.set(\"catalogo_registro_id\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "alta 201 XML",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos",
+            "description": "Alta con cuerpo XML (catalogo.xsd).",
+            "body": {
+              "mode": "raw",
+              "raw": "<catalogo>\n  <nombre>Motivo XML {{$timestamp}}</nombre>\n  <descripcion>Alta de prueba XML</descripcion>\n</catalogo>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"catalogo_xml_id\", xml2Json(pm.response.text()).registro.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "alta 400 sin nombre",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos",
+            "description": "Campo obligatorio vacio.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "alta 401 sin token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos",
+            "description": "Endpoint protegido sin Authorization.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Motivo Postman {{$timestamp}}\",\n  \"descripcion\": \"Alta de prueba desde Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = no_autenticado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_autenticado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "alta 403 analista",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos",
+            "description": "Solo el Administrador da de alta.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Motivo Postman {{$timestamp}}\",\n  \"descripcion\": \"Alta de prueba desde Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "alta 404 catalogo inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/inexistente",
+            "description": "Catalogo fuera de la lista blanca.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Motivo Postman {{$timestamp}}\",\n  \"descripcion\": \"Alta de prueba desde Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "alta 409 referencia inactiva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/productos",
+            "description": "El producto apunta a un proveedor que no existe o esta inactivo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"PM-{{$timestamp}}\",\n  \"nombre\": \"Producto Postman\",\n  \"clasificacion_temperatura\": \"refrigerado\",\n  \"proveedor_id\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"error.tipo = referencia_inactiva\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"referencia_inactiva\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "edicion 200 PUT",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos/{{catalogo_registro_id}}",
+            "description": "Reemplaza los campos del registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Motivo editado {{$timestamp}}\",\n  \"descripcion\": \"Editado desde Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"actualizado\", () => { const J = pm.response.json(); pm.expect(J.actualizado === true).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "edicion 400 tipo invalido",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos/{{catalogo_registro_id}}",
+            "description": "El nombre debe ser texto.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": 123\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "edicion 404 inexistente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos/999999",
+            "description": "Registro inexistente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Motivo fantasma\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "estado 200 desactivar",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos/{{catalogo_registro_id}}/estado",
+            "description": "Activa o desactiva un registro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"inactivo\", () => { const J = pm.response.json(); pm.expect(J.activo === false).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "estado 400 booleano invalido",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos/{{catalogo_registro_id}}/estado",
+            "description": "activo debe ser booleano.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": \"quizas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "estado 404 inexistente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos/999999/estado",
+            "description": "Registro inexistente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "baja 200 desactivar",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos/{{catalogo_xml_id}}",
+            "description": "Baja logica del registro creado en XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "baja 404 inexistente",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ventas_url}}/api/v1/catalogos/motivos/999999",
+            "description": "Registro inexistente."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.tipo = no_encontrado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_encontrado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
