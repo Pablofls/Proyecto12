@@ -1,0 +1,1271 @@
+{
+  "info": {
+    "name": "Analisis y auditoria (analisis_auditoria) - v1",
+    "description": "Evidencias request/response del servicio analisis_auditoria (puerto 8008). Requiere el environment vm.postman_environment.json con vm_host, password_demo y, si aplica, los ids de las colecciones previas. Orden de corrida y capturas: docs/evidencias/README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Preparacion (tokens)",
+      "item": [
+        {
+          "name": "health 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/health",
+            "description": "RNF-22, RF-32: el servicio responde y reporta el estado de sus dependencias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"postgresql ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.postgresql.ok === true).to.be.true; });",
+                  "pm.test(\"redis ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.redis.ok === true).to.be.true; });",
+                  "pm.test(\"mongodb ok\", () => { const J = pm.response.json(); pm.expect(J.dependencias.mongodb.ok === true).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login cliente (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Cliente (dueno de la compra) y lo guarda en token_cliente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_cliente}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_cliente\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login analista (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Analista de Devoluciones y lo guarda en token_analista.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_analista}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_analista\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login admin (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Administrador y lo guarda en token_admin.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_admin}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_admin\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login centro (preparacion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/v1/auth/login",
+            "description": "Obtiene el JWT de Encargado del Centro de Devoluciones y lo guarda en token_centro.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_centro}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.environment.set(\"token_centro\", pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 Clasificar motivo (POST)",
+      "item": [
+        {
+          "name": "clasificar 200 cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/clasificar-motivo",
+            "description": "RF-24, RN-11: sugiere un motivo; el usuario siempre confirma.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"El producto llego roto y el empaque aplastado por el golpe.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"requiere confirmacion\", () => { const J = pm.response.json(); pm.expect(J.requiere_confirmacion === true).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "clasificar 200 analista XML",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/xml"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/clasificar-motivo",
+            "description": "Mismo servicio con XML (clasificacion.xsd).",
+            "body": {
+              "mode": "raw",
+              "raw": "<clasificacion>\n  <descripcion>La leche llego caliente, la temperatura estaba alta.</descripcion>\n</clasificacion>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "clasificar 400 descripcion corta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/clasificar-motivo",
+            "description": "La descripcion exige entre 10 y 2000 caracteres.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"roto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "clasificar 401 sin token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/clasificar-motivo",
+            "description": "Endpoint protegido sin Authorization.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"El producto llego roto y el empaque aplastado por el golpe.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = no_autenticado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_autenticado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "clasificar 403 centro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_centro}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/clasificar-motivo",
+            "description": "Rol sin permiso.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"El producto llego roto y el empaque aplastado por el golpe.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Sincronizar y Pareto",
+      "item": [
+        {
+          "name": "sincronizar 403 cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/sincronizar",
+            "description": "Solo Administrador y Analista.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sincronizar 401 sin token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/sincronizar",
+            "description": "Endpoint protegido sin Authorization.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = no_autenticado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_autenticado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "sincronizar 200 exitoso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/sincronizar",
+            "description": "RF-23: proyecta las devoluciones de PostgreSQL a MongoDB (snapshots).",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"sincronizo casos\", () => { const J = pm.response.json(); pm.expect(J.casos_sincronizados >= 0 && J.version_cache > 0).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "pareto 200 miss",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/pareto?dimension=motivo&medida=frecuencia",
+            "description": "RF-25, RNF-19: primer calculo tras sincronizar, con aggregate real en MongoDB."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"cache miss\", () => { const J = pm.response.json(); pm.expect(J.cache === \"miss\" && Array.isArray(J.categorias)).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "pareto 200 hit",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/pareto?dimension=motivo&medida=frecuencia",
+            "description": "Misma consulta: ahora sale del cache de Redis."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"cache hit\", () => { const J = pm.response.json(); pm.expect(J.cache === \"hit\").to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "pareto 200 XML por proveedor y costo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/pareto?dimension=proveedor&medida=costo",
+            "description": "Otra dimension y medida; XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "pareto 400 dimension desconocida",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/pareto?dimension=color",
+            "description": "Dimension fuera de la lista."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "pareto 400 fecha invalida",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/pareto?desde=ayer",
+            "description": "desde debe usar AAAA-MM-DD."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "pareto 400 rango invertido",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/pareto?desde=2026-12-31&hasta=2026-01-01",
+            "description": "hasta no puede ser menor que desde."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "pareto 403 cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/pareto",
+            "description": "Solo Administrador y Analista."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "pareto 401 token invalido",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_falso}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/pareto",
+            "description": "JWT sin firma valida."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = token_invalido\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"token_invalido\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Resumen, alertas y eventos",
+      "item": [
+        {
+          "name": "resumen 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/resumen",
+            "description": "Cuantos casos y reportes hay en MongoDB."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"trae contadores\", () => { const J = pm.response.json(); pm.expect(J.casos_sincronizados >= 0).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "resumen 403 cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/resumen",
+            "description": "Rol sin permiso."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "alertas 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/alertas-fraude",
+            "description": "RF-25, RN-09: senales de revision humana; no acusan ni bloquean."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"aviso de no determinacion\", () => { const J = pm.response.json(); pm.expect(!!J.aviso).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "alertas 200 XML",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/alertas-fraude",
+            "description": "Respuesta XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "alertas 403 cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/alertas-fraude",
+            "description": "Rol sin permiso."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "eventos 200 paginado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/eventos?pagina=1&por_pagina=5",
+            "description": "RNF-23: eventos publicados por los servicios."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"trae paginacion\", () => { const J = pm.response.json(); pm.expect(J.paginacion.por_pagina === 5).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "eventos 200 XML",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/eventos?servicio=devoluciones",
+            "description": "Filtro por servicio; XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "eventos 400 correlation_id largo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/eventos?correlation_id=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "description": "El filtro no puede superar 100 caracteres."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "eventos 400 paginacion invalida",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/eventos?por_pagina=0",
+            "description": "por_pagina fuera de rango."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "eventos 403 cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/analisis/eventos",
+            "description": "Rol sin permiso."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Auditoria (bitacora)",
+      "item": [
+        {
+          "name": "bitacora 200 paginada",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/auditoria?pagina=1&por_pagina=5",
+            "description": "RF-30, RN-12: bitacora de operaciones."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));",
+                  "pm.test(\"trae paginacion\", () => { const J = pm.response.json(); pm.expect(J.paginacion.por_pagina === 5).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "bitacora 200 filtro XML",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/auditoria?accion=alta_devolucion",
+            "description": "Filtro por accion; XML."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "bitacora 400 filtro largo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/auditoria?accion=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "description": "El filtro no puede superar 100 caracteres."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.tipo = validacion\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"validacion\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "bitacora 403 cliente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/auditoria",
+            "description": "Rol sin permiso."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error.tipo = sin_permiso\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"sin_permiso\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "bitacora 401 sin token",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{analisis_url}}/api/v1/auditoria",
+            "description": "Endpoint protegido sin Authorization."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.tipo = no_autenticado\", () => pm.expect(pm.response.json().error.tipo).to.eql(\"no_autenticado\"));",
+                  "pm.test(\"Trae X-Correlation-ID\", () => pm.response.to.have.header(\"X-Correlation-ID\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
