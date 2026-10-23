@@ -1,2062 +1,236 @@
-
 {% extends "base.html" %}
-{% block titulo %}{{ d.folio_devolucion }} | Orvia{% endblock %}
+{% block titulo %}{{ d.folio_devolucion }}{% endblock %}
 {% block contenido %}
-
-<style>
-/* ============================================
-   ORVIA — EXPEDIENTE DE DEVOLUCIÓN
-   CSS exclusivo de detalle.html
-============================================ */
-
-body:has(#ov-expediente) {
-    margin: 0;
-    background: #f7f9fc;
-    font-family: "Segoe UI", Arial, sans-serif;
-    color: #14233b;
-}
-
-body:has(#ov-expediente) > main {
-    max-width: none;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-}
-
-body.ov-detalle-ready > header.barra,
-body.ov-detalle-ready > nav.menu {
-    display: none !important;
-}
-
-body.ov-detalle-ready > main > .avisos {
-    position: fixed;
-    right: 22px;
-    top: 95px;
-    z-index: 100;
-    max-width: min(450px, 90vw);
-}
-
-#ov-expediente,
-#ov-expediente * {
-    box-sizing: border-box;
-}
-
-#ov-expediente {
-    --verde: #07895a;
-    --texto: #12213a;
-    --gris: #74839c;
-    --borde: #e7ecf2;
-
-    display: grid;
-    grid-template-columns: 258px minmax(0, 1fr);
-    min-height: 100vh;
-    background: #f7f9fc;
-    font-size: 14px;
-}
-
-#ov-expediente button,
-#ov-expediente input,
-#ov-expediente select,
-#ov-expediente textarea {
-    font: inherit;
-}
-
-#ov-expediente button {
-    cursor: pointer;
-}
-
-#ov-expediente :is(button,a,input,select,textarea):focus-visible {
-    outline: 3px solid #31a97755;
-    outline-offset: 2px;
-}
-
-/* ============================================
-   SIDEBAR
-============================================ */
-
-#ov-expediente .ov-sidebar {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    min-height: 580px;
-    display: flex;
-    flex-direction: column;
-    background: #fff;
-    border-right: 1px solid #e9edf3;
-    padding: 30px 21px 23px;
-    z-index: 30;
-}
-
-#ov-expediente .ov-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 8px;
-    margin-bottom: 45px;
-    color: #101c2e;
-    font: 700 38px/1 Georgia, serif;
-    letter-spacing: -1.5px;
-}
-
-#ov-expediente .ov-logo svg {
-    width: 52px;
-    height: 36px;
-    flex-shrink: 0;
-}
-
-#ov-expediente .ov-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    overflow-y: auto;
-}
-
-#ov-expediente .ov-nav a {
-    display: flex;
-    align-items: center;
-    gap: 17px;
-    min-height: 49px;
-    padding: 0 15px;
-    border-radius: 11px;
-    color: #465a76;
-    font-size: 15px;
-    font-weight: 500;
-    text-decoration: none;
-    white-space: nowrap;
-}
-
-#ov-expediente .ov-nav a:hover {
-    color: #056940;
-    background: #f1f7f4;
-}
-
-#ov-expediente .ov-nav a[aria-current="page"] {
-    background: #e2f1eb;
-    color: #075c3b;
-    font-weight: 650;
-}
-
-#ov-expediente .ov-nav svg {
-    width: 21px;
-    height: 21px;
-    flex-shrink: 0;
-    stroke-width: 1.8;
-}
-
-#ov-expediente .ov-sidebar-footer {
-    margin-top: auto;
-    padding: 19px 14px 0;
-    border-top: 1px solid #e9edf3;
-    font-size: 12px;
-    color: #98a6b9;
-}
-
-/* ============================================
-   BARRA SUPERIOR
-============================================ */
-
-#ov-expediente .ov-workspace {
-    min-width: 0;
-}
-
-#ov-expediente .ov-topbar {
-    position: sticky;
-    top: 0;
-    z-index: 25;
-    height: 92px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    padding: 15px 30px;
-    background: #fff;
-    border-bottom: 1px solid #e8edf3;
-}
-
-#ov-expediente .ov-top-search {
-    position: relative;
-    flex: 1;
-    max-width: 770px;
-    min-width: 90px;
-}
-
-#ov-expediente .ov-top-search > svg {
-    position: absolute;
-    left: 18px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 21px;
-    height: 21px;
-    color: #374c69;
-    pointer-events: none;
-}
-
-#ov-expediente .ov-top-search input {
-    width: 100%;
-    height: 52px;
-    border: 1px solid #edf0f5;
-    border-radius: 12px;
-    background: #f5f7fa;
-    color: #20324e;
-    padding: 0 75px 0 54px;
-    outline: none;
-    font-size: 14px;
-}
-
-#ov-expediente .ov-top-search input::placeholder {
-    color: #899ab3;
-}
-
-#ov-expediente .ov-shortcut {
-    position: absolute;
-    right: 13px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #fff;
-    border-radius: 6px;
-    padding: 5px 8px;
-    font-size: 12px;
-    color: #94a2b7;
-    pointer-events: none;
-}
-
-#ov-expediente .ov-top-actions {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-left: auto;
-}
-
-#ov-expediente .ov-bell {
-    min-width: 38px;
-    display: grid;
-    place-items: center;
-}
-
-#ov-expediente .ov-bell .campanita {
-    position: relative;
-}
-
-#ov-expediente .ov-bell .campanita-boton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    color: #273b58;
-}
-
-#ov-expediente .ov-bell .campanita-boton:hover {
-    background: #f2f6f9;
-}
-
-#ov-expediente .ov-bell .campanita-panel {
-    top: 43px;
-    right: 0;
-    z-index: 110;
-}
-
-#ov-expediente .ov-profile {
-    position: relative;
-}
-
-#ov-expediente .ov-profile-button {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    max-width: 290px;
-    padding: 5px;
-    border: 0;
-    border-radius: 11px;
-    background: transparent;
-    text-align: left;
-    color: #182c46;
-}
-
-#ov-expediente .ov-profile-button:hover {
-    background: #f4f7f9;
-}
-
-#ov-expediente .ov-avatar {
-    width: 44px;
-    height: 44px;
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: #dcefe7;
-    color: #08784d;
-    font-weight: 700;
-    font-size: 15px;
-}
-
-#ov-expediente .ov-profile-text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-    max-width: 175px;
-}
-
-#ov-expediente .ov-profile-text strong {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    font-size: 13px;
-}
-
-#ov-expediente .ov-profile-text small {
-    color: #8090a6;
-    font-size: 12px;
-}
-
-#ov-expediente .ov-profile-button > svg {
-    width: 17px;
-    height: 17px;
-    flex-shrink: 0;
-}
-
-#ov-expediente .ov-account-menu {
-    position: absolute;
-    right: 0;
-    top: 60px;
-    width: 245px;
-    padding: 13px;
-    background: white;
-    border: 1px solid #e5eaf0;
-    border-radius: 12px;
-    box-shadow: 0 14px 40px #17294122;
-    z-index: 90;
-}
-
-#ov-expediente .ov-account-menu[hidden] {
-    display: none;
-}
-
-#ov-expediente .ov-account-info {
-    padding: 8px 5px 14px;
-    margin-bottom: 8px;
-    border-bottom: 1px solid #e8edf2;
-    color: #64758e;
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-#ov-expediente .ov-account-menu form {
-    margin: 0;
-}
-
-#ov-expediente .ov-account-menu button {
-    width: 100%;
-    padding: 11px;
-    text-align: left;
-    border: 0;
-    border-radius: 8px;
-    background: #fff;
-    color: #b03242;
-}
-
-#ov-expediente .ov-account-menu button:hover {
-    background: #fff2f3;
-}
-
-#ov-expediente .ov-mobile-button {
-    display: none;
-    border: 1px solid #e5eaf0;
-    border-radius: 9px;
-    background: white;
-    padding: 9px 12px;
-}
-
-/* ============================================
-   CONTENIDO DEL EXPEDIENTE
-============================================ */
-
-#ov-expediente .ov-content {
-    width: 100%;
-    max-width: 1650px;
-    margin: auto;
-    padding: 29px 32px 50px;
-}
-
-#ov-expediente .ov-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 19px;
-    color: #0b8656;
-    font-size: 13px;
-    font-weight: 650;
-    text-decoration: none;
-}
-
-#ov-expediente .ov-back:hover {
-    text-decoration: underline;
-}
-
-#ov-expediente .ov-page-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 18px;
-    margin-bottom: 27px;
-}
-
-#ov-expediente .ov-page-heading h1 {
-    margin: 0 0 9px;
-    color: #112035;
-    font-size: clamp(28px, 2.6vw, 38px);
-    letter-spacing: -1.3px;
-    font-weight: 740;
-    line-height: 1.15;
-}
-
-#ov-expediente .ov-page-heading p {
-    margin: 0;
-    color: #7a8aa2;
-    font-size: 14px;
-}
-
-#ov-expediente .ov-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    padding: 10px 15px;
-    border-radius: 24px;
-    background: #e6f5ec;
-    color: #098350;
-    font-size: 13px;
-    font-weight: 650;
-    text-transform: capitalize;
-    white-space: nowrap;
-}
-
-#ov-expediente .ov-status::before {
-    content: "";
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-#ov-expediente .ov-status.blue {
-    background: #e7f1ff;
-    color: #1573db;
-}
-
-#ov-expediente .ov-status.orange {
-    background: #fff1df;
-    color: #bb741c;
-}
-
-#ov-expediente .ov-status.gray {
-    background: #edf0f5;
-    color: #667792;
-}
-
-/* Case summary */
-
-#ov-expediente .ov-summary {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-}
-
-#ov-expediente .ov-summary-item {
-    background: #fff;
-    border: 1px solid #e6ebf2;
-    border-radius: 12px;
-    padding: 19px 21px;
-    min-width: 0;
-}
-
-#ov-expediente .ov-summary-item small {
-    display: block;
-    margin-bottom: 10px;
-    color: #8090a7;
-    font-size: 12px;
-}
-
-#ov-expediente .ov-summary-item strong {
-    display: block;
-    color: #172842;
-    font-size: 16px;
-    font-weight: 680;
-    overflow-wrap: anywhere;
-}
-
-/* Sections */
-
-#ov-expediente .ov-card {
-    background: #fff;
-    border: 1px solid #e6ebf1;
-    border-radius: 14px;
-    padding: 25px 28px;
-    margin-bottom: 18px;
-    box-shadow: 0 5px 20px #122e4210;
-    scroll-margin-top: 110px;
-}
-
-#ov-expediente .ov-card h2 {
-    color: #16243a;
-    font-size: 21px;
-    font-weight: 720;
-    letter-spacing: -.4px;
-    margin: 0 0 22px;
-}
-
-#ov-expediente .ov-card h3 {
-    font-size: 16px;
-    color: #24354e;
-    margin: 23px 0 14px;
-}
-
-/* Information grid */
-
-#ov-expediente .ov-info-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 22px 27px;
-    margin: 0;
-}
-
-#ov-expediente .ov-info-field {
-    min-width: 0;
-}
-
-#ov-expediente .ov-info-field dt {
-    margin: 0 0 8px;
-    color: #8a99ad;
-    font-size: 12px;
-}
-
-#ov-expediente .ov-info-field dd {
-    margin: 0;
-    color: #172940;
-    font-size: 14px;
-    font-weight: 580;
-    line-height: 1.6;
-    overflow-wrap: anywhere;
-}
-
-#ov-expediente .ov-info-field a {
-    color: #078658;
-    font-weight: 650;
-    text-underline-offset: 3px;
-}
-
-#ov-expediente .ov-info-wide {
-    grid-column: span 2;
-}
-
-#ov-expediente .ov-info-full {
-    grid-column: 1 / -1;
-}
-
-#ov-expediente .ov-type {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    min-width: 145px;
-    padding: 8px 12px;
-    border-radius: 25px;
-    font-size: 12px;
-    font-weight: 650;
-    white-space: nowrap;
-}
-
-#ov-expediente .ov-type.cold {
-    color: #1673da;
-    background: #e8f2ff;
-}
-
-#ov-expediente .ov-type.dry {
-    color: #ba711b;
-    background: #fff3e7;
-}
-
-#ov-expediente .ov-type svg {
-    width: 16px;
-    height: 16px;
-}
-
-#ov-expediente .ov-empty {
-    padding: 20px;
-    border: 1px dashed #e1e7ed;
-    border-radius: 10px;
-    background: #fafbfd;
-    color: #8794a8;
-    font-size: 13px;
-}
-
-/* Forms */
-
-#ov-expediente .ov-card form {
-    max-width: 100%;
-}
-
-#ov-expediente .ov-card .formulario {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-#ov-expediente .ov-card label {
-    color: #354a65;
-    font-size: 13px;
-    font-weight: 650;
-}
-
-#ov-expediente .ov-card :is(input,select,textarea) {
-    min-height: 43px;
-    max-width: 100%;
-    border: 1px solid #dde5ee;
-    border-radius: 9px;
-    background: #fff;
-    padding: 10px 12px;
-    color: #22364f;
-}
-
-#ov-expediente .ov-card textarea {
-    min-height: 100px;
-    resize: vertical;
-}
-
-#ov-expediente .ov-card .acciones {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 12px;
-}
-
-#ov-expediente .ov-card .boton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 43px;
-    padding: 10px 18px;
-    border-radius: 9px;
-    border: 1px solid #07895a;
-    background: #07895a;
-    color: white;
-    font-size: 13px;
-    font-weight: 650;
-    text-decoration: none;
-}
-
-#ov-expediente .ov-card .boton:hover {
-    background: #06764d;
-}
-
-#ov-expediente .ov-card .boton.peligro {
-    background: #fff1f1;
-    border-color: #ffd3d3;
-    color: #b82f3e;
-}
-
-#ov-expediente .ov-card .boton.secundario {
-    background: #f3f6fa;
-    border-color: #dde6ef;
-    color: #405773;
-}
-
-#ov-expediente .ov-card .nota {
-    color: #8492a7;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-/* Tables */
-
-#ov-expediente .tabla-envoltura {
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #e8edf2;
-    border-radius: 10px;
-}
-
-#ov-expediente .tabla-envoltura table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-#ov-expediente .tabla-envoltura thead {
-    background: #f7f9fb;
-}
-
-#ov-expediente .tabla-envoltura th {
-    padding: 13px;
-    font-size: 11px;
-    color: #6b7d98;
-    text-align: left;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-#ov-expediente .tabla-envoltura td {
-    padding: 13px;
-    font-size: 12px;
-    border-top: 1px solid #edf0f4;
-    color: #485e7b;
-}
-
-/* Timeline */
-
-#ov-expediente .linea-tiempo {
-    margin: 0;
-    padding: 0 0 0 22px;
-    list-style: none;
-    border-left: 2px solid #e1eae5;
-}
-
-#ov-expediente .linea-tiempo li {
-    position: relative;
-    margin-bottom: 20px;
-    padding-left: 12px;
-    line-height: 1.6;
-}
-
-#ov-expediente .linea-tiempo li::before {
-    content: "";
-    position: absolute;
-    left: -29px;
-    top: 5px;
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    background: #0a915d;
-    border: 3px solid #e5f4ed;
-}
-
-#ov-expediente .linea-tiempo .cuando {
-    color: #8c9aaf;
-    font-size: 12px;
-    margin-top: 6px;
-}
-
-#ov-expediente .ov-search-match {
-    box-shadow: 0 0 0 3px #07895a35;
-    border-color: #87c8ab;
-}
-
-/* ============================================
-   RESPONSIVE
-============================================ */
-
-@media (max-width: 1190px) {
-    #ov-expediente {
-        grid-template-columns: 220px minmax(0, 1fr);
-    }
-
-    #ov-expediente .ov-sidebar {
-        padding: 24px 13px;
-    }
-
-    #ov-expediente .ov-content {
-        padding: 25px 20px;
-    }
-
-    #ov-expediente .ov-summary {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    #ov-expediente .ov-info-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 790px) {
-    #ov-expediente {
-        display: block;
-    }
-
-    #ov-expediente .ov-sidebar {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 260px;
-        height: 100dvh;
-        z-index: 100;
-        overflow-y: auto;
-        box-shadow: 12px 0 40px #12324535;
-    }
-
-    #ov-expediente[data-menu-open="true"] .ov-sidebar {
-        display: flex;
-    }
-
-    #ov-expediente .ov-mobile-button {
-        display: inline-flex;
-    }
-
-    #ov-expediente .ov-topbar {
-        height: 74px;
-        padding: 12px 16px;
-        gap: 11px;
-    }
-
-    #ov-expediente .ov-profile-text {
-        display: none;
-    }
-
-    #ov-expediente .ov-content {
-        padding: 22px 15px;
-    }
-
-    #ov-expediente .ov-info-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 500px) {
-    #ov-expediente .ov-summary {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-    }
-
-    #ov-expediente .ov-summary-item {
-        padding: 15px;
-    }
-
-    #ov-expediente .ov-summary-item strong {
-        font-size: 13px;
-    }
-
-    #ov-expediente .ov-info-grid {
-        grid-template-columns: 1fr;
-        gap: 19px;
-    }
-
-    #ov-expediente .ov-info-wide,
-    #ov-expediente .ov-info-full {
-        grid-column: auto;
-    }
-
-    #ov-expediente .ov-card {
-        padding: 20px 17px;
-    }
-
-    #ov-expediente .ov-shortcut {
-        display: none;
-    }
-
-    #ov-expediente .ov-top-search input {
-        padding-right: 12px;
-        padding-left: 44px;
-    }
-
-    #ov-expediente .ov-top-actions {
-        gap: 5px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    #ov-expediente * {
-        transition: none !important;
-        animation: none !important;
-    }
-}
-</style>
-
-
-<section id="ov-expediente"
-         data-menu-open="false"
-         aria-label="Expediente de devolución">
-
-    <!-- NAVEGACION LATERAL -->
-    <aside class="ov-sidebar" id="ov-detail-sidebar">
-
-        <div class="ov-logo">
-
-            <svg viewBox="0 0 54 38" aria-hidden="true">
-                <defs>
-                    <linearGradient id="ov-detail-logo-gradient">
-                        <stop stop-color="#4ab783"/>
-                        <stop offset="1" stop-color="#078657"/>
-                    </linearGradient>
-                </defs>
-                <path fill="url(#ov-detail-logo-gradient)"
-                      d="M4 28c0-8 6-13 14-13h4c5 0 7-2 7-6 0-5 4-8 9-8 6 0 9 5 9 9 0 8-5 13-14 13h-5c-4 0-6 2-6 6 0 5-5 9-10 9-5 0-8-4-8-10z"/>
-            </svg>
-
-            <span>Orvia</span>
-        </div>
-
-        <nav id="ov-detail-links"
-             class="ov-nav"
-             aria-label="Navegación autorizada">
-        </nav>
-
-        <div class="ov-sidebar-footer">
-            Logística inversa · Orvia
-        </div>
-
-    </aside>
-
-
-    <!-- CONTENIDO PRINCIPAL -->
-    <div class="ov-workspace">
-
-        <!-- BARRA SUPERIOR -->
-        <header class="ov-topbar">
-
-            <button id="ov-detail-menu"
-                    class="ov-mobile-button"
-                    type="button"
-                    aria-expanded="false"
-                    aria-controls="ov-detail-sidebar"
-                    aria-label="Abrir menú">
-                ☰
-            </button>
-
-            <div class="ov-top-search">
-
-                <svg viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="1.8"
-                     stroke-linecap="round"
-                     aria-hidden="true">
-                    <circle cx="10" cy="10" r="7"/>
-                    <path d="m15 15 6 6"/>
-                </svg>
-
-                <input
-                    id="ov-detail-search"
-                    type="search"
-                    placeholder="Buscar dentro del expediente..."
-                    aria-label="Buscar información de este expediente"
-                    autocomplete="off"
-                >
-
-                <span class="ov-shortcut" aria-hidden="true">
-                    Ctrl K
-                </span>
-
-            </div>
-
-            <div class="ov-top-actions">
-
-                <!-- Campanita original del monolito -->
-                <div id="ov-detail-bell" class="ov-bell"></div>
-
-                <div class="ov-profile">
-
-                    <button type="button"
-                            id="ov-detail-profile-btn"
-                            class="ov-profile-button"
-                            aria-expanded="false"
-                            aria-controls="ov-detail-account">
-
-                        <span class="ov-avatar"
-                              id="ov-detail-initials">
-                            OV
-                        </span>
-
-                        <span class="ov-profile-text">
-                            <strong id="ov-detail-name">
-                                {{ usuario_actual.nombre if usuario_actual else 'Usuario' }}
-                            </strong>
-                            <small>
-                                {{ rol_actual|default('Usuario', true) }}
-                            </small>
-                        </span>
-
-                        <svg viewBox="0 0 24 24"
-                             fill="none"
-                             stroke="currentColor"
-                             stroke-width="1.8"
-                             aria-hidden="true">
-                            <path d="m6 9 6 6 6-6"/>
-                        </svg>
-
-                    </button>
-
-                    <div id="ov-detail-account"
-                         class="ov-account-menu"
-                         hidden>
-
-                        <div class="ov-account-info">
-                            {{ usuario_actual.nombre if usuario_actual else 'Usuario' }}
-                            <div>
-                                {{ rol_actual|default('Usuario', true) }}
-                            </div>
-                        </div>
-
-                        <!-- Formulario de logout original -->
-                        <div id="ov-detail-logout"></div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </header>
-
-
-        <main class="ov-content">
-
-            <a class="ov-back"
-               href="{{ url_for('devoluciones.listar') }}">
-                ← Volver a devoluciones
-            </a>
-
-            <!-- ENCABEZADO DEL EXPEDIENTE -->
-            <div class="ov-page-heading">
-
-                <div>
-                    <h1>
-                        Expediente {{ d.folio_devolucion }}
-                    </h1>
-
-                    <p>
-                        Información y seguimiento de la devolución.
-                    </p>
-                </div>
-
-                {% set estado_actual = d.estado|string|lower %}
-
-                <span class="ov-status
-                    {% if 'inspecc' in estado_actual %}blue
-                    {% elif 'recolec' in estado_actual %}orange
-                    {% elif 'rechaz' in estado_actual %}gray
-                    {% endif %}">
-
-                    {{ d.estado|replace('_', ' ') }}
-
-                </span>
-
-            </div>
-
-
-            <!-- RESUMEN SUPERIOR -->
-            <div class="ov-summary">
-
-                <div class="ov-summary-item">
-                    <small>Cliente</small>
-                    <strong>{{ d.cliente }}</strong>
-                </div>
-
-                <div class="ov-summary-item">
-                    <small>Producto</small>
-                    <strong>{{ d.producto }}</strong>
-                </div>
-
-                <div class="ov-summary-item">
-                    <small>Cantidad devuelta</small>
-                    <strong>
-                        {{ d.cantidad_devuelta }}
-                        de
-                        {{ d.cantidad_comprada }}
-                    </strong>
-                </div>
-
-                <div class="ov-summary-item">
-                    <small>Valor devuelto</small>
-                    <strong>
-                        $ {{ '%.2f'|format(d.valor_devuelto) }}
-                    </strong>
-                </div>
-
-            </div>
-
-
-            <!-- INFORMACION GENERAL -->
-            <section class="ov-card"
-                     id="ov-info"
-                     data-search-section>
-
-                <h2>Información general</h2>
-
-                <dl class="ov-info-grid">
-
-                    <div class="ov-info-field">
-                        <dt>Cliente</dt>
-                        <dd>{{ d.cliente }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Venta</dt>
-                        <dd>
-                            <a href="{{ url_for('ventas.detalle', venta_id=d.venta_id) }}">
-                                {{ d.folio_venta }}
-                            </a>
-                            <span>
-                                del {{ d.fecha_venta.strftime('%d/%m/%Y') }}
-                            </span>
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Tienda</dt>
-                        <dd>{{ d.tienda }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Producto</dt>
-                        <dd>
-                            {{ d.producto }}
-                            ({{ d.sku }})
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Clasificación</dt>
-                        <dd>
-
-                            {% if d.clasificacion_temperatura == 'refrigerado' %}
-
-                            <span class="ov-type cold">
-                                <svg viewBox="0 0 24 24"
-                                     fill="none"
-                                     stroke="currentColor"
-                                     stroke-width="1.8"
-                                     stroke-linecap="round"
-                                     aria-hidden="true">
-                                    <path d="M12 2v20M3 7l18 10M21 7 3 17"/>
-                                </svg>
-                                Refrigerado
-                            </span>
-
-                            {% else %}
-
-                            <span class="ov-type dry">
-                                <svg viewBox="0 0 24 24"
-                                     fill="none"
-                                     stroke="currentColor"
-                                     stroke-width="1.8"
-                                     aria-hidden="true">
-                                    <circle cx="12" cy="12" r="4"/>
-                                    <path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>
-                                </svg>
-                                {{ d.clasificacion_temperatura|replace('_', ' ')|capitalize }}
-                            </span>
-
-                            {% endif %}
-
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Lote</dt>
-                        <dd>
-                            {{ d.numero_lote }}
-                            {% if d.fecha_caducidad %}
-                                · caduca
-                                {{ d.fecha_caducidad.strftime('%d/%m/%Y') }}
-                            {% endif %}
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Proveedor</dt>
-                        <dd>{{ d.proveedor }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Motivo</dt>
-                        <dd>{{ d.motivo }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Solicitada</dt>
-                        <dd>
-                            {{ d.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}
-                        </dd>
-                    </div>
-
-                    {% if d.analista %}
-                    <div class="ov-info-field">
-                        <dt>Analista</dt>
-                        <dd>{{ d.analista }}</dd>
-                    </div>
-                    {% endif %}
-
-                    {% if d.fecha_autorizacion %}
-                    <div class="ov-info-field">
-                        <dt>Autorizada</dt>
-                        <dd>
-                            {{ d.fecha_autorizacion.strftime('%d/%m/%Y %H:%M') }}
-                        </dd>
-                    </div>
-                    {% endif %}
-
-                    <div class="ov-info-field ov-info-full">
-                        <dt>Descripción del problema</dt>
-                        <dd>{{ d.descripcion_problema }}</dd>
-                    </div>
-
-                </dl>
-
-            </section>
-
-
-            <!-- REVISION DE SOLICITUD -->
-            {% if rol_actual == 'Analista de Devoluciones' and d.estado in estados_revisables %}
-
-            <section class="ov-card"
-                     id="ov-revision"
-                     data-search-section>
-
-                <h2>Revisar solicitud (RF-10)</h2>
-
-                <form method="post"
-                      action="{{ url_for('devoluciones.resolver', devolucion_id=d.id) }}"
-                      class="formulario">
-
-                    <label for="justificacion">
-                        Justificación o comentario
-                    </label>
-
-                    <textarea
-                        id="justificacion"
-                        name="justificacion"
-                        placeholder="Obligatorio si se rechaza la solicitud."></textarea>
-
-                    <div class="acciones">
-
-                        <button class="boton"
-                                type="submit"
-                                name="decision"
-                                value="autorizar">
-                            Autorizar
-                        </button>
-
-                        <button class="boton peligro"
-                                type="submit"
-                                name="decision"
-                                value="rechazar">
-                            Rechazar
-                        </button>
-
-                        <button class="boton secundario"
-                                type="submit"
-                                name="decision"
-                                value="informacion">
-                            Solicitar información
-                        </button>
-
-                    </div>
-
-                </form>
-
-            </section>
-
-            {% endif %}
-
-
-            <!-- LOGISTICA INVERSA -->
-            <section class="ov-card"
-                     id="ov-logistica"
-                     data-search-section>
-
-                <h2>Logística inversa</h2>
-
-                {% if recoleccion %}
-
-                <dl class="ov-info-grid">
-
-                    <div class="ov-info-field">
-                        <dt>Estado</dt>
-                        <dd>{{ recoleccion.estado }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Fecha programada</dt>
-                        <dd>
-                            {{ recoleccion.fecha_programada.strftime('%d/%m/%Y') if recoleccion.fecha_programada else '' }}
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Lugar</dt>
-                        <dd>{{ recoleccion.lugar or '' }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Ruta</dt>
-                        <dd>
-                            {{ (recoleccion.origen ~ ' -> ' ~ recoleccion.destino) if recoleccion.origen else 'Sin asignar' }}
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Transportista</dt>
-                        <dd>
-                            {{ recoleccion.transportista or 'Sin asignar' }}
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Coordinador</dt>
-                        <dd>{{ recoleccion.coordinador or '' }}</dd>
-                    </div>
-
-                </dl>
-
-                {% if rol_actual == 'Coordinador de Logistica' and recoleccion.estado != 'completada' %}
-
-                <form method="post"
-                      action="{{ url_for('logistica.actualizar_estado', recoleccion_id=recoleccion.id) }}"
-                      class="acciones">
-
-                    <select name="estado"
-                            aria-label="Estado de recolección">
-
-                        {% for e in ['programada','asignada','en_transito','completada','fallida'] %}
-                        <option value="{{ e }}"
-                            {{ 'selected' if recoleccion.estado == e else '' }}>
-                            {{ e|replace('_',' ') }}
-                        </option>
-                        {% endfor %}
-
-                    </select>
-
-                    <input type="number"
-                           step="0.01"
-                           min="0"
-                           name="costo_transporte"
-                           placeholder="Costo de transporte (si se completa)">
-
-                    <button class="boton pequeno" type="submit">
-                        Actualizar
-                    </button>
-
-                </form>
-
-                {% endif %}
-
-                {% elif d.estado == 'autorizada' and rol_actual == 'Coordinador de Logistica' %}
-
-                <p class="ov-empty">
-                    Esta devolución está autorizada y no tiene recolección programada.
-                </p>
-
-                <div class="acciones">
-                    <a class="boton"
-                       href="{{ url_for('logistica.programar', devolucion_id=d.id) }}">
-                        Programar recolección
-                    </a>
-                </div>
-
-                {% else %}
-
-                <p class="ov-empty">
-                    Sin recolección registrada.
-                </p>
-
-                {% endif %}
-
-
-                {% if recepcion %}
-
-                <h3>Recepción en el centro</h3>
-
-                <dl class="ov-info-grid">
-
-                    <div class="ov-info-field">
-                        <dt>Encargado</dt>
-                        <dd>{{ recepcion.encargado }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Fecha</dt>
-                        <dd>
-                            {{ recepcion.fecha_recepcion.strftime('%d/%m/%Y %H:%M') }}
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Coincide con expediente</dt>
-                        <dd>
-                            {{ 'Sí' if recepcion.coincide_expediente else 'No' }}
-                        </dd>
-                    </div>
-
-                </dl>
-
-                {% elif d.estado == 'en_recoleccion' and rol_actual == 'Encargado del Centro de Devoluciones' %}
-
-                <h3>Recepción en el centro</h3>
-
-                <form method="post"
-                      action="{{ url_for('logistica.registrar_recepcion', devolucion_id=d.id) }}"
-                      class="formulario">
-
-                    <label for="coincide_expediente">
-                        ¿El producto recibido coincide con el expediente?
-                    </label>
-
-                    <select id="coincide_expediente"
-                            name="coincide_expediente">
-                        <option value="si">Sí</option>
-                        <option value="no">No</option>
-                    </select>
-
-                    <label for="costo_almacenamiento">
-                        Costo estimado de almacenamiento (opcional)
-                    </label>
-
-                    <input type="number"
-                           step="0.01"
-                           min="0"
-                           id="costo_almacenamiento"
-                           name="costo_almacenamiento">
-
-                    <div class="acciones">
-                        <button class="boton" type="submit">
-                            Confirmar recepción
-                        </button>
-                    </div>
-
-                </form>
-
-                {% endif %}
-
-            </section>
-
-
-            <!-- INSPECCION Y DISPOSICION -->
-            <section class="ov-card"
-                     id="ov-inspeccion"
-                     data-search-section>
-
-                <h2>Inspección y disposición</h2>
-
-                {% if inspeccion %}
-
-                <dl class="ov-info-grid">
-
-                    <div class="ov-info-field">
-                        <dt>Inspector</dt>
-                        <dd>{{ inspeccion.inspector }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Fecha</dt>
-                        <dd>
-                            {{ inspeccion.fecha_inspeccion.strftime('%d/%m/%Y %H:%M') }}
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Resultado</dt>
-                        <dd>{{ inspeccion.resultado_general }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Apto para inventario</dt>
-                        <dd>
-                            {{ 'Sí' if inspeccion.apto_para_inventario else 'No' }}
-                        </dd>
-                    </div>
-
-                </dl>
-
-                {% elif d.estado in ['recibida', 'en_inspeccion'] and rol_actual == 'Inspector' %}
-
-                <p class="ov-empty">
-                    El producto está listo para inspección.
-                </p>
-
-                <div class="acciones">
-                    <a class="boton"
-                       href="{{ url_for('inspecciones.registrar', devolucion_id=d.id) }}">
-                        Registrar inspección
-                    </a>
-                </div>
-
-                {% else %}
-
-                <p class="ov-empty">
-                    Sin inspección registrada.
-                </p>
-
-                {% endif %}
-
-
-                {% if disposicion %}
-
-                <h3>Disposición del producto</h3>
-
-                <dl class="ov-info-grid">
-
-                    <div class="ov-info-field">
-                        <dt>Destino</dt>
-                        <dd>
-                            {{ disposicion.destino|replace('_', ' ') }}
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Decidido por</dt>
-                        <dd>{{ disposicion.analista }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Fecha</dt>
-                        <dd>
-                            {{ disposicion.fecha_decision.strftime('%d/%m/%Y %H:%M') }}
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field ov-info-full">
-                        <dt>Justificación</dt>
-                        <dd>{{ disposicion.justificacion or '' }}</dd>
-                    </div>
-
-                </dl>
-
-                {% elif inspeccion and rol_actual == 'Analista de Devoluciones' %}
-
-                <div class="acciones">
-                    <a class="boton"
-                       href="{{ url_for('inspecciones.disposicion', devolucion_id=d.id) }}">
-                        Decidir destino del producto
-                    </a>
-                </div>
-
-                {% endif %}
-
-            </section>
-
-
-            <!-- REEMBOLSO Y COSTOS -->
-            <section class="ov-card"
-                     id="ov-reembolso"
-                     data-search-section>
-
-                <h2>Reembolso</h2>
-
-                {% if reembolso %}
-
-                <dl class="ov-info-grid">
-
-                    <div class="ov-info-field">
-                        <dt>Estado</dt>
-                        <dd>{{ reembolso.estado }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Monto</dt>
-                        <dd>
-                            $ {{ '%.2f'|format(reembolso.monto) }}
-                        </dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Método</dt>
-                        <dd>{{ reembolso.metodo or 'No aplica' }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Responsable</dt>
-                        <dd>{{ reembolso.encargado }}</dd>
-                    </div>
-
-                    <div class="ov-info-field">
-                        <dt>Resolución</dt>
-                        <dd>
-                            {{ reembolso.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if reembolso.fecha_resolucion else '' }}
-                        </dd>
-                    </div>
-
-                </dl>
-
-                {% elif rol_actual == 'Encargado de Reembolsos' and d.estado not in ['solicitada', 'en_revision', 'rechazada'] %}
-
-                <div class="acciones">
-                    <a class="boton"
-                       href="{{ url_for('reembolsos.registrar', devolucion_id=d.id) }}">
-                        Gestionar reembolso
-                    </a>
-                </div>
-
-                {% else %}
-
-                <p class="ov-empty">
-                    Sin reembolso registrado.
-                </p>
-
-                {% endif %}
-
-
-                <h3>Costos del caso</h3>
-
-                {% if costos %}
-
-                <div class="tabla-envoltura">
-                    <table>
-
-                        <thead>
-                            <tr>
-                                <th>Etapa</th>
-                                <th>Monto</th>
-                                <th>Fecha</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {% for c in costos %}
-                            <tr>
-                                <td>{{ c.etapa|capitalize }}</td>
-                                <td>$ {{ '%.2f'|format(c.monto) }}</td>
-                                <td>
-                                    {{ c.fecha.strftime('%d/%m/%Y') }}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-
-                    </table>
-                </div>
-
-                <p class="nota">
-                    Costo total del caso:
-                    <strong>
-                        $ {{ '%.2f'|format(costos|sum(attribute='monto')) }}
-                    </strong>
-                </p>
-
-                {% else %}
-
-                <p class="ov-empty">
-                    Sin costos registrados todavía.
-                </p>
-
-                {% endif %}
-
-
-                {% if rol_actual in ['Analista de Devoluciones', 'Administrador'] %}
-
-                <form method="post"
-                      action="{{ url_for('devoluciones.agregar_costo', devolucion_id=d.id) }}"
-                      class="acciones">
-
-                    <input type="number"
-                           step="0.01"
-                           min="0"
-                           name="monto"
-                           placeholder="Monto"
-                           required>
-
-                    <input type="text"
-                           name="nota"
-                           placeholder="Motivo del costo (otros)">
-
-                    <button class="boton pequeno" type="submit">
-                        Agregar costo
-                    </button>
-
-                </form>
-
-                {% endif %}
-
-            </section>
-
-
-            <!-- EVIDENCIAS -->
-            <section class="ov-card"
-                     id="ov-evidencias"
-                     data-search-section>
-
-                <h2>
-                    Evidencias ({{ evidencias|length }})
-                </h2>
-
-                {% if rol_actual in ['Cliente', 'Inspector', 'Analista de Devoluciones'] %}
-
-                <form method="post"
-                      action="{{ url_for('devoluciones.agregar_evidencia', devolucion_id=d.id) }}"
-                      class="formulario">
-
-                    <label for="tipo">
-                        Tipo de evidencia
-                    </label>
-
-                    <select id="tipo" name="tipo">
-                        <option value="comentario">Comentario</option>
-                        <option value="fotografia">Fotografía</option>
-                        <option value="documento">Documento</option>
-                    </select>
-
-                    <label for="comentario">
-                        Comentario
-                    </label>
-
-                    <textarea id="comentario"
-                              name="comentario"></textarea>
-
-                    <label for="nombre_original">
-                        Nombre del archivo
-                        (solo para fotografía o documento)
-                    </label>
-
-                    <input type="text"
-                           id="nombre_original"
-                           name="nombre_original"
-                           placeholder="empaque_danado.jpg">
-
-                    <p class="nota">
-                        En esta versión se registra la referencia de la
-                        evidencia. La carga al bucket y los enlaces
-                        firmados de duración limitada se habilitan con
-                        Google Cloud Storage (RNF-15, RN-14).
-                    </p>
-
-                    <div class="acciones">
-                        <button class="boton" type="submit">
-                            Agregar evidencia
-                        </button>
-                    </div>
-
-                </form>
-
-                {% endif %}
-
-
-                <div class="tabla-envoltura" style="margin-top:20px;">
-
-                    <table>
-
-                        <thead>
-                            <tr>
-                                <th>Tipo</th>
-                                <th>Etapa</th>
-                                <th>Contenido</th>
-                                <th>Autor</th>
-                                <th>Fecha</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-
-                            {% for e in evidencias %}
-
-                            <tr>
-                                <td>
-                                    <span class="etiqueta">
-                                        {{ e.tipo }}
-                                    </span>
-                                </td>
-
-                                <td>{{ e.etapa }}</td>
-
-                                <td>
-                                    {{ e.comentario or e.nombre_original }}
-                                </td>
-
-                                <td>{{ e.autor }}</td>
-
-                                <td>
-                                    {{ e.fecha_registro.strftime('%d/%m/%Y %H:%M') }}
-                                </td>
-                            </tr>
-
-                            {% else %}
-
-                            <tr>
-                                <td colspan="5" class="vacio">
-                                    Sin evidencias registradas.
-                                </td>
-                            </tr>
-
-                            {% endfor %}
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </section>
-
-
-            <!-- HISTORIAL -->
-            <section class="ov-card"
-                     id="ov-historial"
-                     data-search-section>
-
-                <h2>Historial del caso</h2>
-
-                <p class="nota">
-                    Reconstruido desde la bitácora de auditoría
-                    (RF-11, RF-30).
-                </p>
-
-                <ul class="linea-tiempo">
-
-                    {% for h in historial %}
-
-                    <li>
-                        <div>
-                            <strong>
-                                {{ h.accion|replace('_', ' ')|capitalize }}
-                            </strong>
-                            —
-                            {{ h.detalle or '' }}
-                        </div>
-
-                        <div class="cuando">
-                            {{ h.fecha.strftime('%d/%m/%Y %H:%M') }}
-                            ·
-                            {{ h.usuario or '(sistema)' }}
-                        </div>
-                    </li>
-
-                    {% else %}
-
-                    <li>
-                        Sin movimientos registrados.
-                    </li>
-
-                    {% endfor %}
-
-                </ul>
-
-            </section>
-
-        </main>
-
+<h1>Expediente {{ d.folio_devolucion }}</h1>
+<p class="sub">
+  <a href="{{ url_for('devoluciones.listar') }}">Devoluciones</a> / {{ d.folio_devolucion }}
+  &middot; <span class="etiqueta">{{ d.estado|replace('_', ' ') }}</span>
+</p>
+
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Informacion general</h2>
+  <dl class="datos">
+    <dt>Cliente</dt><dd>{{ d.cliente }}</dd>
+    <dt>Venta</dt><dd><a href="{{ url_for('ventas.detalle', venta_id=d.venta_id) }}">{{ d.folio_venta }}</a> del {{ d.fecha_venta.strftime('%d/%m/%Y') }}</dd>
+    <dt>Tienda</dt><dd>{{ d.tienda }}</dd>
+    <dt>Producto</dt><dd>{{ d.producto }} ({{ d.sku }})</dd>
+    <dt>Clasificacion</dt><dd><span class="etiqueta {{ 'azul' if d.clasificacion_temperatura == 'refrigerado' else '' }}">{{ d.clasificacion_temperatura|replace('_', ' ') }}</span></dd>
+    <dt>Lote</dt><dd>{{ d.numero_lote }}{% if d.fecha_caducidad %} &middot; caduca {{ d.fecha_caducidad.strftime('%d/%m/%Y') }}{% endif %}</dd>
+    <dt>Proveedor</dt><dd>{{ d.proveedor }}</dd>
+    <dt>Motivo</dt><dd>{{ d.motivo }}</dd>
+    <dt>Cantidad devuelta</dt><dd>{{ d.cantidad_devuelta }} de {{ d.cantidad_comprada }}</dd>
+    <dt>Valor devuelto</dt><dd>$ {{ '%.2f'|format(d.valor_devuelto) }}</dd>
+    <dt>Descripcion</dt><dd>{{ d.descripcion_problema }}</dd>
+    <dt>Solicitada</dt><dd>{{ d.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}</dd>
+    {% if d.analista %}<dt>Analista</dt><dd>{{ d.analista }}</dd>{% endif %}
+    {% if d.fecha_autorizacion %}<dt>Autorizada</dt><dd>{{ d.fecha_autorizacion.strftime('%d/%m/%Y %H:%M') }}</dd>{% endif %}
+  </dl>
+</div>
+
+{% if rol_actual == 'Analista de Devoluciones' and d.estado in estados_revisables %}
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Revisar solicitud (RF-10)</h2>
+  <form method="post" action="{{ url_for('devoluciones.resolver', devolucion_id=d.id) }}" class="formulario">
+    <label for="justificacion">Justificacion o comentario</label>
+    <textarea id="justificacion" name="justificacion"
+              placeholder="Obligatorio si se rechaza la solicitud."></textarea>
+    <div class="acciones">
+      <button class="boton" type="submit" name="decision" value="autorizar">Autorizar</button>
+      <button class="boton peligro" type="submit" name="decision" value="rechazar">Rechazar</button>
+      <button class="boton secundario" type="submit" name="decision" value="informacion">Solicitar informacion</button>
     </div>
+  </form>
+</div>
+{% endif %}
 
-</section>
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Logistica inversa</h2>
+  {% if recoleccion %}
+    <dl class="datos">
+      <dt>Estado</dt><dd><span class="etiqueta">{{ recoleccion.estado }}</span></dd>
+      <dt>Fecha programada</dt><dd>{{ recoleccion.fecha_programada.strftime('%d/%m/%Y') if recoleccion.fecha_programada else '' }}</dd>
+      <dt>Lugar</dt><dd>{{ recoleccion.lugar or '' }}</dd>
+      <dt>Ruta</dt><dd>{{ (recoleccion.origen ~ ' -> ' ~ recoleccion.destino) if recoleccion.origen else 'Sin asignar' }}</dd>
+      <dt>Transportista</dt><dd>{{ recoleccion.transportista or 'Sin asignar' }}</dd>
+      <dt>Coordinador</dt><dd>{{ recoleccion.coordinador or '' }}</dd>
+    </dl>
+    {% if rol_actual == 'Coordinador de Logistica' and recoleccion.estado != 'completada' %}
+      <form method="post" action="{{ url_for('logistica.actualizar_estado', recoleccion_id=recoleccion.id) }}" class="acciones">
+        <select name="estado">
+          {% for e in ['programada','asignada','en_transito','completada','fallida'] %}
+            <option value="{{ e }}" {{ 'selected' if recoleccion.estado == e else '' }}>{{ e|replace('_',' ') }}</option>
+          {% endfor %}
+        </select>
+        <input type="number" step="0.01" min="0" name="costo_transporte"
+               placeholder="Costo de transporte (si se completa)">
+        <button class="boton pequeno" type="submit">Actualizar</button>
+      </form>
+    {% endif %}
+  {% elif d.estado == 'autorizada' and rol_actual == 'Coordinador de Logistica' %}
+    <p class="nota">Esta devolucion esta autorizada y no tiene recoleccion programada.</p>
+    <div class="acciones">
+      <a class="boton" href="{{ url_for('logistica.programar', devolucion_id=d.id) }}">Programar recoleccion</a>
+    </div>
+  {% else %}
+    <p class="nota">Sin recoleccion registrada.</p>
+  {% endif %}
 
+  {% if recepcion %}
+    <h2>Recepcion en el centro</h2>
+    <dl class="datos">
+      <dt>Encargado</dt><dd>{{ recepcion.encargado }}</dd>
+      <dt>Fecha</dt><dd>{{ recepcion.fecha_recepcion.strftime('%d/%m/%Y %H:%M') }}</dd>
+      <dt>Coincide con expediente</dt>
+      <dd><span class="etiqueta {{ 'verde' if recepcion.coincide_expediente else 'roja' }}">{{ 'si' if recepcion.coincide_expediente else 'no' }}</span></dd>
+    </dl>
+  {% elif d.estado == 'en_recoleccion' and rol_actual == 'Encargado del Centro de Devoluciones' %}
+    <h2>Recepcion en el centro</h2>
+    <form method="post" action="{{ url_for('logistica.registrar_recepcion', devolucion_id=d.id) }}" class="formulario">
+      <label for="coincide_expediente">El producto recibido coincide con el expediente</label>
+      <select id="coincide_expediente" name="coincide_expediente">
+        <option value="si">Si</option>
+        <option value="no">No</option>
+      </select>
+      <label for="costo_almacenamiento">Costo estimado de almacenamiento (opcional)</label>
+      <input type="number" step="0.01" min="0" id="costo_almacenamiento" name="costo_almacenamiento">
+      <div class="acciones"><button class="boton" type="submit">Confirmar recepcion</button></div>
+    </form>
+  {% endif %}
+</div>
 
-<script>
-(function () {
-    "use strict";
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Inspeccion y disposicion</h2>
+  {% if inspeccion %}
+    <dl class="datos">
+      <dt>Inspector</dt><dd>{{ inspeccion.inspector }}</dd>
+      <dt>Fecha</dt><dd>{{ inspeccion.fecha_inspeccion.strftime('%d/%m/%Y %H:%M') }}</dd>
+      <dt>Resultado</dt><dd>{{ inspeccion.resultado_general }}</dd>
+      <dt>Apto para inventario</dt>
+      <dd><span class="etiqueta {{ 'verde' if inspeccion.apto_para_inventario else 'roja' }}">{{ 'si' if inspeccion.apto_para_inventario else 'no' }}</span></dd>
+    </dl>
+  {% elif d.estado in ['recibida', 'en_inspeccion'] and rol_actual == 'Inspector' %}
+    <p class="nota">El producto esta listo para inspeccion.</p>
+    <div class="acciones">
+      <a class="boton" href="{{ url_for('inspecciones.registrar', devolucion_id=d.id) }}">Registrar inspeccion</a>
+    </div>
+  {% else %}
+    <p class="nota">Sin inspeccion registrada.</p>
+  {% endif %}
 
-    var root = document.getElementById("ov-expediente");
+  {% if disposicion %}
+    <dl class="datos" style="margin-top:14px;">
+      <dt>Destino</dt><dd><span class="etiqueta azul">{{ disposicion.destino|replace('_', ' ') }}</span></dd>
+      <dt>Decidido por</dt><dd>{{ disposicion.analista }}</dd>
+      <dt>Fecha</dt><dd>{{ disposicion.fecha_decision.strftime('%d/%m/%Y %H:%M') }}</dd>
+      <dt>Justificacion</dt><dd>{{ disposicion.justificacion or '' }}</dd>
+    </dl>
+  {% elif inspeccion and rol_actual == 'Analista de Devoluciones' %}
+    <div class="acciones">
+      <a class="boton" href="{{ url_for('inspecciones.disposicion', devolucion_id=d.id) }}">Decidir destino del producto</a>
+    </div>
+  {% endif %}
+</div>
 
-    if (!root) {
-        return;
-    }
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Reembolso</h2>
+  {% if reembolso %}
+    <dl class="datos">
+      <dt>Estado</dt>
+      <dd><span class="etiqueta {{ 'verde' if reembolso.estado == 'aprobado' else 'roja' }}">{{ reembolso.estado }}</span></dd>
+      <dt>Monto</dt><dd>$ {{ '%.2f'|format(reembolso.monto) }}</dd>
+      <dt>Metodo</dt><dd>{{ reembolso.metodo or 'No aplica' }}</dd>
+      <dt>Responsable</dt><dd>{{ reembolso.encargado }}</dd>
+      <dt>Resolucion</dt><dd>{{ reembolso.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if reembolso.fecha_resolucion else '' }}</dd>
+    </dl>
+  {% elif rol_actual == 'Encargado de Reembolsos' and d.estado not in ['solicitada', 'en_revision', 'rechazada'] %}
+    <div class="acciones">
+      <a class="boton" href="{{ url_for('reembolsos.registrar', devolucion_id=d.id) }}">Gestionar reembolso</a>
+    </div>
+  {% else %}
+    <p class="nota">Sin reembolso registrado.</p>
+  {% endif %}
 
-    /* ============================================
-       1. NAVEGACION ORIGINAL DE BASE.HTML
-       Conserva las rutas y los permisos.
-    ============================================ */
+  <h2>Costos del caso</h2>
+  {% if costos %}
+    <div class="tabla-envoltura">
+      <table>
+        <thead><tr><th>Etapa</th><th>Monto</th><th>Fecha</th></tr></thead>
+        <tbody>
+          {% for c in costos %}
+            <tr><td>{{ c.etapa|capitalize }}</td><td>$ {{ '%.2f'|format(c.monto) }}</td><td>{{ c.fecha.strftime('%d/%m/%Y') }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="nota">Costo total del caso: <strong>$ {{ '%.2f'|format(costos|sum(attribute='monto')) }}</strong></p>
+  {% else %}
+    <p class="nota">Sin costos registrados todavia.</p>
+  {% endif %}
 
-    var originalNav = document.querySelector("body > nav.menu");
-    var originalHeader = document.querySelector("body > header.barra");
-    var sidebar = document.getElementById("ov-detail-links");
+  {% if rol_actual in ['Analista de Devoluciones', 'Administrador'] %}
+    <form method="post" action="{{ url_for('devoluciones.agregar_costo', devolucion_id=d.id) }}" class="acciones">
+      <input type="number" step="0.01" min="0" name="monto" placeholder="Monto" required>
+      <input type="text" name="nota" placeholder="Motivo del costo (otros)">
+      <button class="boton pequeno" type="submit">Agregar costo</button>
+    </form>
+  {% endif %}
+</div>
 
-    var iconPaths = {
-        panel: "M3 10l9-7 9 7v11h-6v-7H9v7H3z",
-        ventas: "M4 20V10m6 10V4m6 16v-8m4 8V6",
-        devoluciones: "m12 2 9 5-9 5-9-5 9-5zM3 7v10l9 5 9-5V7M12 12v10",
-        recolecciones: "M3 7h11v10H3zM14 11h4l3 3v3h-7zM5 19h2m10 0h2",
-        inspecciones: "M20 20l-5-5M17 9a8 8 0 1 0-16 0 8 8 0 0 0 16 0z",
-        inventario: "m12 2 9 5-9 5-9-5zM3 12l9 5 9-5M3 17l9 5 9-5",
-        reembolsos: "M3 5h18v14H3zM17 12h3M3 9h18",
-        causas: "M6 3h10l4 4v14H6zM15 3v5h5M9 13h7M9 17h6",
-        costos: "M5 3h14v18H5zM8 8h8M8 12h8M8 16h8",
-        catalogos: "M3 12V4h9l9 9-8 8zM8 8h.01",
-        usuarios: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM16 4a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-4",
-        bitacora: "M3 12a9 9 0 1 1 3 7M3 17v-5h5M12 7v5l4 3",
-        servicios: "M12 3a3 3 0 0 0-3 3v1l-2 2H6a3 3 0 0 0 0 6h1l2 2v1a3 3 0 0 0 6 0v-1l2-2h1a3 3 0 0 0 0-6h-1l-2-2V6a3 3 0 0 0-3-3z"
-    };
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Evidencias ({{ evidencias|length }})</h2>
+  {% if rol_actual in ['Cliente', 'Inspector', 'Analista de Devoluciones'] %}
+  <form method="post" action="{{ url_for('devoluciones.agregar_evidencia', devolucion_id=d.id) }}" class="formulario">
+    <label for="tipo">Tipo de evidencia</label>
+    <select id="tipo" name="tipo">
+      <option value="comentario">Comentario</option>
+      <option value="fotografia">Fotografia</option>
+      <option value="documento">Documento</option>
+    </select>
+    <label for="comentario">Comentario</label>
+    <textarea id="comentario" name="comentario"></textarea>
+    <label for="nombre_original">Nombre del archivo (solo para fotografia o documento)</label>
+    <input type="text" id="nombre_original" name="nombre_original" placeholder="empaque_danado.jpg">
+    <p class="nota">
+      En esta version se registra la referencia de la evidencia. La carga al bucket
+      y los enlaces firmados de duracion limitada se habilitan con Google Cloud
+      Storage (RNF-15, RN-14).
+    </p>
+    <div class="acciones"><button class="boton" type="submit">Agregar evidencia</button></div>
+  </form>
+  {% endif %}
 
-    function normalize(text) {
-        return String(text || "")
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase()
-            .trim();
-    }
+  <div class="tabla-envoltura" style="margin-top:16px;">
+    <table>
+      <thead><tr><th>Tipo</th><th>Etapa</th><th>Contenido</th><th>Autor</th><th>Fecha</th></tr></thead>
+      <tbody>
+      {% for e in evidencias %}
+        <tr>
+          <td><span class="etiqueta">{{ e.tipo }}</span></td>
+          <td>{{ e.etapa }}</td>
+          <td>{{ e.comentario or e.nombre_original }}</td>
+          <td>{{ e.autor }}</td>
+          <td>{{ e.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="vacio">Sin evidencias registradas.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 
-    function createIcon(pathData) {
-        var ns = "http://www.w3.org/2000/svg";
-
-        var svg = document.createElementNS(ns, "svg");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("fill", "none");
-        svg.setAttribute("stroke", "currentColor");
-        svg.setAttribute("stroke-linecap", "round");
-        svg.setAttribute("stroke-linejoin", "round");
-        svg.setAttribute("aria-hidden", "true");
-
-        var path = document.createElementNS(ns, "path");
-        path.setAttribute("d", pathData);
-
-        svg.appendChild(path);
-        return svg;
-    }
-
-    if (originalNav) {
-        originalNav.querySelectorAll("a[href]").forEach(function (link) {
-            var label = link.textContent.trim();
-            var key = normalize(label);
-
-            var newLink = document.createElement("a");
-            newLink.href = link.href;
-            newLink.appendChild(
-                createIcon(iconPaths[key] || "M4 6h16M4 12h16M4 18h16")
-            );
-
-            var text = document.createElement("span");
-            text.textContent = label;
-            newLink.appendChild(text);
-
-            if (
-                link.classList.contains("activo") ||
-                (
-                    key === "devoluciones" &&
-                    window.location.pathname.startsWith("/devoluciones/")
-                )
-            ) {
-                newLink.setAttribute("aria-current", "page");
-            }
-
-            sidebar.appendChild(newLink);
-        });
-    }
-
-    /* ============================================
-       2. CAMPANITA Y CIERRE DE SESION REALES
-       Movemos los componentes existentes.
-    ============================================ */
-
-    if (originalHeader) {
-        var bell = originalHeader.querySelector(".campanita");
-        var logout = originalHeader.querySelector("form[action]");
-
-        if (bell) {
-            document.getElementById("ov-detail-bell").appendChild(bell);
-        }
-
-        if (logout) {
-            document.getElementById("ov-detail-logout").appendChild(logout);
-        }
-    }
-
-    /* Ocultar la cabecera anterior solo si
-       pudimos recuperar la navegación y sesión. */
-
-    if (
-        originalNav &&
-        originalHeader &&
-        sidebar.querySelector("a") &&
-        document.getElementById("ov-detail-logout").querySelector("form")
-    ) {
-        document.body.classList.add("ov-detalle-ready");
-    }
-
-    /* ============================================
-       3. INICIALES DEL USUARIO
-    ============================================ */
-
-    var name = document.getElementById("ov-detail-name")
-        .textContent.trim()
-        .split(/\s+/);
-
-    var first = (name[0] || "O").charAt(0);
-    var last = (name.length > 1 ? name[name.length - 1] : "V").charAt(0);
-
-    document.getElementById("ov-detail-initials").textContent =
-        (first + last).toUpperCase();
-
-    /* ============================================
-       4. MENU DE PERFIL
-    ============================================ */
-
-    var profileButton = document.getElementById("ov-detail-profile-btn");
-    var accountMenu = document.getElementById("ov-detail-account");
-
-    profileButton.addEventListener("click", function () {
-        var show = accountMenu.hidden;
-
-        accountMenu.hidden = !show;
-        profileButton.setAttribute("aria-expanded", String(show));
-    });
-
-    document.addEventListener("click", function (event) {
-        if (!event.target.closest("#ov-expediente .ov-profile")) {
-            accountMenu.hidden = true;
-            profileButton.setAttribute("aria-expanded", "false");
-        }
-    });
-
-    /* ============================================
-       5. MENU LATERAL RESPONSIVE
-    ============================================ */
-
-    var menuButton = document.getElementById("ov-detail-menu");
-
-    menuButton.addEventListener("click", function () {
-        var open = root.getAttribute("data-menu-open") !== "true";
-
-        root.setAttribute("data-menu-open", String(open));
-        menuButton.setAttribute("aria-expanded", String(open));
-    });
-
-    /* ============================================
-       6. BUSCADOR DEL EXPEDIENTE
-       Busca dentro de las secciones existentes.
-    ============================================ */
-
-    var search = document.getElementById("ov-detail-search");
-    var sections = Array.from(
-        root.querySelectorAll("[data-search-section]")
-    );
-
-    function searchCase() {
-        var query = normalize(search.value);
-
-        sections.forEach(function (section) {
-            section.classList.remove("ov-search-match");
-        });
-
-        if (!query) {
-            return;
-        }
-
-        var match = sections.find(function (section) {
-            return normalize(section.textContent).includes(query);
-        });
-
-        if (match) {
-            match.classList.add("ov-search-match");
-            match.scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
-        }
-    }
-
-    var searchDelay;
-
-    search.addEventListener("input", function () {
-        window.clearTimeout(searchDelay);
-        searchDelay = window.setTimeout(searchCase, 250);
-    });
-
-    document.addEventListener("keydown", function (event) {
-        if (event.key === "Escape") {
-            accountMenu.hidden = true;
-            profileButton.setAttribute("aria-expanded", "false");
-
-            root.setAttribute("data-menu-open", "false");
-            menuButton.setAttribute("aria-expanded", "false");
-        }
-
-        if (
-            (event.ctrlKey || event.metaKey) &&
-            event.key.toLowerCase() === "k"
-        ) {
-            event.preventDefault();
-            search.focus();
-        }
-    });
-
-})();
-</script>
-
+<div class="tarjeta">
+  <h2 style="margin-top:0;">Historial del caso</h2>
+  <p class="nota">Reconstruido desde la bitacora de auditoria (RF-11, RF-30).</p>
+  <ul class="linea-tiempo">
+    {% for h in historial %}
+      <li>
+        <div><strong>{{ h.accion|replace('_', ' ')|capitalize }}</strong> &mdash; {{ h.detalle or '' }}</div>
+        <div class="cuando">{{ h.fecha.strftime('%d/%m/%Y %H:%M') }} &middot; {{ h.usuario or '(sistema)' }}</div>
+      </li>
+    {% else %}
+      <li>Sin movimientos registrados.</li>
+    {% endfor %}
+  </ul>
+</div>
 {% endblock %}
