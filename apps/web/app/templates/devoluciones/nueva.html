@@ -1,47 +1,113 @@
 {% extends "base.html" %}
-{% block titulo %}Registrar devolucion{% endblock %}
+{% block titulo %}Registrar devolucion · Orvia{% endblock %}
 {% block contenido %}
-<h1>Registrar devolucion</h1>
-<p class="sub">Venta {{ linea.folio_venta }} &middot; {{ linea.producto }}</p>
 
-<div class="tarjeta">
-  <dl class="datos">
-    <dt>Producto</dt><dd>{{ linea.producto }} ({{ linea.sku }})</dd>
-    <dt>Clasificacion</dt><dd>{{ linea.clasificacion_temperatura|replace('_', ' ') }}</dd>
-    <dt>Lote</dt><dd>{{ linea.numero_lote }}</dd>
-    <dt>Caducidad</dt><dd>{{ linea.fecha_caducidad.strftime('%d/%m/%Y') if linea.fecha_caducidad else 'No aplica' }}</dd>
-    <dt>Fecha de compra</dt><dd>{{ linea.fecha_venta.strftime('%d/%m/%Y') }}</dd>
-    <dt>Unidades disponibles</dt><dd>{{ disponible }} de {{ linea.cantidad }}</dd>
-  </dl>
+<style>
+body:has(.ov-client-shell){margin:0;background:#f5f7fa;font-family:Segoe UI,Arial,sans-serif;color:#14243b}
+body:has(.ov-client-shell)>header.barra,body:has(.ov-client-shell)>nav.menu{display:none!important}
+body:has(.ov-client-shell)>main{padding:0!important;margin:0!important;max-width:none!important;width:100%!important}
+body:has(.ov-client-shell)>main>.avisos{position:fixed;right:25px;top:100px;z-index:1100;max-width:420px}
+.ov-client-shell,.ov-client-shell *{box-sizing:border-box}
+.ov-client-shell{--ov-border:#e5ebf1;--ov-green:#07875b;--ov-muted:#7b8ea7;display:grid;grid-template-columns:258px minmax(0,1fr);min-height:100vh;font-size:14px}
+.ov-client-shell a{text-decoration:none}
+.ov-client-shell .ov-sidebar{height:100vh;position:sticky;top:0;background:white;border-right:1px solid var(--ov-border);padding:30px 21px 23px;display:flex;flex-direction:column;min-width:0}
+.ov-client-shell .ov-logo{display:flex;gap:12px;align-items:center;font:bold 37px Georgia,serif;color:#13243d;margin:0 8px 44px;letter-spacing:-1px}
+.ov-client-shell .ov-mark{width:36px;height:33px;display:inline-block;position:relative}
+.ov-client-shell .ov-mark:before,.ov-client-shell .ov-mark:after{content:"";position:absolute;width:23px;height:15px;background:#25a778;transform:rotate(-35deg);border-radius:12px}
+.ov-client-shell .ov-mark:before{left:12px;top:2px}.ov-client-shell .ov-mark:after{left:0;top:17px}
+.ov-client-shell .ov-nav{display:grid;gap:4px}.ov-client-shell .ov-nav a{min-height:49px;border-radius:11px;display:flex;gap:16px;align-items:center;padding:0 15px;color:#4b5d79;font-weight:500;font-size:15px}.ov-client-shell .ov-nav a:hover{background:#f0f7f3}.ov-client-shell .ov-nav a[aria-current=page]{background:#e1f1eb;color:#086c46;font-weight:700}
+.ov-client-shell .ov-nav svg,.ov-client-shell .ov-search svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.ov-client-shell .ov-sidebar-foot{margin-top:auto;border-top:1px solid var(--ov-border);padding:20px 12px 0;color:#91a0b5;font-size:12px}
+.ov-client-shell .ov-work{min-width:0}.ov-client-shell .ov-top{height:92px;background:white;border-bottom:1px solid var(--ov-border);padding:15px 31px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.ov-client-shell .ov-search{display:flex;align-items:center;gap:16px;background:#f5f7fa;border:1px solid #e8edf3;border-radius:12px;max-width:770px;width:57%;min-height:50px;padding:0 17px;color:#8195ad;font-size:13px}
+.ov-client-shell .ov-topright{display:flex;align-items:center;gap:18px;position:relative}.ov-client-shell .ov-bell-slot{position:relative;min-width:42px;min-height:42px;display:grid;place-items:center}.ov-client-shell .ov-bell-slot .campanita-boton{width:42px;height:42px;display:grid;place-items:center;border-radius:11px;color:#223d5a}.ov-client-shell .ov-bell-slot .campanita-panel{right:0;top:48px;z-index:1100}
+.ov-client-shell .ov-profile{position:relative}.ov-client-shell .ov-profile-trigger{display:flex;align-items:center;gap:12px;background:transparent;border:0;cursor:pointer;border-radius:12px;padding:6px 9px;text-align:left;color:#102641}.ov-client-shell .ov-profile-trigger:hover{background:#f4f8f8}.ov-client-shell .ov-avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#dff2ea;color:#087b53;font-weight:700}.ov-client-shell .ov-name{font-size:13px;font-weight:700}.ov-client-shell .ov-role{display:block;color:#8194ab;font-size:11px;margin-top:4px}.ov-client-shell .ov-chevron{font-size:18px;color:#526984}.ov-client-shell .ov-profile-menu{position:absolute;top:60px;right:0;z-index:200;background:#fff;border:1px solid var(--ov-border);box-shadow:0 14px 36px #10274422;border-radius:13px;width:235px;padding:15px}.ov-client-shell .ov-profile-menu[hidden]{display:none}.ov-client-shell .ov-profile-menu p{padding:0 5px 13px;margin:0 0 10px;border-bottom:1px solid var(--ov-border);color:#647a96;font-size:12px;line-height:1.7}.ov-client-shell .ov-profile-menu form{margin:0}.ov-client-shell .ov-profile-menu button{border:0;background:#fff;color:#c23240;padding:11px;width:100%;text-align:left;cursor:pointer;font-weight:600;border-radius:8px}.ov-client-shell .ov-profile-menu button:hover{background:#fff2f2}
+.ov-client-shell .ov-content{max-width:1590px;margin:0 auto;padding:39px 32px 75px}.ov-client-shell .ov-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;margin-bottom:26px;flex-wrap:wrap}.ov-client-shell h1{font-size:32px;letter-spacing:-.8px;line-height:1.25;color:#102744;margin:0 0 8px}.ov-client-shell .ov-subtitle{color:var(--ov-muted);font-size:13px;line-height:1.6;margin:0}.ov-client-shell .ov-card{background:white;border:1px solid var(--ov-border);border-radius:15px;box-shadow:0 5px 20px #183b5510;margin:0 0 24px;overflow:hidden}.ov-client-shell .ov-card-head{padding:23px 26px;border-bottom:1px solid var(--ov-border)}.ov-client-shell h2{font-size:19px;margin:0 0 7px;color:#142943}.ov-client-shell .ov-card-body{padding:26px}.ov-client-shell .ov-muted{font-size:12px;color:var(--ov-muted);line-height:1.6}.ov-client-shell .ov-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}.ov-client-shell .ov-fact-label{display:block;font-size:11px;color:#7c8fa7;margin-bottom:7px}.ov-client-shell .ov-fact-value{font-size:14px;font-weight:650;color:#1a324d;overflow-wrap:anywhere}.ov-client-shell .ov-pill{display:inline-flex;align-items:center;padding:6px 12px;border-radius:22px;background:#eaf2ff;color:#357ac7;font-weight:650;font-size:12px}.ov-client-shell .ov-pill.warm{background:#fff1e8;color:#bd6c26}
+.ov-client-shell .ov-button{display:inline-flex;justify-content:center;align-items:center;gap:9px;background:#078858;border:1px solid #078858;color:white!important;padding:12px 18px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer}.ov-client-shell .ov-button:hover{background:#056c48}.ov-client-shell .ov-button.secondary{background:white;color:#087858!important;border-color:#c6e2d5}.ov-client-shell .ov-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.ov-client-shell .ov-controls form{margin:0}.ov-client-shell label{font-size:12px;font-weight:650;color:#243b54;display:block;margin:0 0 7px}.ov-client-shell input,.ov-client-shell select,.ov-client-shell textarea{width:100%;min-height:44px;border:1px solid #dce5ee;border-radius:9px;background:white;padding:10px 12px;font:inherit;color:#19324e}.ov-client-shell textarea{min-height:115px;resize:vertical}.ov-client-shell input:focus,.ov-client-shell select:focus,.ov-client-shell textarea:focus{outline:2px solid #07885844;border-color:#0d9c6e}.ov-client-shell .ov-fields{display:grid;grid-template-columns:1fr 1fr;gap:23px}.ov-client-shell .ov-field-full{grid-column:1/-1}.ov-client-shell .ov-form-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:25px}.ov-client-shell .ov-tablewrap{width:100%;overflow:auto}.ov-client-shell table{width:100%;border-collapse:collapse;background:white;min-width:650px}.ov-client-shell th{background:#e7f3ed;color:#607d92;font-size:10px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:17px 20px}.ov-client-shell td{padding:17px 20px;border-top:1px solid #edf1f5;color:#425876;font-size:13px}.ov-client-shell .ov-unread{background:#f6fbf9}.ov-client-shell .ov-empty{text-align:center!important;color:#8799af!important;padding:35px!important}.ov-client-shell .ov-small-btn{display:inline-block;background:#e9f7ef;color:#07764e;border:1px solid #cfebdb;padding:9px 13px;border-radius:8px;font-weight:700;cursor:pointer}.ov-client-shell .ov-pager{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:18px}
+@media(max-width:900px){.ov-client-shell{grid-template-columns:78px minmax(0,1fr)}.ov-client-shell .ov-sidebar{padding:21px 11px}.ov-client-shell .ov-logo{font-size:0;justify-content:center;margin:0 0 30px}.ov-client-shell .ov-nav a{justify-content:center;font-size:0;padding:0}.ov-client-shell .ov-nav svg{width:22px;height:22px}.ov-client-shell .ov-sidebar-foot{display:none}.ov-client-shell .ov-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.ov-client-shell{display:block}.ov-client-shell .ov-sidebar{position:relative;height:auto;padding:12px 18px}.ov-client-shell .ov-logo{font-size:28px;justify-content:flex-start;margin-bottom:10px}.ov-client-shell .ov-nav{display:flex;overflow:auto}.ov-client-shell .ov-nav a{font-size:12px;padding:0 12px;white-space:nowrap}.ov-client-shell .ov-nav svg{width:17px}.ov-client-shell .ov-top{height:70px;padding:10px 16px}.ov-client-shell .ov-search{display:none}.ov-client-shell .ov-topright{margin-left:auto}.ov-client-shell .ov-content{padding:24px 16px}.ov-client-shell .ov-facts,.ov-client-shell .ov-fields{grid-template-columns:1fr}.ov-client-shell .ov-profile-trigger .ov-name,.ov-client-shell .ov-profile-trigger .ov-role{display:none}}
+</style>
+
+<div class="ov-client-shell" id="ov-client-shell">
+  <aside class="ov-sidebar" aria-label="Menu principal">
+    <a class="ov-logo" href="{{ url_for('panel.principal') }}"><span class="ov-mark" aria-hidden="true"></span>Orvia</a>
+    <nav class="ov-nav">
+      <a href="{{ url_for('panel.principal') }}" {% if request.endpoint == 'panel.principal' %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v11H3z"/><path d="M9 21v-8h6v8"/></svg>Panel</a>
+      <a href="{{ url_for('ventas.listar') }}" {% if request.endpoint and request.endpoint.startswith('ventas.') %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="M4 20v-9M9 20V5M14 20v-7M19 20V8"/></svg>Ventas</a>
+      <a href="{{ url_for('devoluciones.listar') }}" {% if request.endpoint and request.endpoint.startswith('devoluciones.') %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5z"/><path d="M3 7v10l9 5 9-5V7M12 12v10"/></svg>Devoluciones</a>
+    </nav>
+    <div class="ov-sidebar-foot">Logistica inversa · Orvia</div>
+  </aside>
+  <div class="ov-work">
+    <header class="ov-top">
+      <div class="ov-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>Orvia · Logistica inversa</div>
+      <div class="ov-topright">
+        <div id="ov-original-bell" class="ov-bell-slot" aria-label="Notificaciones"></div>
+        <div class="ov-profile">
+          <button type="button" id="ov-client-profile-button" class="ov-profile-trigger" aria-expanded="false" aria-controls="ov-client-profile-menu">
+            <span class="ov-avatar">{{ usuario_actual.nombre[:1]|upper if usuario_actual else 'O' }}</span>
+            <span><span class="ov-name">{{ usuario_actual.nombre if usuario_actual else 'Usuario' }}</span><span class="ov-role">{{ rol_actual }}</span></span><span class="ov-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div id="ov-client-profile-menu" class="ov-profile-menu" hidden>
+            <p>{{ usuario_actual.nombre if usuario_actual else 'Usuario' }}<br>{{ rol_actual }}</p>
+            <div id="ov-original-logout"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <section class="ov-content">
+
+<div class="ov-heading"><div><h1>Registrar devolucion</h1><p class="ov-subtitle">Venta {{ linea.folio_venta }} · Solicita la devolucion de un articulo de tu compra.</p></div><a class="ov-button secondary" href="{{ url_for('ventas.detalle', venta_id=linea.venta_id) }}">Volver a mi compra</a></div>
+<div class="ov-card">
+  <div class="ov-card-head"><h2>Producto seleccionado</h2><p class="ov-muted">Informacion de la linea de venta registrada en Orvia.</p></div>
+  <div class="ov-card-body"><div class="ov-facts">
+    <div><span class="ov-fact-label">Producto</span><span class="ov-fact-value">{{ linea.producto }} ({{ linea.sku }})</span></div>
+    <div><span class="ov-fact-label">Clasificacion</span><span class="ov-pill {{ '' if linea.clasificacion_temperatura == 'refrigerado' else 'warm' }}">{{ linea.clasificacion_temperatura|replace('_', ' ')|capitalize }}</span></div>
+    <div><span class="ov-fact-label">Lote</span><span class="ov-fact-value">{{ linea.numero_lote }}</span></div>
+    <div><span class="ov-fact-label">Caducidad</span><span class="ov-fact-value">{{ linea.fecha_caducidad.strftime('%d/%m/%Y') if linea.fecha_caducidad else 'No aplica' }}</span></div>
+    <div><span class="ov-fact-label">Fecha de compra</span><span class="ov-fact-value">{{ linea.fecha_venta.strftime('%d/%m/%Y') }}</span></div>
+    <div><span class="ov-fact-label">Unidades disponibles</span><span class="ov-fact-value">{{ disponible }} de {{ linea.cantidad }}</span></div>
+  </div></div>
 </div>
-
-<div class="tarjeta">
-<form method="post" class="formulario">
-  <input type="hidden" name="venta_detalle_id" value="{{ linea.id }}">
-
-  <label for="motivo_id">Motivo de la devolucion *</label>
-  <select id="motivo_id" name="motivo_id" required>
-    <option value="">Selecciona...</option>
-    {% for m in motivos %}<option value="{{ m.id }}">{{ m.nombre }}</option>{% endfor %}
-  </select>
-
-  <label for="cantidad_devuelta">Cantidad a devolver *</label>
-  <input type="number" id="cantidad_devuelta" name="cantidad_devuelta"
-         min="1" max="{{ disponible }}" value="1" required>
-
-  <label for="descripcion_problema">Descripcion del problema *</label>
-  <textarea id="descripcion_problema" name="descripcion_problema" required minlength="10"
-            placeholder="Describe que le paso al producto."></textarea>
-
-  <p class="nota">
-    El sistema generara un folio unico e irrepetible para tu solicitud (RN-02).
-    Podras agregar fotografias y comentarios como evidencia desde el expediente.
-  </p>
-
-  <div class="acciones">
-    <button class="boton" type="submit">Registrar devolucion</button>
-    <a class="boton secundario" href="{{ url_for('ventas.detalle', venta_id=linea.venta_id) }}">Cancelar</a>
+<div class="ov-card">
+  <div class="ov-card-head"><h2>Cuéntanos qué ocurrió</h2><p class="ov-muted">Completa los campos obligatorios para crear tu solicitud.</p></div>
+  <div class="ov-card-body">
+    <form method="post">
+      <input type="hidden" name="venta_detalle_id" value="{{ linea.id }}">
+      <div class="ov-fields">
+        <div><label for="motivo_id">Motivo de la devolucion *</label><select name="motivo_id" id="motivo_id" required><option value="">Selecciona un motivo...</option>{% for m in motivos %}<option value="{{ m.id }}" {% if request.form.get('motivo_id') == m.id|string %}selected{% endif %}>{{ m.nombre }}</option>{% endfor %}</select></div>
+        <div><label for="cantidad_devuelta">Cantidad a devolver *</label><input id="cantidad_devuelta" name="cantidad_devuelta" type="number" min="1" max="{{ disponible }}" value="{{ request.form.get('cantidad_devuelta', '1') }}" required></div>
+        <div class="ov-field-full"><label for="descripcion_problema">Descripcion del problema *</label><textarea name="descripcion_problema" id="descripcion_problema" minlength="10" required placeholder="Describe que le paso al producto (minimo 10 caracteres).">{{ request.form.get('descripcion_problema', '') }}</textarea></div>
+      </div>
+      <p class="ov-muted">El sistema generara un folio unico para la solicitud (RN-02). Podras agregar fotografias y comentarios desde el expediente.</p>
+      <div class="ov-form-actions"><button type="submit" class="ov-button">Registrar devolucion</button><a href="{{ url_for('ventas.detalle', venta_id=linea.venta_id) }}" class="ov-button secondary">Cancelar</a></div>
+    </form>
   </div>
-</form>
 </div>
+
+    </section>
+  </div>
+</div>
+<script>
+(function(){
+  // Se mueven los controles reales: no se crean formularios ni campanas duplicadas.
+  const original = document.querySelector('body > header.barra');
+  if (original) {
+    const bell = original.querySelector('.campanita');
+    const logout = original.querySelector('form[action]');
+    if (bell) document.getElementById('ov-original-bell').appendChild(bell);
+    if (logout) {
+      const slot = document.getElementById('ov-original-logout');
+      slot.appendChild(logout);
+      const button = logout.querySelector('button');
+      if (button) button.textContent = 'Cerrar sesion';
+    }
+  }
+  const trigger=document.getElementById('ov-client-profile-button');
+  const panel=document.getElementById('ov-client-profile-menu');
+  trigger.addEventListener('click',function(){ panel.hidden=!panel.hidden;trigger.setAttribute('aria-expanded',String(!panel.hidden)); });
+  document.addEventListener('click',function(event){if(!event.target.closest('.ov-profile')){panel.hidden=true;trigger.setAttribute('aria-expanded','false');}});
+  document.addEventListener('keydown',function(event){if(event.key==='Escape'){panel.hidden=true;trigger.setAttribute('aria-expanded','false');}});
+})();
+</script>
 {% endblock %}

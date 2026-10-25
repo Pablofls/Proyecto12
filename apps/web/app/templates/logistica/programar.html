@@ -1,49 +1,92 @@
 {% extends "base.html" %}
 {% block titulo %}Programar recoleccion{% endblock %}
 {% block contenido %}
-<h1>Programar recoleccion</h1>
-<p class="sub">Devolucion {{ d.folio_devolucion }} &middot; {{ d.producto }}</p>
-
-<div class="tarjeta">
-  <dl class="datos">
-    <dt>Cliente</dt><dd>{{ d.cliente }}</dd>
-    <dt>Producto</dt><dd>{{ d.producto }} ({{ d.clasificacion_temperatura|replace('_', ' ') }})</dd>
-    <dt>Tienda de origen</dt><dd>{{ d.tienda }}</dd>
-  </dl>
-  {% if d.clasificacion_temperatura == 'refrigerado' %}
-  <p class="nota">
-    Producto refrigerado: considera transporte con control de temperatura para no
-    romper la cadena de frio antes de la inspeccion (RN-06).
-  </p>
-  {% endif %}
-</div>
-
-<div class="tarjeta">
-<form method="post" class="formulario">
-  <label for="fecha_programada">Fecha de recoleccion *</label>
-  <input type="date" id="fecha_programada" name="fecha_programada" required>
-
-  <label for="lugar">Lugar de recoleccion *</label>
-  <input type="text" id="lugar" name="lugar" required placeholder="Domicilio o tienda">
-
-  <label for="ruta_id">Ruta</label>
-  <select id="ruta_id" name="ruta_id">
-    <option value="">Sin asignar</option>
-    {% for r in rutas %}<option value="{{ r.id }}">{{ r.origen }} -> {{ r.destino }}</option>{% endfor %}
-  </select>
-
-  <label for="transportista_id">Transportista</label>
-  <select id="transportista_id" name="transportista_id">
-    <option value="">Sin asignar</option>
-    {% for t in transportistas %}<option value="{{ t.id }}">{{ t.nombre }}{% if t.empresa %} ({{ t.empresa }}){% endif %}</option>{% endfor %}
-  </select>
-
-  <p class="nota">Una recoleccion solo puede marcarse como completada cuando tiene fecha, lugar, ruta y transportista (RN-08).</p>
-
-  <div class="acciones">
-    <button class="boton" type="submit">Programar</button>
-    <a class="boton secundario" href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">Cancelar</a>
+<style id="orvia-flow-style">
+body:has(.orvia-flow){margin:0;background:#f5f7fb;color:#132b48;font-family:Inter,"Segoe UI",Arial,sans-serif}body:has(.orvia-flow)>header.barra,body:has(.orvia-flow)>nav.menu{display:none!important}body:has(.orvia-flow)>main{padding:0!important;margin:0!important;max-width:none!important;width:100%!important}body:has(.orvia-flow)>main>.avisos{position:fixed;top:100px;right:24px;z-index:250;max-width:min(440px,88vw)}
+.orvia-flow,.orvia-flow *{box-sizing:border-box}.orvia-flow{--ink:#142b49;--muted:#7e91aa;--green:#07865b;--border:#e2eaf2;display:grid;grid-template-columns:258px minmax(0,1fr);min-height:100vh;width:100%;background:#f5f7fb;font-size:14px;color:var(--ink)}.orvia-flow a{text-decoration:none}.orvia-flow button{cursor:pointer}.orvia-flow :is(a,button,input,select,textarea):focus-visible{outline:2px solid #1ba879;outline-offset:3px}
+.orvia-flow .ov-sidebar{position:sticky;top:0;height:100vh;min-height:0;display:flex;flex-direction:column;background:white;border-right:1px solid var(--border);padding:29px 21px 22px;z-index:30}.orvia-flow .ov-brand{display:flex;gap:13px;align-items:center;font:bold 37px Georgia,serif;color:#0c213b;letter-spacing:-1.4px;padding:0 7px;margin-bottom:39px}.orvia-flow .ov-mark{display:block;position:relative;height:36px;width:38px;flex:none}.orvia-flow .ov-mark:before,.orvia-flow .ov-mark:after{content:"";position:absolute;width:25px;height:15px;border-radius:15px;background:#24aa7a;transform:rotate(-35deg)}.orvia-flow .ov-mark:before{top:3px;left:12px}.orvia-flow .ov-mark:after{top:17px;left:1px}.orvia-flow .ov-nav{display:flex;flex-direction:column;gap:4px;overflow-y:auto;min-height:0}.orvia-flow .ov-navlink{height:49px;min-height:49px;display:flex;align-items:center;gap:15px;padding:0 14px;border-radius:11px;font-size:15px;color:#506580;font-weight:500;white-space:nowrap}.orvia-flow .ov-navlink:hover{background:#f0f6f4;color:#08754e}.orvia-flow .ov-navlink.ov-active{background:#e0f1e9;color:#08724d;font-weight:700}.orvia-flow .ov-navlink svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;fill:none;flex:none}.orvia-flow .ov-footer{margin-top:auto;border-top:1px solid var(--border);padding:18px 10px 0;font-size:11px;color:#9cadbe}
+.orvia-flow .ov-workspace{min-width:0}.orvia-flow .ov-topbar{height:92px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 31px;gap:20px}.orvia-flow .ov-search{height:51px;width:min(720px,65%);display:flex;align-items:center;gap:13px;background:#f5f7fa;border:1px solid #e8eef4;border-radius:11px;padding:0 17px;color:#8b9cb2;font-size:13px}.orvia-flow .ov-search svg{height:20px;width:20px;stroke:#607794;stroke-width:2;fill:none}.orvia-flow .ov-account-zone{display:flex;align-items:center;gap:19px;min-width:0}.orvia-flow .ov-bell-wrap{position:relative;flex:none}.orvia-flow .ov-bell-wrap .campanita-boton{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:11px;color:#263f61}.orvia-flow .ov-bell-wrap .campanita-boton:hover{background:#f0f6f8}.orvia-flow .ov-bell-wrap .campanita-panel{position:absolute;right:0;top:50px;z-index:300;min-width:280px}.orvia-flow .ov-account{position:relative;min-width:0}.orvia-flow .ov-account-button{border:0;background:transparent;display:flex;align-items:center;gap:12px;border-radius:11px;padding:6px 8px;color:var(--ink);text-align:left}.orvia-flow .ov-account-button:hover,.orvia-flow .ov-account-button[aria-expanded=true]{background:#f2f7f8}.orvia-flow .ov-avatar{border-radius:50%;width:42px;height:42px;background:#dbf0e7;color:#07855d;display:grid;place-items:center;font-size:14px;font-weight:800;flex:none}.orvia-flow .ov-account-text strong{display:block;font-size:13px;white-space:nowrap}.orvia-flow .ov-account-text small{display:block;font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap}.orvia-flow .ov-chevron{width:15px;height:15px;stroke:#536984;fill:none}.orvia-flow .ov-account-menu{position:absolute;right:0;top:59px;width:255px;z-index:300;padding:15px;background:white;border:1px solid var(--border);border-radius:14px;box-shadow:0 13px 38px #1635571c}.orvia-flow .ov-account-menu[hidden]{display:none!important}.orvia-flow .ov-account-menu p{margin:0 0 13px;padding:7px 6px 14px;border-bottom:1px solid var(--border);font-size:12px;color:#7c8ea6;line-height:1.7}.orvia-flow .ov-account-menu form{margin:0}.orvia-flow .ov-account-menu button{width:100%;text-align:left;background:white;border:none;color:#b63440;padding:10px;border-radius:7px;font-weight:650;font-size:13px}.orvia-flow .ov-account-menu button:hover{background:#fff1f1}
+.orvia-flow .ov-content{padding:38px 32px 75px;max-width:1750px;margin:0 auto;min-width:0}.orvia-flow .ov-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:27px}.orvia-flow .ov-heading h1{margin:0 0 8px;font-size:33px;letter-spacing:-.8px;color:#142b49;font-weight:750}.orvia-flow .ov-heading .sub{margin:0;font-size:13px;color:#8293ac;line-height:1.5}.orvia-flow .ov-page-body>h2{font-size:18px;font-weight:720;color:#142b49;margin:32px 0 15px}.orvia-flow .ov-page-body>.tabla-envoltura,.orvia-flow .ov-page-body>.tarjeta{background:white;border:1px solid var(--border);border-radius:14px;box-shadow:0 7px 24px rgba(15,35,65,.025);overflow:hidden;margin-bottom:24px}.orvia-flow .ov-page-body>.tabla-envoltura{overflow-x:auto}.orvia-flow table{border-collapse:collapse;width:100%;font-size:13px}.orvia-flow table th{background:#e6f2eb;color:#607990;letter-spacing:.025em;text-transform:uppercase;font-size:10px;text-align:left;font-weight:750;padding:16px 18px}.orvia-flow table td{padding:15px 18px;border-bottom:1px solid #e7edf2;color:#455a77;vertical-align:middle}.orvia-flow table tbody tr:last-child td{border-bottom:0}.orvia-flow table tbody tr:hover{background:#fafcfb}.orvia-flow table a{color:#00885d;font-weight:650;text-decoration:underline;text-underline-offset:3px}.orvia-flow .etiqueta{display:inline-flex;align-items:center;border-radius:999px;background:#eef2f5;color:#63768e;padding:6px 11px;font-size:11px;font-weight:650;white-space:nowrap}.orvia-flow .etiqueta.verde{background:#e1f4e9;color:#00784f}.orvia-flow .etiqueta.roja{background:#fceaea;color:#c43d48}.orvia-flow .etiqueta.azul{background:#e5f0ff;color:#3274ce}.orvia-flow .vacio{color:#8394aa;text-align:center;padding:30px!important}.orvia-flow .nota{color:#8799b0;font-size:12px;line-height:1.6}.orvia-flow .ov-page-body>.tarjeta{padding:25px 27px}.orvia-flow .datos{display:grid;grid-template-columns:minmax(180px,230px) 1fr;gap:13px 22px;margin:0}.orvia-flow .datos dt{color:#7e91a9;font-size:12px}.orvia-flow .datos dd{margin:0;color:#203751;font-weight:650;font-size:13px;overflow-wrap:anywhere}.orvia-flow .formulario{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px 20px;max-width:none}.orvia-flow .formulario>label{display:block;grid-column:span 2;color:#344d68;font-weight:700;font-size:12px;margin-top:6px}.orvia-flow .formulario>input,.orvia-flow .formulario>select,.orvia-flow .formulario>textarea{width:100%;min-width:0;grid-column:span 2;display:block;border:1px solid #dce6ef;border-radius:10px;background:white;color:#19324f;padding:12px 13px;min-height:44px;font:inherit}.orvia-flow .formulario>textarea{min-height:110px;resize:vertical}.orvia-flow .formulario>h2{grid-column:span 2;margin:19px 0 4px;font-size:17px}.orvia-flow .formulario>.nota,.orvia-flow .formulario>.acciones{grid-column:span 2}.orvia-flow .acciones{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0}.orvia-flow .acciones form,.orvia-flow td form{margin:0}.orvia-flow .boton{display:inline-flex;align-items:center;justify-content:center;min-height:39px;border-radius:9px;background:#07875b;color:white!important;border:1px solid #07875b;padding:10px 14px;text-decoration:none!important;font-weight:700;font-size:12px;white-space:nowrap}.orvia-flow .boton.secundario{background:#fff;color:#07875b!important;border:1px solid #b7ddcc}.orvia-flow .boton.peligro{background:#fff1f1;color:#b73240!important;border:1px solid #efcbd0}.orvia-flow .boton.pequeno{min-height:33px;padding:7px 10px;font-size:11px}.orvia-flow .boton:hover{filter:brightness(.96)}
+@media(max-width:900px){.orvia-flow{grid-template-columns:78px minmax(0,1fr)}.orvia-flow .ov-sidebar{padding:20px 10px}.orvia-flow .ov-brand{font-size:0;justify-content:center;margin-bottom:28px}.orvia-flow .ov-navlink{justify-content:center;padding:0}.orvia-flow .ov-navlink span{display:none}.orvia-flow .ov-footer{display:none}.orvia-flow .ov-content{padding:26px 18px}.orvia-flow .ov-topbar{padding:0 17px}}
+@media(max-width:560px){.orvia-flow{display:block}.orvia-flow .ov-sidebar{height:auto;position:relative;padding:13px;gap:8px}.orvia-flow .ov-brand{font-size:25px;justify-content:flex-start;margin:0 0 5px}.orvia-flow .ov-nav{flex-direction:row}.orvia-flow .ov-navlink{height:44px;min-height:44px;padding:0 12px}.orvia-flow .ov-topbar{height:70px}.orvia-flow .ov-search{display:none}.orvia-flow .ov-account-text{display:none}.orvia-flow .ov-content{padding:22px 13px}.orvia-flow .ov-heading h1{font-size:27px}.orvia-flow .datos{grid-template-columns:1fr;gap:5px}.orvia-flow .datos dd{margin:0 0 13px}}
+</style>
+<style id="ov-logistica-tweaks">
+.orvia-flow .ov-page-body>.tabla-envoltura{overflow-x:auto}
+.orvia-flow .ov-page-body>.tabla-envoltura table{min-width:850px}
+.orvia-flow .ov-page-body>.tarjeta{max-width:960px;padding:26px 28px;margin-bottom:22px}
+.orvia-flow .ov-page-body .datos{display:grid;grid-template-columns:minmax(150px,220px) 1fr;gap:15px 25px}
+.orvia-flow .ov-page-body .datos dt{color:#7b8ea8}
+.orvia-flow .ov-page-body .datos dd{margin:0;font-weight:650}
+.orvia-flow .ov-page-body .formulario{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px 20px;align-items:end;max-width:900px}
+.orvia-flow .ov-page-body .formulario label{display:block;margin:7px 0 0;font-weight:650}
+.orvia-flow .ov-page-body .formulario input,.orvia-flow .ov-page-body .formulario select{width:100%;min-height:45px;border-radius:9px;border:1px solid #e0e8f1;background:#fff;padding:11px 12px;color:#142b49}
+.orvia-flow .ov-page-body .formulario .nota,.orvia-flow .ov-page-body .formulario .acciones{grid-column:1/-1}
+.orvia-flow .ov-page-body .formulario .acciones{margin-top:14px}
+@media(max-width:760px){.orvia-flow .ov-page-body .formulario{grid-template-columns:1fr}.orvia-flow .ov-page-body .datos{grid-template-columns:1fr;gap:5px}.orvia-flow .ov-page-body .datos dd{margin-bottom:13px}}
+</style>
+<div class="orvia-flow">
+ <aside class="ov-sidebar">
+ <a class="ov-brand" href="{{ url_for('panel.principal') }}"><span class="ov-mark" aria-hidden="true"></span>Orvia</a>
+ <nav class="ov-nav" aria-label="Navegacion principal">
+{% if rol_actual %}<a class="ov-navlink"  href="{{ url_for('panel.principal') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 21v-8h6v8"/></svg><span>Panel</span></a>{% endif %}
+{% if rol_actual %}<a class="ov-navlink"  href="{{ url_for('ventas.listar') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20v-8M9 20V4M14 20v-9M19 20V7"/></svg><span>Ventas</span></a>{% endif %}
+{% if rol_actual %}<a class="ov-navlink"  href="{{ url_for('devoluciones.listar') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 9 5-9 5-9-5z"/><path d="M3 7v10l9 5 9-5V7M12 12v10"/></svg><span>Devoluciones</span></a>{% endif %}
+{% if rol_actual in ['Coordinador de Logistica', 'Encargado del Centro de Devoluciones'] %}<a class="ov-navlink ov-active" aria-current="page" href="{{ url_for('logistica.listar') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v12H3zM14 10h4l3 4v4h-7"/><circle cx="7.5" cy="19" r="2"/><circle cx="17.5" cy="19" r="2"/></svg><span>Recolecciones</span></a>{% endif %}
+{% if rol_actual in ['Inspector', 'Analista de Devoluciones', 'Encargado del Centro de Devoluciones'] %}<a class="ov-navlink" href="{{ url_for('inspecciones.listar') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V2h6v2M9 12l2 2 4-4"/></svg><span>Inspecciones</span></a>{% endif %}
+{% if rol_actual in ['Encargado del Centro de Devoluciones', 'Analista de Devoluciones'] %}<a class="ov-navlink"  href="{{ url_for('inspecciones.inventario') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h8v8H3zM13 4h8v8h-8zM8 14h8v8H8z"/></svg><span>Inventario</span></a>{% endif %}
+{% if rol_actual in ['Encargado de Reembolsos', 'Analista de Devoluciones'] %}<a class="ov-navlink"  href="{{ url_for('reembolsos.listar') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M15 14h3"/></svg><span>Reembolsos</span></a>{% endif %}
+{% if rol_actual in ['Analista de Devoluciones', 'Administrador'] %}<a class="ov-navlink"  href="{{ url_for('panel.causas') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5M6 12h3l2-4 2 7 2-3h2"/></svg><span>Causas</span></a>{% endif %}
+{% if rol_actual in ['Analista de Devoluciones', 'Encargado de Reembolsos', 'Administrador'] %}<a class="ov-navlink"  href="{{ url_for('panel.costos') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18l-3-2-4 2-4-2-3 2z"/><path d="M9 9h6M9 13h6"/></svg><span>Costos</span></a>{% endif %}
+{% if rol_actual in ['Administrador', 'Analista de Devoluciones'] %}<a class="ov-navlink"  href="{{ url_for('catalogos.indice') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h9l9 9-8 8-10-10z"/><circle cx="8" cy="9" r="1"/></svg><span>Catalogos</span></a>{% endif %}
+{% if rol_actual in ['Administrador', 'Analista de Devoluciones'] %}<a class="ov-navlink"  href="{{ url_for('usuarios.listar') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v2"/></svg><span>Usuarios</span></a>{% endif %}
+{% if rol_actual in ['Administrador', 'Analista de Devoluciones'] %}<a class="ov-navlink"  href="{{ url_for('panel.bitacora') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2 7M3 4v7h7"/><path d="M12 7v5l4 2"/></svg><span>Bitacora</span></a>{% endif %}
+{% if rol_actual in ['Administrador'] %}<a class="ov-navlink"  href="{{ url_for('integracion.servicios') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="8" rx="2"/><rect x="3" y="13" width="18" height="8" rx="2"/><path d="M7 7h.01M7 17h.01"/></svg><span>Servicios</span></a>{% endif %}
+ </nav><div class="ov-footer">Logistica inversa · Orvia</div>
+ </aside>
+ <div class="ov-workspace">
+ <header class="ov-topbar">
+  <div class="ov-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>Buscar folio, producto o proceso...</div>
+  <div class="ov-account-zone"><div class="ov-bell-wrap"></div>
+   <div class="ov-account">
+    <button type="button" class="ov-account-button" aria-expanded="false" aria-controls="orvia-account-menu"><span class="ov-avatar">{{ usuario_actual.nombre[:1]|upper if usuario_actual else 'O' }}</span><span class="ov-account-text"><strong>{{ usuario_actual.nombre if usuario_actual else 'Usuario' }}</strong><small>{{ rol_actual }}</small></span><svg class="ov-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 9 7 7 7-7" stroke="currentColor" stroke-width="2"/></svg></button>
+    <div class="ov-account-menu" id="orvia-account-menu" hidden><p>{{ usuario_actual.nombre if usuario_actual else 'Usuario' }}<br>{{ rol_actual }}</p><div class="ov-logout-original"></div></div>
+   </div>
   </div>
-</form>
+ </header>
+ <div class="ov-content"><div class="ov-heading"><div><h1>Programar recoleccion</h1><p class="sub">Devolucion {{ d.folio_devolucion }} · {{ d.producto }}</p></div></div>
+<div class="ov-page-body">
+<div class="tarjeta"><dl class="datos">
+<dt>Cliente</dt><dd>{{ d.cliente }}</dd>
+<dt>Producto</dt><dd>{{ d.producto }} ({{ d.clasificacion_temperatura|replace('_', ' ') }})</dd>
+<dt>Tienda de origen</dt><dd>{{ d.tienda }}</dd>
+</dl>
+{% if d.clasificacion_temperatura == 'refrigerado' %}<p class="nota">Producto refrigerado: considera transporte con control de temperatura para no romper la cadena de frio antes de la inspeccion (RN-06).</p>{% endif %}
 </div>
+<div class="tarjeta"><form method="post" class="formulario">
+<label for="fecha_programada">Fecha de recoleccion *</label>
+<input type="date" id="fecha_programada" name="fecha_programada" required>
+<label for="lugar">Lugar de recoleccion *</label>
+<input type="text" id="lugar" name="lugar" required placeholder="Domicilio o tienda">
+<label for="ruta_id">Ruta</label>
+<select id="ruta_id" name="ruta_id"><option value="">Sin asignar</option>{% for r in rutas %}<option value="{{ r.id }}">{{ r.origen }} -> {{ r.destino }}</option>{% endfor %}</select>
+<label for="transportista_id">Transportista</label>
+<select id="transportista_id" name="transportista_id"><option value="">Sin asignar</option>{% for t in transportistas %}<option value="{{ t.id }}">{{ t.nombre }}{% if t.empresa %} ({{ t.empresa }}){% endif %}</option>{% endfor %}</select>
+<p class="nota">Una recoleccion solo puede marcarse como completada cuando tiene fecha, lugar, ruta y transportista (RN-08).</p>
+<div class="acciones"><button class="boton" type="submit">Programar</button><a class="boton secundario" href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">Cancelar</a></div>
+</form></div>
+</div></div></div></div>
+<script>
+(function(){
+ const root=document.querySelector('.orvia-flow');if(!root)return;
+ const old=document.querySelector('body > header.barra');
+ const targetBell=root.querySelector('.ov-bell-wrap');
+ const targetLogout=root.querySelector('.ov-logout-original');
+ if(old){const bell=old.querySelector('.campanita');if(bell&&targetBell)targetBell.appendChild(bell);const logout=old.querySelector('form[action]');if(logout&&targetLogout)targetLogout.appendChild(logout);}
+ // If the original session controls were absent, preserve working explicit links.
+ const accountBtn=root.querySelector('.ov-account-button');const accountMenu=root.querySelector('.ov-account-menu');
+ if(accountBtn&&accountMenu){accountBtn.addEventListener('click',function(){const next=accountMenu.hidden;accountMenu.hidden=!next;accountBtn.setAttribute('aria-expanded',String(next));});document.addEventListener('click',function(e){if(!e.target.closest('.ov-account')){accountMenu.hidden=true;accountBtn.setAttribute('aria-expanded','false');}});document.addEventListener('keydown',function(e){if(e.key==='Escape'){accountMenu.hidden=true;accountBtn.setAttribute('aria-expanded','false');}});}
+ const bell=targetBell&&targetBell.querySelector('.campanita');if(!bell && targetBell){const a=document.createElement('a');a.href={{ url_for('notificaciones.listar')|tojson }};a.className='ov-bell-fallback';a.setAttribute('aria-label','Notificaciones');a.textContent='Notificaciones';targetBell.appendChild(a);}
+})();
+</script>
+
 {% endblock %}

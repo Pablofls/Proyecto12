@@ -1,40 +1,131 @@
 {% extends "base.html" %}
-{% block titulo %}Mis devoluciones{% endblock %}
+{% block titulo %}Mis devoluciones · Orvia{% endblock %}
 {% block contenido %}
-<h1>Mis devoluciones</h1>
-<p class="sub">Consulta el avance de las solicitudes que has registrado.</p>
+<style>
+/* Únicamente el panel Cliente: no modifica las demás pantallas. */
+body:has(#ov-cliente) { margin:0; background:#f6f8fb; font-family: "Segoe UI",Arial,sans-serif; }
+body:has(#ov-cliente) > header.barra, body:has(#ov-cliente) > nav.menu { display:none !important; }
+body:has(#ov-cliente) > main { max-width:none; width:100%; padding:0; margin:0; }
+body:has(#ov-cliente) > main > .avisos { position:relative; z-index:5; margin:0; }
+#ov-cliente, #ov-cliente * { box-sizing:border-box; }
+#ov-cliente { --ink:#14253d;--muted:#778ba4;--line:#e5ebf1;--green:#06865a; display:grid;grid-template-columns:258px minmax(0,1fr);min-height:100vh;background:#f6f8fb;color:var(--ink);font-size:14px; }
+#ov-cliente a { text-decoration:none; }
+#ov-cliente .ov-side { position:sticky;top:0;align-self:start;height:100vh;background:#fff;border-right:1px solid var(--line);padding:30px 21px 22px;display:flex;flex-direction:column;overflow-y:auto; }
+#ov-cliente .ov-brand { display:flex;align-items:center;gap:12px;padding:0 7px;margin-bottom:42px;color:#0b203e;font:700 37px/1 Georgia,serif;letter-spacing:-1.4px; }
+#ov-cliente .ov-symbol { width:42px;height:34px;flex:none; }
+#ov-cliente .ov-links { display:flex;flex-direction:column;gap:4px; }
+#ov-cliente .ov-links a { min-height:49px;display:flex;align-items:center;gap:16px;border-radius:11px;padding:0 15px;color:#4b5d79;font-size:15px;font-weight:500; }
+#ov-cliente .ov-links a:hover {background:#f0f7f3;color:#086c46;}
+#ov-cliente .ov-links a[aria-current="page"] {background:#e1f1eb;color:#086c46;font-weight:700;}
+#ov-cliente .ov-links svg {width:21px;height:21px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+#ov-cliente .ov-sidefoot {margin-top:auto;border-top:1px solid var(--line);padding:18px 12px 0;color:#92a2b7;font-size:12px;}
+#ov-cliente .ov-work {min-width:0;}
+#ov-cliente .ov-top {height:92px;padding:14px 32px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;}
+#ov-cliente .ov-searchlabel {display:flex;align-items:center;gap:12px;max-width:720px;width:55%;padding:14px 18px;border:1px solid #e8edf3;border-radius:12px;background:#f6f8fa;color:#879bb2;font-size:13px;}
+#ov-cliente .ov-searchlabel svg {width:20px;height:20px;fill:none;stroke:#48617f;stroke-width:2;}
+#ov-cliente .ov-actions {display:flex;align-items:center;gap:20px;}
+#ov-cliente .ov-bell {position:relative;}
+#ov-cliente .ov-bell .campanita {position:relative;}
+#ov-cliente .ov-bell .campanita-boton {display:grid;place-items:center;width:42px;height:42px;color:#243a57;border-radius:11px;}
+#ov-cliente .ov-bell .campanita-boton:hover {background:#f1f6f9;}
+#ov-cliente .ov-bell .campanita-panel {position:absolute;right:0;top:48px;z-index:100;width:min(380px,88vw);background:white;border:1px solid var(--line);box-shadow:0 14px 35px #0d274222;border-radius:13px;}
+#ov-cliente .ov-profile {position:relative;}
+#ov-cliente .ov-personbutton {display:flex;align-items:center;gap:12px;border:1px solid transparent;border-radius:12px;background:transparent;padding:6px 9px;cursor:pointer;text-align:left;color:var(--ink);font:inherit;}
+#ov-cliente .ov-personbutton:hover,#ov-cliente .ov-personbutton[aria-expanded="true"] {border-color:#b7dfce;background:#f5f9f7;}
+#ov-cliente .ov-avatar {width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:#ddf1e9;color:#087950;font-weight:700;flex:none;}
+#ov-cliente .ov-persontext strong {display:block;font-size:13px;} #ov-cliente .ov-persontext small {display:block;margin-top:4px;color:#8395ad;font-size:11px;}
+#ov-cliente .ov-chevron {width:15px;height:15px;fill:none;stroke:#465b77;stroke-width:1.8;}
+#ov-cliente .ov-dropdown {position:absolute;right:0;top:60px;width:250px;z-index:110;padding:15px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 16px 36px #12304a20;}
+#ov-cliente .ov-dropdown[hidden] {display:none;}
+#ov-cliente .ov-dropdown-info {font-size:12px;color:#768aa5;line-height:1.65;padding:4px 5px 13px;border-bottom:1px solid var(--line);margin-bottom:10px;overflow-wrap:anywhere;}
+#ov-cliente .ov-dropdown form {margin:0;} #ov-cliente .ov-dropdown button {background:none;border:0;padding:12px 5px;width:100%;text-align:left;color:#be3647;font-size:13px;cursor:pointer;border-radius:7px;} #ov-cliente .ov-dropdown button:hover {background:#fff2f3;}
+#ov-cliente .ov-main {width:100%;max-width:1600px;margin:0 auto;padding:42px 32px 78px;}
+#ov-cliente .ov-heading {display:flex;justify-content:space-between;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:25px;}
+#ov-cliente h1 {font-size:34px;line-height:1.2;letter-spacing:-.7px;margin:0 0 9px;color:var(--ink);font-weight:750;} #ov-cliente .ov-sub {color:var(--muted);margin:0;font-size:14px;}
+#ov-cliente .ov-button {display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:10px;background:var(--green);color:#fff;padding:13px 18px;font-weight:650;font-size:13px;white-space:normal;}
+#ov-cliente .ov-button:hover {background:#05764f;}
+#ov-cliente .ov-summary {display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:15px;margin-bottom:26px;}
+#ov-cliente .ov-stat {background:#fff;border:1px solid var(--line);border-radius:14px;padding:21px 24px;min-height:118px;box-shadow:0 6px 20px #12304a06;}
+#ov-cliente .ov-stat-label {color:#8292aa;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.06em;}
+#ov-cliente .ov-stat-number {font-size:31px;font-weight:750;color:#087e58;margin-top:12px;}
+#ov-cliente .ov-card {background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:0 6px 20px #12304a06;overflow:hidden;}
+#ov-cliente .ov-cardhead {padding:23px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+#ov-cliente h2 {margin:0 0 7px;font-size:19px;letter-spacing:-.25px;} #ov-cliente .ov-cardhead p {margin:0;color:var(--muted);font-size:13px;}
+#ov-cliente .ov-tablewrap {width:100%;overflow-x:auto;}
+#ov-cliente table {width:100%;border-collapse:collapse;font-size:13px;} #ov-cliente th {background:#e8f4ed;color:#688098;font-size:11px;text-transform:uppercase;letter-spacing:.045em;text-align:left;padding:15px 22px;white-space:nowrap;} #ov-cliente td {padding:17px 22px;border-top:1px solid #e8edf2;color:#526783;vertical-align:middle;} #ov-cliente td a {font-weight:700;color:#00885c;text-decoration:underline;text-underline-offset:3px;}
+#ov-cliente .ov-status {display:inline-block;padding:7px 13px;border-radius:30px;background:#edf3fb;color:#3761a5;font-weight:650;text-transform:capitalize;white-space:nowrap;}
+#ov-cliente .ov-empty {padding:45px 22px;text-align:center;color:#8394aa;} #ov-cliente .ov-empty strong {display:block;font-size:15px;color:#314a66;margin-bottom:7px;}
+#ov-cliente :is(a,button):focus-visible {outline:3px solid #16a36a66;outline-offset:3px;}
+@media(max-width:930px){ #ov-cliente {grid-template-columns:210px minmax(0,1fr);}#ov-cliente .ov-side{padding-left:14px;padding-right:14px;}#ov-cliente .ov-brand{font-size:31px;}#ov-cliente .ov-main{padding:29px 21px;}#ov-cliente .ov-top{padding:10px 20px;}}
+@media(max-width:650px){ #ov-cliente {display:block;}#ov-cliente .ov-side{position:relative;height:auto;padding:14px 16px;gap:12px;}#ov-cliente .ov-brand{font-size:27px;margin:0;}#ov-cliente .ov-links{flex-direction:row;overflow-x:auto;}#ov-cliente .ov-links a{min-height:42px;white-space:nowrap;padding:0 12px;font-size:13px;}#ov-cliente .ov-sidefoot{display:none;}#ov-cliente .ov-top{height:72px;}#ov-cliente .ov-searchlabel{display:none;}#ov-cliente .ov-actions{margin-left:auto;gap:7px;}#ov-cliente .ov-persontext{display:none;}#ov-cliente h1{font-size:28px;}#ov-cliente .ov-main{padding:25px 15px 55px;}#ov-cliente .ov-heading{align-items:flex-start;}}
+</style>
 
-<div class="rejilla">
-  {% for fila in resumen %}
-    <div class="indicador">
-      <div class="rotulo">{{ fila.estado|replace('_', ' ')|capitalize }}</div>
-      <div class="cifra">{{ fila.total }}</div>
+<div id="ov-cliente">
+  <aside class="ov-side" aria-label="Navegación Cliente">
+    <a class="ov-brand" href="{{ url_for('panel.principal') }}">
+      <svg class="ov-symbol" viewBox="0 0 48 40" aria-hidden="true"><defs><linearGradient id="ov-client-logo" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#39b988"/><stop offset="1" stop-color="#05875c"/></linearGradient></defs><rect x="22" y="5" width="25" height="16" rx="8" transform="rotate(-35 22 5)" fill="url(#ov-client-logo)"/><rect x="4" y="19" width="25" height="16" rx="8" transform="rotate(-35 4 19)" fill="url(#ov-client-logo)"/></svg>
+      Orvia
+    </a>
+    <nav class="ov-links" aria-label="Menú principal">
+      <a href="{{ url_for('panel.principal') }}" aria-current="page"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7"/></svg>Panel</a>
+      <a href="{{ url_for('ventas.listar') }}"><svg viewBox="0 0 24 24"><path d="M4 20v-8M9 20V5M14 20v-9M19 20V8"/></svg>Ventas</a>
+      <a href="{{ url_for('devoluciones.listar') }}"><svg viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5zM3 7v10l9 5 9-5V7M12 12v10"/></svg>Devoluciones</a>
+    </nav>
+    <div class="ov-sidefoot">Logística inversa · Orvia</div>
+  </aside>
+  <div class="ov-work">
+    <div class="ov-top">
+      <div class="ov-searchlabel" aria-label="Sección actual"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg> Mis devoluciones · Seguimiento</div>
+      <div class="ov-actions">
+        <div class="ov-bell">{% include '_campanita.html' %}</div>
+        <div class="ov-profile" id="ov-cliente-profile">
+          <button type="button" class="ov-personbutton" id="ov-cliente-profile-button" aria-haspopup="true" aria-expanded="false" aria-controls="ov-cliente-profile-menu">
+            <span class="ov-avatar">{{ usuario_actual.nombre[:1]|upper if usuario_actual else 'O' }}</span>
+            <span class="ov-persontext"><strong>{{ usuario_actual.nombre if usuario_actual else 'Cliente' }}</strong><small>{{ rol_actual }}</small></span>
+            <svg class="ov-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="ov-dropdown" id="ov-cliente-profile-menu" hidden>
+            <div class="ov-dropdown-info">{{ usuario_actual.nombre if usuario_actual else 'Cliente' }}<br>{{ rol_actual }}</div>
+            <form method="post" action="{{ url_for('auth.logout') }}"><button type="submit">Cerrar sesión</button></form>
+          </div>
+        </div>
+      </div>
     </div>
-  {% else %}
-    <div class="indicador"><div class="rotulo">Solicitudes</div><div class="cifra">0</div></div>
-  {% endfor %}
+    <main class="ov-main">
+      <div class="ov-heading">
+        <div><h1>Mis devoluciones</h1><p class="ov-sub">Consulta el avance de las solicitudes que has registrado.</p></div>
+        <a class="ov-button" href="{{ url_for('ventas.listar') }}">Registrar una devolución desde mis compras <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="ov-summary">
+        {% for fila in resumen %}
+          <div class="ov-stat"><div class="ov-stat-label">{{ fila.estado|replace('_', ' ')|capitalize }}</div><div class="ov-stat-number">{{ fila.total }}</div></div>
+        {% else %}
+          <div class="ov-stat"><div class="ov-stat-label">Solicitudes</div><div class="ov-stat-number">0</div></div>
+        {% endfor %}
+      </div>
+      <section class="ov-card" aria-labelledby="ov-cliente-recent-title">
+        <div class="ov-cardhead"><div><h2 id="ov-cliente-recent-title">Solicitudes recientes</h2><p>Seguimiento de tus devoluciones registradas.</p></div></div>
+        <div class="ov-tablewrap"><table><thead><tr><th>Folio</th><th>Producto</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>
+        {% for d in recientes %}
+          <tr><td><a href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">{{ d.folio_devolucion }}</a></td><td>{{ d.producto }}</td><td><span class="ov-status">{{ d.estado|replace('_', ' ') }}</span></td><td>{{ d.fecha_solicitud.strftime('%d/%m/%Y') }}</td></tr>
+        {% else %}
+          <tr><td colspan="4" class="ov-empty"><strong>Aún no has registrado devoluciones.</strong>Desde Mis compras podrás seleccionar un artículo y solicitar su devolución.</td></tr>
+        {% endfor %}
+        </tbody></table></div>
+      </section>
+    </main>
+  </div>
 </div>
-
-<div class="acciones">
-  <a class="boton" href="{{ url_for('ventas.listar') }}">Registrar una devolucion desde mis compras</a>
-</div>
-
-<h2>Solicitudes recientes</h2>
-<div class="tabla-envoltura">
-  <table>
-    <thead><tr><th>Folio</th><th>Producto</th><th>Estado</th><th>Fecha</th></tr></thead>
-    <tbody>
-    {% for d in recientes %}
-      <tr>
-        <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=d.id) }}">{{ d.folio_devolucion }}</a></td>
-        <td>{{ d.producto }}</td>
-        <td><span class="etiqueta">{{ d.estado|replace('_', ' ') }}</span></td>
-        <td>{{ d.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
-      </tr>
-    {% else %}
-      <tr><td colspan="4" class="vacio">Aun no has registrado devoluciones.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</div>
+<script>
+(function(){
+  var profile=document.getElementById('ov-cliente-profile');
+  var button=document.getElementById('ov-cliente-profile-button');
+  var menu=document.getElementById('ov-cliente-profile-menu');
+  if(!profile||!button||!menu)return;
+  function close(){menu.hidden=true;button.setAttribute('aria-expanded','false');}
+  button.addEventListener('click',function(){var opening=menu.hidden;menu.hidden=!opening;button.setAttribute('aria-expanded',String(opening));});
+  document.addEventListener('click',function(e){if(!profile.contains(e.target))close();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+})();
+</script>
 {% endblock %}
