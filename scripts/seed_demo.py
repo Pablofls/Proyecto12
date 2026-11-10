@@ -51,6 +51,10 @@ USUARIOS = [
     ("Josue Berdeal",      "josue.analista@demo.mx",    "Analista de Devoluciones"),
     ("Carla Trevino",      "carla.reembolsos@demo.mx",  "Encargado de Reembolsos"),
     ("Pablo Flores",       "pablo.admin@demo.mx",       "Administrador"),
+    # Tercer parcial (migracion 014): perfiles de la aplicacion Android.
+    ("Luis Garza",         "luis.recolector@demo.mx",   "Recolector"),
+    ("Marta Cantu",        "marta.almacen@demo.mx",     "Operador de Almacen"),
+    ("Jorge Salinas",      "jorge.supervisor@demo.mx",  "Supervisor"),
 ]
 
 

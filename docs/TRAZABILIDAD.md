@@ -36,7 +36,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-01 | Inicio y cierre de sesion | `apps/web/app/blueprints/auth.py`; API: `services/auth` (`POST /api/v1/auth/login`, `/logout`) | implementado |
 | RF-02 | Recuperacion de contrasena | — | pendiente |
 | RF-03 | Administrar usuarios | `apps/web/app/blueprints/usuarios.py` | implementado |
-| RF-04 | Roles y permisos | `apps/web/app/security.py`, `db/migrations/008_roles_base.sql` | implementado |
+| RF-04 | Roles y permisos | `apps/web/app/security.py`, `db/migrations/008_roles_base.sql`; roles de la app Android (Recolector, Operador de Almacen, Supervisor) en `db/migrations/014_roles_operacion_campo.sql` y `shared/seguridad.py` | implementado |
 | RF-05 | Administrar catalogos | `apps/web/app/blueprints/catalogos.py` | implementado |
 | RF-06 | Devolucion ligada a venta y producto | `db/migrations/002_venta_detalle.sql`, `apps/web/app/blueprints/devoluciones.py` | implementado |
 | RF-07 | Registrar solicitud con motivo | `devoluciones.nueva`; API: `POST /api/v1/devoluciones` (`services/devoluciones`) | implementado |

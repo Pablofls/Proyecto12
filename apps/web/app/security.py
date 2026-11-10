@@ -19,6 +19,13 @@ COORDINADOR = "Coordinador de Logistica"
 ANALISTA = "Analista de Devoluciones"
 ENCARGADO_REEMBOLSOS = "Encargado de Reembolsos"
 ADMINISTRADOR = "Administrador"
+# Tercer parcial (migracion 014): trabajan desde la aplicacion Android. No
+# entran en TODOS_LOS_ROLES a proposito: ese grupo abre ventas, devoluciones,
+# reportes y el panel completo, y un recolector no debe verlos (RN-13). Cada
+# vista que los necesite debe nombrarlos explicitamente.
+RECOLECTOR = "Recolector"
+OPERADOR_ALMACEN = "Operador de Almacen"
+SUPERVISOR = "Supervisor"
 
 TODOS_LOS_ROLES = (
     CLIENTE, INSPECTOR, ENCARGADO_CENTRO, COORDINADOR,

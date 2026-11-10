@@ -31,6 +31,11 @@ COORDINADOR = "Coordinador de Logistica"
 ANALISTA = "Analista de Devoluciones"
 ENCARGADO_REEMBOLSOS = "Encargado de Reembolsos"
 ADMINISTRADOR = "Administrador"
+# Tercer parcial (migracion 014): perfiles de la aplicacion Android. Ningun
+# endpoint los acepta por omision; cada servicio los autoriza explicitamente.
+RECOLECTOR = "Recolector"
+OPERADOR_ALMACEN = "Operador de Almacen"
+SUPERVISOR = "Supervisor"
 
 
 def secreto():
