@@ -4,7 +4,7 @@ Responsabilidad: identificar al usuario y administrar el ciclo de vida de sus
 tokens. Es el unico servicio que emite JWT; los demas solo los validan con
 shared/seguridad.py.
 
-Trazabilidad: RF-01, RF-04, RNF-07, RNF-08, RNF-09, RNF-12, RNF-13, RNF-16,
+Trazabilidad: RF-01, RF-04, RN-13, RNF-07, RNF-08, RNF-09, RNF-12, RNF-13, RNF-16,
 RNF-23, RF-30, HU-01, UC-01.
 
 Endpoints (todos aceptan y devuelven JSON o XML):
@@ -14,6 +14,9 @@ Endpoints (todos aceptan y devuelven JSON o XML):
   GET    /api/v1/auth/sesion                     Datos de la sesion actual
   DELETE /api/v1/auth/usuarios/<id>/sesiones     Cierra todas las sesiones de
                                                  un usuario (Administrador)
+  POST   /api/v1/auth/autorizar-operacion        Confirma la contrasena y emite
+                                                 un permiso de un solo uso para
+                                                 una operacion critica
   GET    /health                                 Estado y dependencias
   GET    /docs                                   Swagger UI
   GET    /contratos/<nombre>.xsd                 Contratos XML (XSD)
@@ -34,7 +37,9 @@ from shared.infra import (PREFIJO, cerrar_conexion, consultar, ejecutar,
                           salud_postgres, salud_redis)
 from shared.respuestas import ErrorApi, leer_cuerpo, responder
 from shared.seguridad import (ADMINISTRADOR, ALGORITMO, EMISOR,
-                              clave_revocado, clave_sesion,
+                              HEADER_OPERACION, MINUTOS_OPERACION,
+                              OPERACIONES_CRITICAS, TODOS_LOS_ROLES,
+                              clave_operacion, clave_revocado, clave_sesion,
                               clave_sesiones_usuario, comprobar_en_redis,
                               decodificar, requiere_jwt, secreto)
 
@@ -46,6 +51,9 @@ MINUTOS_BLOQUEO = int(os.environ.get("MINUTOS_BLOQUEO", "15"))
 LOGIN_POR_MINUTO = int(os.environ.get("LOGIN_MAX_POR_MINUTO", "10"))
 
 EMAIL_VALIDO = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+# Identificador del registro sobre el que se autoriza una operacion: entero de
+# PostgreSQL u ObjectId de MongoDB.
+RECURSO_VALIDO = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 # Contratos XSD de los cuerpos XML (seccion 6); tambien se publican en
 # GET /contratos/<nombre>.xsd.
 CONTRATOS = os.path.join(os.path.dirname(__file__), "contratos")
@@ -56,18 +64,21 @@ api = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
 # --------------------------------------------------------------------------- #
 # Emision de tokens
 # --------------------------------------------------------------------------- #
-def _token(usuario, sid, tipo, duracion):
+def _token(usuario, sid, tipo, duracion, **extra):
     ahora = datetime.now(timezone.utc)
     claims = {
         "iss": EMISOR,
         "sub": str(usuario["id"]),
         "rol": usuario["rol"],
         "nombre": usuario["nombre"],
+        # Sucursal del usuario; None si opera en todas (control por sucursal).
+        "tienda_id": usuario.get("tienda_id"),
         "sid": sid,
         "jti": uuid.uuid4().hex,
         "typ": tipo,
         "iat": ahora,
         "exp": ahora + duracion,
+        **extra,
     }
     return jwt.encode(claims, secreto(), algorithm=ALGORITMO)
 
@@ -176,7 +187,7 @@ def login():
     usuario = consultar(
         """
         SELECT u.id, u.nombre, u.email, u.password_hash, u.estado,
-               u.bloqueado_hasta, r.nombre AS rol
+               u.bloqueado_hasta, u.tienda_id, r.nombre AS rol
           FROM usuarios u
           JOIN roles r ON r.id = u.rol_id
          WHERE lower(u.email) = %s AND u.eliminado_en IS NULL
@@ -209,7 +220,8 @@ def login():
     _historial(email, usuario["id"], True)
 
     publico = {"id": usuario["id"], "nombre": usuario["nombre"],
-               "email": usuario["email"], "rol": usuario["rol"]}
+               "email": usuario["email"], "rol": usuario["rol"],
+               "tienda_id": usuario.get("tienda_id")}
     tokens = _abrir_sesion(publico)
     g.usuario = publico
     registrar_bitacora("login_api", "usuarios", usuario["id"],
@@ -228,7 +240,7 @@ def refresh():
     claims = decodificar(token, "refresh")
     comprobar_en_redis(claims)
     usuario = {"id": int(claims["sub"]), "rol": claims["rol"],
-               "nombre": claims["nombre"]}
+               "nombre": claims["nombre"], "tienda_id": claims.get("tienda_id")}
     return responder({
         "token_type": "Bearer",
         "access_token": _token(usuario, claims["sid"], "access",
@@ -238,7 +250,7 @@ def refresh():
 
 
 @api.post("/logout")
-@requiere_jwt()
+@requiere_jwt(*TODOS_LOS_ROLES)
 def logout():
     claims = g.claims
     _revocar(claims)
@@ -251,7 +263,7 @@ def logout():
 
 
 @api.get("/sesion")
-@requiere_jwt()
+@requiere_jwt(*TODOS_LOS_ROLES)
 def sesion():
     claims = g.claims
     ttl = get_redis().ttl(clave_sesion(claims["sid"]))
@@ -284,6 +296,82 @@ def cerrar_sesiones_de_usuario(usuario_id):
                        f"El administrador cerro {len(sesiones)} sesion(es)")
     return responder({"usuario_id": usuario_id,
                       "sesiones_cerradas": len(sesiones)})
+
+
+@api.post("/autorizar-operacion")
+@requiere_jwt(*TODOS_LOS_ROLES)
+def autorizar_operacion():
+    """Reconfirmacion de contrasena para operaciones criticas (RN-13, RNF-09).
+
+    Emite un permiso (JWT de tipo "operacion") valido para una sola operacion
+    sobre un solo registro, dentro de la sesion actual, por 5 minutos. El
+    servicio que ejecuta la operacion lo consume con
+    shared.seguridad.exigir_autorizacion_operacion(); al consumirse se borra de
+    Redis, asi que no puede usarse dos veces.
+    """
+    limitar("autorizar_operacion", 10, 60, sujeto=f"usuario{g.usuario['id']}")
+    datos = leer_cuerpo(xsd=os.path.join(CONTRATOS, "autorizar_operacion.xsd"))
+    operacion = str(datos.get("operacion") or "").strip()
+    recurso_id = str(datos.get("recurso_id") or "").strip()
+    password = str(datos.get("password") or "")
+
+    errores = []
+    if operacion not in OPERACIONES_CRITICAS:
+        errores.append({"campo": "operacion",
+                        "problema": "debe ser una de: " + ", ".join(OPERACIONES_CRITICAS)})
+    if not RECURSO_VALIDO.match(recurso_id):
+        errores.append({"campo": "recurso_id",
+                        "problema": "letras, numeros, guion o guion bajo (maximo 64)"})
+    if not password:
+        errores.append({"campo": "password", "problema": "es obligatorio"})
+    if errores:
+        raise ErrorApi(400, "validacion", "Datos de la autorizacion incompletos.",
+                       errores)
+    if g.usuario["rol"] not in OPERACIONES_CRITICAS[operacion]:
+        raise ErrorApi(403, "sin_permiso",
+                       "Tu rol no puede autorizar esta operacion.",
+                       {"rol": g.usuario["rol"], "operacion": operacion,
+                        "roles_permitidos": list(OPERACIONES_CRITICAS[operacion])})
+
+    usuario = consultar(
+        """
+        SELECT u.id, u.email, u.password_hash, u.estado, u.bloqueado_hasta
+          FROM usuarios u
+         WHERE u.id = %s AND u.eliminado_en IS NULL
+        """,
+        (g.usuario["id"],), uno=True,
+    )
+    if usuario is None or usuario["estado"] != "activo":
+        raise ErrorApi(401, "sesion_inactiva",
+                       "La cuenta ya no esta activa. Inicia sesion de nuevo.")
+    email = usuario["email"].lower()
+    if _bloqueado(usuario, email):
+        raise ErrorApi(423, "cuenta_bloqueada",
+                       "La cuenta esta bloqueada temporalmente. Intenta de "
+                       f"nuevo en {MINUTOS_BLOQUEO} minutos.")
+    if not check_password_hash(usuario["password_hash"], password):
+        # Cuenta para el bloqueo igual que un login fallido (RNF-12).
+        _historial(email, usuario["id"], False)
+        _intento_fallido(email, usuario)
+        registrar_bitacora("autorizacion_rechazada", "usuarios", usuario["id"],
+                           f"Contrasena incorrecta al autorizar {operacion} "
+                           f"sobre {recurso_id}")
+        raise ErrorApi(401, "credenciales_invalidas", "Contrasena incorrecta.")
+
+    permiso = _token(g.usuario, g.claims["sid"], "operacion",
+                     timedelta(minutes=MINUTOS_OPERACION),
+                     op=operacion, recurso=recurso_id)
+    jti = decodificar(permiso, "operacion")["jti"]
+    get_redis().setex(clave_operacion(jti), MINUTOS_OPERACION * 60, operacion)
+    registrar_bitacora("autorizacion_operacion", "usuarios", usuario["id"],
+                       f"Autorizo {operacion} sobre {recurso_id}")
+    return responder({
+        "token_operacion": permiso,
+        "expires_in": MINUTOS_OPERACION * 60,
+        "operacion": operacion,
+        "recurso_id": recurso_id,
+        "header": HEADER_OPERACION,
+    }, 201)
 
 
 # --------------------------------------------------------------------------- #

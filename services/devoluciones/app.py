@@ -30,13 +30,20 @@ from shared.infra import (cerrar_conexion, consultar, ejecutar, limitar,
                           registrar_bitacora, salud_postgres, salud_redis)
 from shared.paginacion import leer_paginacion, paginar
 from shared.respuestas import ErrorApi, leer_cuerpo, responder
-from shared.seguridad import ANALISTA, CLIENTE, COORDINADOR, requiere_jwt
+from shared.seguridad import (ANALISTA, CLIENTE, COORDINADOR, OPERADOR_ALMACEN,
+                              ROLES_BASE, SUPERVISOR, condicion_tienda,
+                              exigir_tienda, requiere_jwt)
 
 import reglas
 
 NOMBRE = "devoluciones"
 CONTRATOS = os.path.join(os.path.dirname(__file__), "contratos")
 CREAR_POR_MINUTO = int(os.environ.get("DEVOLUCIONES_MAX_POR_MINUTO", "20"))
+
+# Consulta de devoluciones: roles originales mas los de campo que la necesitan
+# (el operador compara lo recibido contra lo autorizado; el supervisor revisa
+# incidencias). El recolector no: ve sus tareas en logistica (RN-13).
+CONSULTA = ROLES_BASE + (SUPERVISOR, OPERADOR_ALMACEN)
 
 log = logging.getLogger("servicio")
 api = Blueprint("devoluciones", __name__, url_prefix="/api/v1/devoluciones")
@@ -52,7 +59,7 @@ _EXPEDIENTE = """
            d.venta_detalle_id, vd.cantidad AS cantidad_comprada,
            vd.precio_unitario,
            (vd.precio_unitario * d.cantidad_devuelta) AS valor_devuelto,
-           v.folio_venta, v.cliente_id, cli.nombre AS cliente,
+           v.folio_venta, v.cliente_id, v.tienda_id, cli.nombre AS cliente,
            p.nombre AS producto, p.sku, p.clasificacion_temperatura,
            l.numero_lote, d.analista_id, ana.nombre AS analista
       FROM devoluciones d
@@ -80,12 +87,19 @@ def _expediente(devolucion_id, bloquear=False):
 
 def _exigir_visible(exp):
     """Autorizacion por recurso (5.3): el cliente solo ve sus devoluciones,
-    aunque conozca el id de otra. El personal interno ve todas."""
+    aunque conozca el id de otra; el personal con sucursal, solo las de su
+    tienda (la de la venta). El resto del personal interno ve todas."""
     if g.usuario["rol"] == CLIENTE and exp["cliente_id"] != g.usuario["id"]:
         registrar_bitacora("acceso_denegado", "devoluciones", exp["id"],
                            "Intento de acceder a una devolucion de otro cliente (API)")
         raise ErrorApi(403, "sin_permiso",
                        "La devolucion no pertenece a tu cuenta.")
+    try:
+        exigir_tienda(exp["tienda_id"])
+    except ErrorApi:
+        registrar_bitacora("acceso_denegado", "devoluciones", exp["id"],
+                           "Intento de acceder a una devolucion de otra sucursal (API)")
+        raise
 
 
 def _linea_de_venta(venta_detalle_id, excluir_devolucion=None):
@@ -96,7 +110,7 @@ def _linea_de_venta(venta_detalle_id, excluir_devolucion=None):
     """
     linea = consultar(
         """
-        SELECT vd.id, vd.cantidad, v.cliente_id, v.folio_venta
+        SELECT vd.id, vd.cantidad, v.cliente_id, v.tienda_id, v.folio_venta
           FROM venta_detalle vd
           JOIN ventas v ON v.id = vd.venta_id
          WHERE vd.id = %s AND v.eliminado_en IS NULL
@@ -218,6 +232,7 @@ def registrar():
         registrar_bitacora("acceso_denegado", "ventas", linea["id"],
                            "Intento de devolver una compra de otro cliente (API)")
         raise ErrorApi(403, "sin_permiso", "La compra no pertenece a tu cuenta.")
+    exigir_tienda(linea["tienda_id"])
     _exigir_motivo(valores["motivo_id"])
     _exigir_cantidad(linea, valores["cantidad_devuelta"])
 
@@ -243,7 +258,7 @@ def registrar():
 
 
 @api.get("")
-@requiere_jwt()
+@requiere_jwt(*CONSULTA)
 def listar():
     """RF-11: busqueda por estado, folio o producto, con paginacion."""
     estado, errores = reglas.validar_estado(request.args.get("estado"))
@@ -256,6 +271,10 @@ def listar():
     if g.usuario["rol"] == CLIENTE:
         condiciones.append("v.cliente_id = %s")
         parametros.append(g.usuario["id"])
+    condicion, valores = condicion_tienda("v.tienda_id")
+    if condicion:
+        condiciones.append(condicion)
+        parametros += valores
     if estado:
         condiciones.append("d.estado = %s")
         parametros.append(estado)
@@ -287,7 +306,7 @@ def listar():
 
 
 @api.get("/<int:devolucion_id>")
-@requiere_jwt()
+@requiere_jwt(*CONSULTA)
 def detalle(devolucion_id):
     """RF-11: expediente, historial (bitacora, RF-30) y eventos (MongoDB)."""
     exp = _expediente(devolucion_id)
@@ -350,6 +369,7 @@ def resolver(devolucion_id):
     if errores:
         raise ErrorApi(400, "validacion", "Resolucion incompleta.", errores)
     exp = _expediente(devolucion_id, bloquear=True)
+    _exigir_visible(exp)  # un analista con sucursal solo resuelve las suyas
     if exp["estado"] not in reglas.ESTADOS_REVISABLES:
         raise ErrorApi(409, "estado_no_permite",
                        "La devolucion ya no esta en revision.",
