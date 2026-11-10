@@ -120,6 +120,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RN-13 | Cada usuario solo ejecuta lo de su rol | `roles_required` en todas las vistas; en los servicios, `requiere_jwt()` sin roles solo acepta los 7 roles base, la sucursal limita los registros y las operaciones criticas exigen reconfirmar la contrasena |
 | RN-14 | Evidencias privadas por enlaces temporales | Parcial: enlaces temporales HMAC de 15 min en `services/evidencias`; falta almacenar en GCS |
 | RN-15 | No exponer informacion sensible sin autorizacion | Bitacora y errores sin datos sensibles |
+| RN-16 | Plazo de devolucion: 30 dias no refrigerado, 7 refrigerado, desde la venta; una sola solicitud abierta por linea y motivo | Tabla `politicas_devolucion` (migracion 016); `services/devoluciones/app.py` (`_exigir_plazo`, `_exigir_no_duplicada`, `GET /api/v1/devoluciones/elegibilidad`) y la misma regla en `apps/web/app/blueprints/devoluciones.py` (modo monolitico) |
 
 ## Casos de uso cubiertos
 

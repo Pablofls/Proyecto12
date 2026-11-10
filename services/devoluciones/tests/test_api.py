@@ -107,6 +107,19 @@ class PruebaApi(unittest.TestCase):
             self.assertIn(seguridad.SUPERVISOR, permitidos)
             self.assertNotIn(seguridad.RECOLECTOR, permitidos)
 
+    def test_elegibilidad_exige_venta_detalle_id(self):
+        for consulta in ("", "?venta_detalle_id=abc", "?venta_detalle_id=0"):
+            resp = self.cliente.get("/api/v1/devoluciones/elegibilidad" + consulta,
+                                    headers=self.headers(seguridad.CLIENTE))
+            self.assertEqual(resp.status_code, 400)
+            self.assertEqual(resp.get_json()["error"]["detalles"][0]["campo"],
+                             "venta_detalle_id")
+
+    def test_elegibilidad_no_es_para_el_recolector(self):
+        resp = self.cliente.get("/api/v1/devoluciones/elegibilidad?venta_detalle_id=1",
+                                headers=self.headers(seguridad.RECOLECTOR))
+        self.assertEqual(resp.status_code, 403)
+
     def test_inspector_no_puede_registrar(self):
         resp = self.cliente.post("/api/v1/devoluciones",
                                  headers=self.headers(seguridad.INSPECTOR), json={})

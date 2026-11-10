@@ -602,3 +602,36 @@ el beneficio es que nunca hay dos usos del mismo permiso.
 
 **Contrasena incorrecta.** Cuenta como intento fallido para el bloqueo de la
 cuenta (RNF-12), igual que en el login.
+
+---
+
+## 2026-11-10 — Plazo de devolucion y solicitudes duplicadas (RN-16)
+
+**Decision.** Se agrega la regla de negocio RN-16, que el documento no tenia:
+una devolucion se puede solicitar hasta 30 dias naturales despues de la venta si
+el producto no es refrigerado, y hasta 7 si es refrigerado; el ultimo dia todavia
+se acepta. Ademas, no puede haber dos solicitudes abiertas (no rechazadas ni
+cerradas) con la misma linea de venta y el mismo motivo: la segunda responde
+`409 solicitud_duplicada` y para cambiar la primera se usa PUT.
+
+**Por que en una tabla y no en el `.env`.** La retroalimentacion pide que las
+decisiones respondan a politicas formalmente definidas y que el modo monolitico y
+el distribuido no apliquen reglas distintas. `politicas_devolucion` (migracion
+016) es la unica fuente del plazo: la leen el servicio de devoluciones y la web.
+
+**Por que no un trigger.** El seed y las pruebas siembran devoluciones historicas
+sobre ventas de agosto; un trigger con `CURRENT_DATE` las rechazaria. La regla se
+aplica donde nace una solicitud nueva: la API y el formulario de la web.
+
+**Datos de demostracion.** Las ventas de agosto quedan fuera de plazo y sirven
+para demostrar el 409. `seed_demo.py` agrega cada dia que se corre seis ventas
+recientes (de hoy a hace 6 dias). Hay que correrlo el dia de la demostracion.
+
+**Pruebas del equipo afectadas.** La suite E2E y las pruebas de integracion de
+devoluciones eligen ahora una linea dentro del plazo, y cada registro usa un
+motivo sin otra solicitud abierta en esa linea (`flujo.motivo_libre`).
+
+**Elegibilidad.** `GET /api/v1/devoluciones/elegibilidad` responde, sin escribir,
+si una linea se puede devolver, hasta cuando, cuantas unidades y que solicitudes
+siguen abiertas; la app Android lo usa para mostrar las condiciones antes de la
+solicitud.

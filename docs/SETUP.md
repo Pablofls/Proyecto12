@@ -261,6 +261,12 @@ Los tres perfiles de la app Android (migracion 014) inician sesion en el servici
 auth, pero la web les responde "No tienes permiso": no forman parte de
 `TODOS_LOS_ROLES` a proposito (ver docs/BITACORA.md, 2026-11-09).
 
+**Antes de la demostracion, corre `seed_demo.py` ese mismo dia.** Por el plazo de
+devolucion (RN-16: 7 dias refrigerados, 30 los demas), las ventas historicas de
+agosto ya no se pueden devolver. El script agrega cada dia seis ventas recientes
+(`VTA-AAAAMMDD-R1` a `R6`) dentro del plazo; las pruebas E2E e integracion tambien
+las necesitan.
+
 Tras 5 intentos fallidos la cuenta se bloquea 15 minutos (RNF-12). Para
 desbloquearla sin esperar, entra como administrador y usa el boton
 "Desbloquear" en la pantalla de usuarios, o corre el script con `--rotar`.

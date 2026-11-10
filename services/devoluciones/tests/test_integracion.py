@@ -70,12 +70,18 @@ class PruebaIntegracion(unittest.TestCase):
               FROM venta_detalle vd
               JOIN ventas v   ON v.id = vd.venta_id
               JOIN usuarios u ON u.id = v.cliente_id
+              JOIN lotes l    ON l.id = vd.lote_id
+              JOIN productos p ON p.id = l.producto_id
+              JOIN politicas_devolucion pol
+                              ON pol.clasificacion_temperatura = p.clasificacion_temperatura
              WHERE v.eliminado_en IS NULL AND RIGHT(u.email, 8) = '@demo.mx'
+               AND v.fecha_venta + pol.dias_plazo >= CURRENT_DATE
              ORDER BY disponible DESC, vd.id
              LIMIT 1
             """, uno=True)
-        if not cls.linea or cls.linea["disponible"] < 2:
-            raise unittest.SkipTest("No hay lineas de venta con al menos 2 unidades disponibles")
+        if not cls.linea or cls.linea["disponible"] < 3:
+            raise unittest.SkipTest("No hay lineas de venta dentro del plazo (RN-16) con al "
+                                    "menos 3 unidades disponibles: corre seed_demo.py hoy")
         cls.otro_cliente = _sql(
             """
             SELECT u.email FROM usuarios u JOIN roles r ON r.id = u.rol_id
@@ -84,8 +90,11 @@ class PruebaIntegracion(unittest.TestCase):
              ORDER BY u.id
              LIMIT 1
             """, (cls.linea["email"],), uno=True)["email"]
-        cls.motivo = _sql("SELECT id FROM motivos WHERE activo ORDER BY id LIMIT 1",
-                          uno=True)["id"]
+        # Motivos distintos: dos solicitudes abiertas con el mismo motivo sobre la
+        # misma linea son duplicadas (409 solicitud_duplicada).
+        cls.motivos = [f["id"] for f in _sql(
+            "SELECT id FROM motivos WHERE activo ORDER BY id LIMIT 4")]
+        cls.motivo = cls.motivos[0]
 
         password = os.environ["PASSWORD_DEMO"]
         cls.tokens = {email: _auth("/api/v1/auth/login",
@@ -111,10 +120,10 @@ class PruebaIntegracion(unittest.TestCase):
     def h(self, email):
         return {"Authorization": f"Bearer {self.tokens[email]}"}
 
-    def registrar(self, cantidad=1):
+    def registrar(self, cantidad=1, motivo=None):
         resp = self.cliente.post("/api/v1/devoluciones", headers=self.h(self.linea["email"]),
                                  json={"venta_detalle_id": self.linea["id"],
-                                       "motivo_id": self.motivo,
+                                       "motivo_id": motivo or self.motivo,
                                        "descripcion_problema": DESCRIPCION,
                                        "cantidad_devuelta": cantidad})
         if resp.status_code == 201:
@@ -145,7 +154,7 @@ class PruebaIntegracion(unittest.TestCase):
                              "AND entidad_id = %s", (dev["id"],), uno=True))
 
         # 3. Regla de negocio: no se puede devolver mas de lo comprado.
-        resp = self.registrar(cantidad=self.linea["disponible"] + 5)
+        resp = self.registrar(cantidad=self.linea["disponible"] + 5, motivo=self.motivos[1])
         self.assertEqual(resp.status_code, 409)
         self.assertEqual(resp.get_json()["error"]["tipo"], "cantidad_excedida")
 
@@ -195,7 +204,7 @@ class PruebaIntegracion(unittest.TestCase):
 
     def test_2_cancelacion_logica(self):
         dueno = self.linea["email"]
-        dev = self.registrar().get_json()
+        dev = self.registrar(motivo=self.motivos[2]).get_json()
         resp = self.cliente.delete(f"/api/v1/devoluciones/{dev['id']}", headers=self.h(dueno))
         self.assertEqual(resp.status_code, 200)
         # La fila se conserva para auditoria (RNF-30) pero la API ya no la muestra.
@@ -272,6 +281,64 @@ class PruebaIntegracion(unittest.TestCase):
                                      (ajena["id"], "%otra sucursal%"), uno=True))
         finally:
             _auth("/api/v1/auth/logout", token=token)
+
+
+    def test_6_plazo_duplicados_y_elegibilidad(self):
+        """RN-16: plazo de 7 dias (refrigerado) o 30 (no refrigerado) desde la
+        venta, y una sola solicitud abierta por linea y motivo."""
+        analista = self.h(ANALISTA)
+
+        # Duplicada: el mismo cliente, misma linea, mismo motivo, con la primera abierta.
+        primera = self.registrar(motivo=self.motivos[3])
+        self.assertEqual(primera.status_code, 201, primera.get_json())
+        resp = self.registrar(motivo=self.motivos[3])
+        self.assertEqual(resp.status_code, 409)
+        error = resp.get_json()["error"]
+        self.assertEqual(error["tipo"], "solicitud_duplicada")
+        self.assertEqual(error["detalles"]["devolucion_id"], primera.get_json()["id"])
+
+        # Elegibilidad de una linea dentro del plazo, vista por su dueno.
+        resp = self.cliente.get(
+            f"/api/v1/devoluciones/elegibilidad?venta_detalle_id={self.linea['id']}",
+            headers=self.h(self.linea["email"]))
+        self.assertEqual(resp.status_code, 200)
+        cuerpo = resp.get_json()
+        self.assertTrue(cuerpo["dentro_del_plazo"])
+        self.assertIn(cuerpo["dias_plazo"], (7, 30))
+        self.assertIn(primera.get_json()["id"],
+                      [a["id"] for a in cuerpo["solicitudes_abiertas"]])
+
+        # Fuera de plazo: una venta historica (agosto) con unidades disponibles.
+        vieja = _sql("""
+            SELECT vd.id FROM venta_detalle vd
+              JOIN ventas v ON v.id = vd.venta_id
+              JOIN lotes l ON l.id = vd.lote_id
+              JOIN productos p ON p.id = l.producto_id
+              JOIN politicas_devolucion pol
+                   ON pol.clasificacion_temperatura = p.clasificacion_temperatura
+             WHERE v.eliminado_en IS NULL AND v.fecha_venta + pol.dias_plazo < CURRENT_DATE
+               AND vd.cantidad > COALESCE((SELECT SUM(d.cantidad_devuelta) FROM devoluciones d
+                                            WHERE d.venta_detalle_id = vd.id
+                                              AND d.eliminado_en IS NULL
+                                              AND d.estado <> 'rechazada'), 0)
+             ORDER BY vd.id LIMIT 1""", uno=True)
+        if not vieja:
+            self.skipTest("No hay ventas fuera de plazo con unidades disponibles")
+        resp = self.cliente.post("/api/v1/devoluciones", headers=analista, json={
+            "venta_detalle_id": vieja["id"], "motivo_id": self.motivo,
+            "descripcion_problema": DESCRIPCION, "cantidad_devuelta": 1})
+        if resp.status_code == 201:
+            self.creadas.append(resp.get_json()["id"])
+        self.assertEqual(resp.status_code, 409)
+        error = resp.get_json()["error"]
+        self.assertEqual(error["tipo"], "fuera_de_plazo")
+        self.assertLess(error["detalles"]["dias_restantes"], 0)
+
+        resp = self.cliente.get(
+            f"/api/v1/devoluciones/elegibilidad?venta_detalle_id={vieja['id']}", headers=analista)
+        cuerpo = resp.get_json()
+        self.assertFalse(cuerpo["elegible"])
+        self.assertEqual(cuerpo["impedimentos"][0]["regla"], "RN-16")
 
 
 if __name__ == "__main__":

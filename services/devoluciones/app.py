@@ -9,10 +9,12 @@ Mismas reglas que el monolito (apps/web/app/blueprints/devoluciones.py), ahora c
 REST con JWT, JSON/XML, eventos en MongoDB y notificaciones al cliente.
 
 Trazabilidad: RF-06, RF-07, RF-08, RF-10, RF-11, RF-29, RF-30, RN-01, RN-02,
-RN-12, RNF-09, RNF-30, HU-06 a HU-11, UC-06 a UC-09.
+RN-12, RN-16, RNF-09, RNF-30, HU-06 a HU-11, UC-06 a UC-09.
 
 Endpoints (JSON o XML):
   POST   /api/v1/devoluciones                    Registrar (Cliente, Analista)
+  GET    /api/v1/devoluciones/elegibilidad       Plazo, disponible y duplicados de
+                                                 una linea de venta (RN-16)
   GET    /api/v1/devoluciones                    Listar con filtros y paginacion
   GET    /api/v1/devoluciones/<id>               Expediente, historial y eventos
   PUT    /api/v1/devoluciones/<id>               Corregir la solicitud (Cliente)
@@ -22,6 +24,7 @@ Endpoints (JSON o XML):
 """
 import logging
 import os
+from datetime import date
 
 from flask import Blueprint, Flask, g, request
 
@@ -102,20 +105,25 @@ def _exigir_visible(exp):
         raise
 
 
-def _linea_de_venta(venta_detalle_id, excluir_devolucion=None):
-    """Linea de venta bloqueada y cantidad que aun se puede devolver (RN-01).
+def _linea_de_venta(venta_detalle_id, excluir_devolucion=None, bloquear=True):
+    """Linea de venta, su plazo (RN-16) y cantidad que aun se puede devolver (RN-01).
 
     El bloqueo evita que dos solicitudes simultaneas sobre la misma linea
-    superen juntas la cantidad comprada.
+    superen juntas la cantidad comprada o se registren duplicadas. El plazo sale
+    de politicas_devolucion (migracion 016), la misma tabla que lee la web.
     """
     linea = consultar(
         """
-        SELECT vd.id, vd.cantidad, v.cliente_id, v.tienda_id, v.folio_venta
+        SELECT vd.id, vd.cantidad, v.cliente_id, v.tienda_id, v.folio_venta,
+               v.fecha_venta, p.clasificacion_temperatura, pol.dias_plazo
           FROM venta_detalle vd
-          JOIN ventas v ON v.id = vd.venta_id
+          JOIN ventas v    ON v.id = vd.venta_id
+          JOIN lotes l     ON l.id = vd.lote_id
+          JOIN productos p ON p.id = l.producto_id
+          JOIN politicas_devolucion pol
+                           ON pol.clasificacion_temperatura = p.clasificacion_temperatura
          WHERE vd.id = %s AND v.eliminado_en IS NULL
-           FOR UPDATE OF vd
-        """,
+        """ + (" FOR UPDATE OF vd" if bloquear else ""),
         (venta_detalle_id,), uno=True,
     )
     if linea is None:
@@ -132,6 +140,54 @@ def _linea_de_venta(venta_detalle_id, excluir_devolucion=None):
     )["n"]
     linea["disponible"] = linea["cantidad"] - devuelto
     return linea
+
+
+def _plazo(linea):
+    dentro, limite, restantes = reglas.evaluar_plazo(
+        linea["fecha_venta"], linea["dias_plazo"], date.today())
+    return {"dentro_del_plazo": dentro, "fecha_venta": linea["fecha_venta"],
+            "clasificacion_temperatura": linea["clasificacion_temperatura"],
+            "dias_plazo": linea["dias_plazo"], "fecha_limite": limite,
+            "dias_restantes": restantes}
+
+
+def _exigir_plazo(linea):
+    """RN-16: 30 dias para no refrigerados, 7 para refrigerados."""
+    plazo = _plazo(linea)
+    if not plazo["dentro_del_plazo"]:
+        raise ErrorApi(409, "fuera_de_plazo",
+                       f"El plazo para devolver este producto vencio el "
+                       f"{plazo['fecha_limite'].isoformat()} "
+                       f"({plazo['dias_plazo']} dias desde la compra).", plazo)
+
+
+def _devolucion_abierta(venta_detalle_id, motivo_id, excluir=None):
+    """Solicitud no rechazada ni cerrada sobre la misma linea y el mismo motivo."""
+    return consultar(
+        """
+        SELECT id, folio_devolucion, estado
+          FROM devoluciones
+         WHERE venta_detalle_id = %s AND motivo_id = %s
+           AND eliminado_en IS NULL AND estado <> ALL(%s) AND id <> %s
+         ORDER BY id
+         LIMIT 1
+        """,
+        (venta_detalle_id, motivo_id, list(reglas.ESTADOS_CERRADOS), excluir or 0),
+        uno=True,
+    )
+
+
+def _exigir_no_duplicada(venta_detalle_id, motivo_id, excluir=None):
+    """Evita dos solicitudes iguales abiertas al mismo tiempo (doble envio desde
+    la app, reintento). Para cambiar la solicitud existente se usa PUT."""
+    abierta = _devolucion_abierta(venta_detalle_id, motivo_id, excluir)
+    if abierta:
+        raise ErrorApi(409, "solicitud_duplicada",
+                       f"Ya existe la solicitud {abierta['folio_devolucion']} "
+                       "abierta para este producto con el mismo motivo.",
+                       {"devolucion_id": abierta["id"],
+                        "folio_devolucion": abierta["folio_devolucion"],
+                        "estado": abierta["estado"]})
 
 
 def _exigir_cantidad(linea, cantidad):
@@ -234,6 +290,8 @@ def registrar():
         raise ErrorApi(403, "sin_permiso", "La compra no pertenece a tu cuenta.")
     exigir_tienda(linea["tienda_id"])
     _exigir_motivo(valores["motivo_id"])
+    _exigir_plazo(linea)
+    _exigir_no_duplicada(linea["id"], valores["motivo_id"])
     _exigir_cantidad(linea, valores["cantidad_devuelta"])
 
     nueva = ejecutar(
@@ -255,6 +313,56 @@ def registrar():
             cantidad=valores["cantidad_devuelta"])
     return responder({**nueva, **valores}, 201, headers={
         "Location": f"/api/v1/devoluciones/{nueva['id']}"})
+
+
+@api.get("/elegibilidad")
+@requiere_jwt(CLIENTE, ANALISTA, SUPERVISOR)
+def elegibilidad():
+    """RN-16, RN-01: antes de llenar la solicitud, la app muestra si el
+    producto se puede devolver, hasta cuando y cuantas unidades. No bloquea
+    ni escribe; las mismas reglas se vuelven a aplicar al registrar."""
+    try:
+        venta_detalle_id = int(request.args.get("venta_detalle_id", ""))
+    except ValueError:
+        venta_detalle_id = 0
+    if venta_detalle_id < 1:
+        raise ErrorApi(400, "validacion", "Falta venta_detalle_id.",
+                       [{"campo": "venta_detalle_id",
+                         "problema": "debe ser un entero mayor que 0"}])
+    linea = _linea_de_venta(venta_detalle_id, bloquear=False)
+    if g.usuario["rol"] == CLIENTE and linea["cliente_id"] != g.usuario["id"]:
+        raise ErrorApi(403, "sin_permiso", "La compra no pertenece a tu cuenta.")
+    exigir_tienda(linea["tienda_id"])
+
+    plazo = _plazo(linea)
+    abiertas = consultar(
+        """
+        SELECT d.id, d.folio_devolucion, d.estado, d.motivo_id, m.nombre AS motivo
+          FROM devoluciones d JOIN motivos m ON m.id = d.motivo_id
+         WHERE d.venta_detalle_id = %s AND d.eliminado_en IS NULL
+           AND d.estado <> ALL(%s)
+         ORDER BY d.id
+        """,
+        (venta_detalle_id, list(reglas.ESTADOS_CERRADOS)),
+    )
+    impedimentos = []
+    if not plazo["dentro_del_plazo"]:
+        impedimentos.append({"regla": "RN-16", "tipo": "fuera_de_plazo",
+                             "detalle": f"Vencio el {plazo['fecha_limite'].isoformat()}"})
+    if linea["disponible"] <= 0:
+        impedimentos.append({"regla": "RN-01", "tipo": "sin_disponible",
+                             "detalle": "Todas las unidades ya tienen devolucion"})
+    return responder({
+        "venta_detalle_id": venta_detalle_id,
+        "folio_venta": linea["folio_venta"],
+        "elegible": not impedimentos,
+        **plazo,
+        "cantidad_comprada": linea["cantidad"],
+        "disponible": max(linea["disponible"], 0),
+        # Un motivo con solicitud abierta no se puede repetir (409 solicitud_duplicada).
+        "solicitudes_abiertas": abiertas,
+        "impedimentos": impedimentos,
+    })
 
 
 @api.get("")
@@ -343,6 +451,7 @@ def corregir(devolucion_id):
                        {"estado_actual": exp["estado"]})
     _exigir_motivo(valores["motivo_id"])
     linea = _linea_de_venta(exp["venta_detalle_id"], excluir_devolucion=devolucion_id)
+    _exigir_no_duplicada(exp["venta_detalle_id"], valores["motivo_id"], excluir=devolucion_id)
     _exigir_cantidad(linea, valores["cantidad_devuelta"])
 
     ejecutar(

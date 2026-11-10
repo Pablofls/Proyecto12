@@ -17,6 +17,12 @@ imprime una sola vez. Asi el repositorio puede ser publico sin regalar el acceso
 
 Es idempotente: si los usuarios de demostracion ya existen, no los duplica. Las
 contrasenas se guardan con el mismo hash que usa la aplicacion (RNF-07).
+
+Plazo de devolucion (RN-16, migracion 016): las ventas historicas son de agosto
+de 2026 y ya estan fuera de plazo (sirven para demostrar el 409). Cada vez que
+se corre, el script agrega un juego de ventas RECIENTES fechadas en los ultimos
+6 dias, dentro del plazo de 7 dias de los refrigerados. Correlo el dia de la
+demostracion para tener compras que se puedan devolver.
 """
 import os
 import random
@@ -138,6 +144,58 @@ def crear_ventas(cur, clientes):
             )
             detalles.append(cur.fetchone()["id"])
     return detalles
+
+
+def crear_ventas_recientes(cur, clientes):
+    """Ventas dentro del plazo de devolucion (RN-16), relativas a hoy.
+
+    Seis ventas fechadas de hoy a hace 6 dias, cada una con dos productos
+    refrigerados y uno no refrigerado, 3 unidades por linea. El folio lleva la
+    fecha de hoy: correr el script otro dia agrega un juego nuevo y no toca los
+    anteriores. No usa random, para no alterar los datos reproducibles del resto
+    del seed.
+    """
+    hoy = date.today()
+    cur.execute("SELECT id FROM tiendas ORDER BY id")
+    tiendas = [f["id"] for f in cur.fetchall()]
+    cur.execute("""
+        SELECT l.id, p.clasificacion_temperatura
+          FROM lotes l JOIN productos p ON p.id = l.producto_id
+         ORDER BY l.id""")
+    lotes = cur.fetchall()
+    refrigerados = [l["id"] for l in lotes if l["clasificacion_temperatura"] == "refrigerado"]
+    normales = [l["id"] for l in lotes if l["clasificacion_temperatura"] != "refrigerado"]
+    if not (tiendas and refrigerados and normales):
+        return 0
+
+    creadas = 0
+    for n, dias_atras in enumerate((0, 1, 2, 3, 5, 6), start=1):
+        folio = f"VTA-{hoy:%Y%m%d}-R{n}"
+        cur.execute("SELECT 1 FROM ventas WHERE folio_venta = %s", (folio,))
+        if cur.fetchone():
+            continue
+        cur.execute(
+            """
+            INSERT INTO ventas (folio_venta, cliente_id, tienda_id, fecha_venta)
+            VALUES (%s, %s, %s, %s) RETURNING id
+            """,
+            (folio, clientes[n % len(clientes)], tiendas[n % len(tiendas)],
+             hoy - timedelta(days=dias_atras)),
+        )
+        venta_id = cur.fetchone()["id"]
+        lineas = (refrigerados[n % len(refrigerados)],
+                  refrigerados[(n + 1) % len(refrigerados)],
+                  normales[n % len(normales)])
+        for lote_id in dict.fromkeys(lineas):  # sin repetir lote en la venta
+            cur.execute(
+                """
+                INSERT INTO venta_detalle (venta_id, lote_id, cantidad, precio_unitario)
+                VALUES (%s, %s, 3, %s)
+                """,
+                (venta_id, lote_id, 45 + 10 * n),
+            )
+        creadas += 1
+    return creadas
 
 
 def crear_devoluciones(cur, detalles, usuarios):
@@ -353,6 +411,11 @@ def main():
 
             print("Creando devoluciones ...")
             crear_devoluciones(cur, detalles, usuarios)
+
+            # Despues de las devoluciones historicas: estas ventas quedan libres
+            # para registrar devoluciones nuevas dentro del plazo (RN-16).
+            recientes = crear_ventas_recientes(cur, clientes)
+            print(f"Ventas recientes dentro del plazo de devolucion: {recientes} nuevas.")
 
             actualizadas = backfill_fecha_cierre(cur)
             if actualizadas:

@@ -4,14 +4,18 @@ Funciones puras (sin base de datos) para poder probarlas de forma unitaria.
 Las reglas que dependen de datos guardados (dueno de la venta, cantidad
 disponible, estado actual) viven en app.py.
 
-Trazabilidad: RF-07, RF-10, RN-01.
+Trazabilidad: RF-07, RF-10, RN-01, RN-16.
 """
+from datetime import timedelta
 # Estados del expediente: mismos valores que el CHECK de devoluciones.estado.
 ESTADOS = ("solicitada", "en_revision", "autorizada", "rechazada",
            "en_recoleccion", "recibida", "en_inspeccion", "resuelta", "cerrada")
 # Estados desde los que el analista todavia puede resolver (RF-10).
 ESTADOS_REVISABLES = ("solicitada", "en_revision")
 DECISIONES = ("autorizar", "rechazar", "informacion")
+# Una solicitud sigue "abierta" (y bloquea otra igual) mientras no se rechace
+# ni se cierre (RN-16, solicitudes duplicadas).
+ESTADOS_CERRADOS = ("rechazada", "cerrada")
 
 MIN_DESCRIPCION = 10
 MAX_DESCRIPCION = 2000
@@ -98,3 +102,15 @@ def validar_estado(texto):
         return None, [{"campo": "estado",
                        "problema": "valor desconocido; validos: " + ", ".join(ESTADOS)}]
     return estado, []
+
+
+def evaluar_plazo(fecha_venta, dias_plazo, hoy):
+    """RN-16: plazo de devolucion contado desde la venta.
+
+    El ultimo dia del plazo todavia se acepta. Devuelve
+    (dentro_del_plazo, fecha_limite, dias_restantes); dias_restantes es
+    negativo si ya vencio.
+    """
+    fecha_limite = fecha_venta + timedelta(days=dias_plazo)
+    restantes = (fecha_limite - hoy).days
+    return restantes >= 0, fecha_limite, restantes

@@ -1,5 +1,6 @@
 """Pruebas unitarias de las validaciones (sin base de datos)."""
 import unittest
+from datetime import date
 
 import reglas
 
@@ -71,6 +72,29 @@ class PruebaReglas(unittest.TestCase):
         estado, errores = reglas.validar_estado("perdida")
         self.assertIsNone(estado)
         self.assertEqual(self.campos(errores), {"estado"})
+
+    # -- RN-16: plazo de devolucion ----------------------------------------- #
+    def test_plazo_refrigerado_ultimo_dia_si(self):
+        dentro, limite, restantes = reglas.evaluar_plazo(
+            date(2026, 11, 1), 7, date(2026, 11, 8))
+        self.assertTrue(dentro)
+        self.assertEqual(limite, date(2026, 11, 8))
+        self.assertEqual(restantes, 0)
+
+    def test_plazo_refrigerado_dia_siguiente_no(self):
+        dentro, _, restantes = reglas.evaluar_plazo(
+            date(2026, 11, 1), 7, date(2026, 11, 9))
+        self.assertFalse(dentro)
+        self.assertEqual(restantes, -1)
+
+    def test_plazo_no_refrigerado_30_dias(self):
+        self.assertTrue(reglas.evaluar_plazo(date(2026, 10, 15), 30, date(2026, 11, 14))[0])
+        self.assertFalse(reglas.evaluar_plazo(date(2026, 10, 15), 30, date(2026, 11, 15))[0])
+
+    def test_plazo_mismo_dia_de_la_compra(self):
+        dentro, _, restantes = reglas.evaluar_plazo(date(2026, 11, 10), 7, date(2026, 11, 10))
+        self.assertTrue(dentro)
+        self.assertEqual(restantes, 7)
 
 
 if __name__ == "__main__":

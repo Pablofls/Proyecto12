@@ -12,9 +12,23 @@ from . import cliente as c
 DESCRIPCION = "Prueba E2E: el empaque llego roto y danado."
 
 
+def motivo_libre(ctx):
+    """Motivo sin otra solicitud abierta sobre la linea de la suite. RN-16 rechaza
+    dos solicitudes abiertas con la misma linea y el mismo motivo (409
+    solicitud_duplicada), y el proceso completo conserva la suya abierta."""
+    fila = c.sql("""
+        SELECT m.id FROM motivos m
+         WHERE m.activo AND NOT EXISTS (
+               SELECT 1 FROM devoluciones d
+                WHERE d.venta_detalle_id = %s AND d.motivo_id = m.id
+                  AND d.eliminado_en IS NULL AND d.estado NOT IN ('rechazada', 'cerrada'))
+         ORDER BY m.id LIMIT 1""", (ctx.linea["id"],), uno=True)
+    return fila["id"] if fila else ctx.motivo
+
+
 def registrar(ctx, cantidad=1, token=None, correlation_id=None):
     resp = c.llamar("devoluciones", "POST", c.PREFIJO_API["devoluciones"],
-                    {"venta_detalle_id": ctx.linea["id"], "motivo_id": ctx.motivo,
+                    {"venta_detalle_id": ctx.linea["id"], "motivo_id": motivo_libre(ctx),
                      "descripcion_problema": DESCRIPCION,
                      "cantidad_devuelta": cantidad},
                     token=token or ctx.h(c.CLIENTE), correlation_id=correlation_id)
