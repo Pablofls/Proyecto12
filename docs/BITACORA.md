@@ -542,3 +542,27 @@ de capturas se generan con `docs/postman/generar_colecciones.py` a partir de
 con `xmllint` contra los XSD, pero la corrida real es en la VM. Si una peticion
 falla ahi, lo correcto es revisar si cambio el servicio y corregir
 `especificaciones.py`.
+
+---
+
+## 2026-11-09 — Roles de la aplicacion Android (tercer parcial)
+
+**Decision.** La migracion 014 agrega `Recolector`, `Operador de Almacen` y
+`Supervisor`, los perfiles que la retroalimentacion del segundo parcial pide para
+la app Android (recoleccion, recepcion en almacen y supervision de incidencias).
+Se declaran en `shared/seguridad.py` y en `apps/web/app/security.py`, y
+`seed_demo.py` crea una cuenta de demostracion para cada uno.
+
+**Por que no entran en `TODOS_LOS_ROLES` de la web.** Ese grupo abre ventas,
+devoluciones, reportes y el panel completo. Agregarlos ahi le daria a un
+recolector acceso a todos los expedientes, contra el minimo privilegio (RN-13).
+Su canal es la app Android; si una vista web los necesita, debe nombrarlos
+explicitamente. Hoy, si entran a la web, ven la pagina de "No tienes permiso".
+
+**Por que no cambian permisos existentes.** En los microservicios cada endpoint
+lista sus roles en `@requiere_jwt(...)`. Ninguno los acepta por omision: cada
+servicio debe autorizarlos de forma explicita donde corresponda.
+
+**Nombres sin "o transportista".** El documento habla de "recolector o
+transportista"; se uso `Recolector` para cubrir ambos, porque el nombre del rol
+viaja en cada JWT y se compara textualmente.

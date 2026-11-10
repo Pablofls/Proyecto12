@@ -219,6 +219,26 @@ class IntegracionAuth(unittest.TestCase):
                           token=otro["access_token"])
         self.assertEqual(codigo, 403)
 
+    def test_roles_de_campo_inician_sesion_sin_permisos_de_mas(self):  # RF-04, RN-13
+        """Los perfiles de la app Android (migracion 014) obtienen un JWT con su
+        rol, pero no heredan permisos: el cierre de sesiones sigue siendo solo
+        del Administrador."""
+        _, admin = self._abrir("Administrador")
+        uid_admin = int(_claims(admin["access_token"])["sub"])
+        for rol in ("Recolector", "Operador de Almacen", "Supervisor"):
+            with self.subTest(rol=rol):
+                _, tokens = self._abrir(rol)
+                self.assertEqual(_claims(tokens["access_token"])["rol"], rol)
+                codigo, cuerpo = _http(SERVICIO_URL, "GET", PREFIJO + "/sesion",
+                                       token=tokens["access_token"])
+                self.assertEqual(codigo, 200)
+                self.assertEqual(cuerpo["usuario"]["rol"], rol)
+                codigo, cuerpo = _http(SERVICIO_URL, "DELETE",
+                                       f"{PREFIJO}/usuarios/{uid_admin}/sesiones",
+                                       token=tokens["access_token"])
+                self.assertEqual(codigo, 403)
+                self.assertEqual(cuerpo["error"]["tipo"], "sin_permiso")
+
     def test_credenciales_malas_quedan_en_el_historial_sin_revelar_nada(self):
         email = _email_de_rol("Cliente")
         codigo, cuerpo = _http(SERVICIO_URL, "POST", PREFIJO + "/login",

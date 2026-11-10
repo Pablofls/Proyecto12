@@ -253,6 +253,13 @@ fallidos.
 | Analista de Devoluciones | `josue.analista@demo.mx` |
 | Encargado de Reembolsos | `carla.reembolsos@demo.mx` |
 | Administrador | `pablo.admin@demo.mx` |
+| Recolector (app Android) | `luis.recolector@demo.mx` |
+| Operador de Almacen (app Android) | `marta.almacen@demo.mx` |
+| Supervisor (app Android) | `jorge.supervisor@demo.mx` |
+
+Los tres perfiles de la app Android (migracion 014) inician sesion en el servicio
+auth, pero la web les responde "No tienes permiso": no forman parte de
+`TODOS_LOS_ROLES` a proposito (ver docs/BITACORA.md, 2026-11-09).
 
 Tras 5 intentos fallidos la cuenta se bloquea 15 minutos (RNF-12). Para
 desbloquearla sin esperar, entra como administrador y usa el boton
