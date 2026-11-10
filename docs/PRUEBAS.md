@@ -12,6 +12,8 @@ resultado de la VM").
 
 ## Resumen
 
+> **Resultado vigente:** [`docs/pruebas/REPORTE_FINAL.md`](pruebas/REPORTE_FINAL.md) (commit, fecha y entorno de la corrida, y el historial de corridas sin mezclar versiones). Los estados de esta tabla corresponden a la corrida del 2026-10-21.
+
 | Grupo | Casos | Donde corre | Estado |
 |---|---|---|---|
 | Unitarias (con dobles) | 119 | Local y VM | **119 passed** en local (`docs/pruebas/resultado_2026-10-21_local.md`) |

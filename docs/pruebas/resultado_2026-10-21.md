@@ -1,5 +1,9 @@
 # Resultado de pruebas en la VM — 2026-10-21
 
+> **Documento historico.** El resultado vigente, con commit, fecha y entorno, esta
+> en [`REPORTE_FINAL.md`](REPORTE_FINAL.md). Este archivo conserva las corridas 1 y 2
+> del historial tal como se registraron.
+
 Primera corrida real de `bash scripts/correr_e2e.sh` en la VM, sobre `main` con las
 sesiones 01, 02 y 03 integradas (suite E2E y pruebas de integracion por servicio).
 
