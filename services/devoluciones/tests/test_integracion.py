@@ -226,6 +226,53 @@ class PruebaIntegracion(unittest.TestCase):
         self.assertEqual(resp.status_code, 401)
         self.assertEqual(resp.get_json()["error"]["tipo"], "token_revocado")
 
+    def test_5_control_por_sucursal(self):
+        """Un operador de almacen con sucursal solo ve devoluciones de su tienda
+        (la de la venta); las de otra tienda responden 403 y quedan en la
+        bitacora (RF-04, RN-13). La sucursal viaja en el JWT que emite auth."""
+        operador = _sql("""SELECT u.email, u.tienda_id FROM usuarios u
+                             JOIN roles r ON r.id = u.rol_id
+                            WHERE r.nombre = 'Operador de Almacen' AND u.tienda_id IS NOT NULL
+                              AND u.estado = 'activo' AND u.eliminado_en IS NULL
+                            ORDER BY u.id LIMIT 1""", uno=True)
+        if not operador:
+            self.skipTest("No hay operador de almacen con sucursal (corre seed_demo)")
+
+        def de_tienda(propia):
+            return _sql(f"""SELECT d.id FROM devoluciones d
+                              JOIN venta_detalle vd ON vd.id = d.venta_detalle_id
+                              JOIN ventas v ON v.id = vd.venta_id
+                             WHERE d.eliminado_en IS NULL
+                               AND v.tienda_id {'=' if propia else '<>'} %s
+                             ORDER BY d.id LIMIT 1""", (operador["tienda_id"],), uno=True)
+
+        token = _auth("/api/v1/auth/login", {"email": operador["email"],
+                                             "password": os.environ["PASSWORD_DEMO"]})["access_token"]
+        h = {"Authorization": f"Bearer {token}"}
+        try:
+            esperadas = _sql("""SELECT count(*) AS n FROM devoluciones d
+                                  JOIN venta_detalle vd ON vd.id = d.venta_detalle_id
+                                  JOIN ventas v ON v.id = vd.venta_id
+                                 WHERE d.eliminado_en IS NULL AND v.tienda_id = %s""",
+                             (operador["tienda_id"],), uno=True)["n"]
+            resp = self.cliente.get("/api/v1/devoluciones?por_pagina=100", headers=h)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.get_json()["paginacion"]["total"], esperadas)
+
+            propia, ajena = de_tienda(True), de_tienda(False)
+            if propia:
+                resp = self.cliente.get(f"/api/v1/devoluciones/{propia['id']}", headers=h)
+                self.assertEqual(resp.status_code, 200)
+            if ajena:
+                resp = self.cliente.get(f"/api/v1/devoluciones/{ajena['id']}", headers=h)
+                self.assertEqual(resp.status_code, 403)
+                self.assertEqual(resp.get_json()["error"]["tipo"], "fuera_de_sucursal")
+                self.assertTrue(_sql("""SELECT 1 FROM bitacora WHERE accion = 'acceso_denegado'
+                                          AND entidad_id = %s AND detalle LIKE %s""",
+                                     (ajena["id"], "%otra sucursal%"), uno=True))
+        finally:
+            _auth("/api/v1/auth/logout", token=token)
+
 
 if __name__ == "__main__":
     unittest.main()

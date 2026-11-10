@@ -57,6 +57,13 @@ USUARIOS = [
     ("Jorge Salinas",      "jorge.supervisor@demo.mx",  "Supervisor"),
 ]
 
+# Control por sucursal (migracion 015). Quien no aparece aqui opera en todas
+# las sucursales; el supervisor es regional a proposito.
+SUCURSAL_DEMO = {
+    "luis.recolector@demo.mx": "Tienda Centro",
+    "marta.almacen@demo.mx": "Tienda Centro",
+}
+
 
 def conectar():
     return psycopg2.connect(
@@ -82,6 +89,15 @@ def crear_usuarios(cur, password):
             ON CONFLICT (email) DO NOTHING
             """,
             (nombre, email, hash_demo, roles[rol]),
+        )
+    for email, tienda in SUCURSAL_DEMO.items():
+        # Solo si no tiene sucursal: no pisa lo que el administrador ya cambio.
+        cur.execute(
+            """
+            UPDATE usuarios SET tienda_id = (SELECT id FROM tiendas WHERE nombre = %s)
+             WHERE email = %s AND tienda_id IS NULL
+            """,
+            (tienda, email),
         )
     cur.execute("SELECT id, email FROM usuarios")
     return {fila["email"]: fila["id"] for fila in cur.fetchall()}

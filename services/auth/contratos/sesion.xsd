@@ -15,6 +15,14 @@
             <xs:all>
               <xs:element name="id" type="xs:positiveInteger"/>
               <xs:element name="rol" type="xs:string"/>
+              <!-- Sucursal del usuario; vacia si opera en todas. -->
+              <xs:element name="tienda_id" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:pattern value="[0-9]*"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
               <xs:element name="nombre" type="xs:string"/>
             </xs:all>
           </xs:complexType>

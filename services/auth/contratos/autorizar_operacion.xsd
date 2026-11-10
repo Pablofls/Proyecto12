@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato XML de la peticion POST /api/v1/auth/autorizar-operacion
+  (Content-Type: application/xml). Si no cumple: 400 xml_no_cumple_xsd.
+
+  El usuario ya tiene sesion (Authorization: Bearer) y vuelve a escribir su
+  contrasena para obtener un permiso de un solo uso, valido 5 minutos, para una
+  operacion critica sobre un registro concreto.
+
+  Ejemplo:
+    <autorizacion>
+      <operacion>aprobar_reembolso</operacion>
+      <recurso_id>57</recurso_id>
+      <password>tu-contrasena</password>
+    </autorizacion>
+
+  Trazabilidad: RN-13, RNF-09, RNF-12.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="autorizacion">
+    <xs:complexType>
+      <xs:all>
+        <!-- Mismo catalogo que shared.seguridad.OPERACIONES_CRITICAS. -->
+        <xs:element name="operacion">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="aprobar_reembolso"/>
+              <xs:enumeration value="aprobar_disposicion"/>
+              <xs:enumeration value="reincorporar_inventario"/>
+              <xs:enumeration value="cerrar_investigacion"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+        <!-- Id de PostgreSQL u ObjectId de MongoDB del registro afectado. -->
+        <xs:element name="recurso_id">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="[A-Za-z0-9_\-]{1,64}"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+        <xs:element name="password">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:minLength value="1"/>
+              <xs:maxLength value="128"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

@@ -96,6 +96,17 @@ class PruebaApi(unittest.TestCase):
         self.assertEqual(resp.get_json()["error"]["detalles"]["roles_permitidos"],
                          [seguridad.ANALISTA])
 
+    def test_recolector_no_consulta_devoluciones(self):
+        """Los roles de campo solo entran donde se nombran (RN-13): el
+        recolector ve sus tareas en logistica, no el listado de devoluciones."""
+        for ruta in ("/api/v1/devoluciones", "/api/v1/devoluciones/1"):
+            resp = self.cliente.get(ruta, headers=self.headers(seguridad.RECOLECTOR))
+            self.assertEqual(resp.status_code, 403)
+            permitidos = resp.get_json()["error"]["detalles"]["roles_permitidos"]
+            self.assertIn(seguridad.OPERADOR_ALMACEN, permitidos)
+            self.assertIn(seguridad.SUPERVISOR, permitidos)
+            self.assertNotIn(seguridad.RECOLECTOR, permitidos)
+
     def test_inspector_no_puede_registrar(self):
         resp = self.cliente.post("/api/v1/devoluciones",
                                  headers=self.headers(seguridad.INSPECTOR), json={})

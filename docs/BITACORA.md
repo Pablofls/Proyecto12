@@ -566,3 +566,39 @@ servicio debe autorizarlos de forma explicita donde corresponda.
 **Nombres sin "o transportista".** El documento habla de "recolector o
 transportista"; se uso `Recolector` para cubrir ambos, porque el nombre del rol
 viaja en cada JWT y se compara textualmente.
+
+---
+
+## 2026-11-10 — Control por sucursal y operaciones criticas
+
+**Correccion de la entrada anterior.** El 2026-11-09 se escribio que ningun
+endpoint aceptaba los roles de campo por omision. No era cierto: los 11
+endpoints con `@requiere_jwt()` sin roles aceptaban a cualquier usuario
+autenticado, asi que un recolector podia listar todas las devoluciones, ventas y
+evidencias. Ahora `requiere_jwt()` sin roles acepta solo `ROLES_BASE` (los 7
+originales); los roles nuevos deben nombrarse. Auth abre `/sesion`, `/logout` y
+`/autorizar-operacion` a `TODOS_LOS_ROLES`, porque cualquiera debe poder cerrar
+su sesion. En devoluciones, el listado y el detalle admiten ademas al Supervisor
+y al Operador de Almacen; el Recolector no (ve sus tareas en logistica).
+
+**Sucursal (migracion 015).** `usuarios.tienda_id` es nullable: NULL = opera en
+todas. Auth la copia al claim `tienda_id` (tambien en el refresh) y
+`shared/seguridad.py` ofrece `condicion_tienda` para listados y `exigir_tienda`
+para un registro. La sucursal de una devolucion es la de su venta. Se aplica en
+devoluciones como ejemplo para el resto de servicios.
+
+**Operaciones criticas.** `POST /api/v1/auth/autorizar-operacion` pide de nuevo
+la contrasena y emite un JWT de tipo `operacion` ligado a la operacion, al
+registro y a la sesion, valido 5 minutos. Su `jti` se guarda en Redis
+(`devoluciones:operacion_autorizada:<jti>`) y `exigir_autorizacion_operacion` lo
+borra al usarlo. Se eligio reconfirmar la contrasena (como el NIP de una
+transferencia) porque protege ante una sesion abierta y desatendida, y el
+consumo atomico con `DELETE` evita ademas dobles aprobaciones simultaneas.
+
+**Por que el permiso se consume antes de escribir.** Si la operacion falla
+despues (por ejemplo, un 409 de negocio), el usuario debe reconfirmar. Se
+prefirio eso a dejar un permiso reutilizable: el costo es una contrasena mas,
+el beneficio es que nunca hay dos usos del mismo permiso.
+
+**Contrasena incorrecta.** Cuenta como intento fallido para el bloqueo de la
+cuenta (RNF-12), igual que en el login.

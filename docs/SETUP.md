@@ -253,8 +253,8 @@ fallidos.
 | Analista de Devoluciones | `josue.analista@demo.mx` |
 | Encargado de Reembolsos | `carla.reembolsos@demo.mx` |
 | Administrador | `pablo.admin@demo.mx` |
-| Recolector (app Android) | `luis.recolector@demo.mx` |
-| Operador de Almacen (app Android) | `marta.almacen@demo.mx` |
+| Recolector (app Android, Tienda Centro) | `luis.recolector@demo.mx` |
+| Operador de Almacen (app Android, Tienda Centro) | `marta.almacen@demo.mx` |
 | Supervisor (app Android) | `jorge.supervisor@demo.mx` |
 
 Los tres perfiles de la app Android (migracion 014) inician sesion en el servicio

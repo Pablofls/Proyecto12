@@ -36,7 +36,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-01 | Inicio y cierre de sesion | `apps/web/app/blueprints/auth.py`; API: `services/auth` (`POST /api/v1/auth/login`, `/logout`) | implementado |
 | RF-02 | Recuperacion de contrasena | — | pendiente |
 | RF-03 | Administrar usuarios | `apps/web/app/blueprints/usuarios.py` | implementado |
-| RF-04 | Roles y permisos | `apps/web/app/security.py`, `db/migrations/008_roles_base.sql`; roles de la app Android (Recolector, Operador de Almacen, Supervisor) en `db/migrations/014_roles_operacion_campo.sql` y `shared/seguridad.py` | implementado |
+| RF-04 | Roles y permisos | `apps/web/app/security.py`, `db/migrations/008_roles_base.sql`; roles de la app Android (Recolector, Operador de Almacen, Supervisor) en `db/migrations/014_roles_operacion_campo.sql` y `shared/seguridad.py`; control por sucursal (`db/migrations/015_sucursal_usuario.sql`, `condicion_tienda`/`exigir_tienda`) y operaciones criticas con reconfirmacion (`POST /api/v1/auth/autorizar-operacion`, `exigir_autorizacion_operacion`); ver `docs/GUIA_SEGURIDAD.md` | implementado |
 | RF-05 | Administrar catalogos | `apps/web/app/blueprints/catalogos.py` | implementado |
 | RF-06 | Devolucion ligada a venta y producto | `db/migrations/002_venta_detalle.sql`, `apps/web/app/blueprints/devoluciones.py` | implementado |
 | RF-07 | Registrar solicitud con motivo | `devoluciones.nueva`; API: `POST /api/v1/devoluciones` (`services/devoluciones`) | implementado |
@@ -117,7 +117,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RN-10 | Agrupacion por atributos definidos por el negocio | `panel.causas` agrupa y filtra por motivo, producto, lote, proveedor, tienda, ruta y estado |
 | RN-11 | La clasificacion automatica es sugerencia | `clasificar-motivo` devuelve `requiere_confirmacion=true`; no modifica la devolucion |
 | RN-12 | Toda decision queda registrada con usuario y fecha | `registrar_bitacora` en cada operacion |
-| RN-13 | Cada usuario solo ejecuta lo de su rol | `roles_required` en todas las vistas |
+| RN-13 | Cada usuario solo ejecuta lo de su rol | `roles_required` en todas las vistas; en los servicios, `requiere_jwt()` sin roles solo acepta los 7 roles base, la sucursal limita los registros y las operaciones criticas exigen reconfirmar la contrasena |
 | RN-14 | Evidencias privadas por enlaces temporales | Parcial: enlaces temporales HMAC de 15 min en `services/evidencias`; falta almacenar en GCS |
 | RN-15 | No exponer informacion sensible sin autorizacion | Bitacora y errores sin datos sensibles |
 

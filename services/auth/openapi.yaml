@@ -21,6 +21,7 @@ info:
     - Peticion de refresh: [refresh.xsd](contratos/refresh.xsd)
     - Respuesta de login y refresh: [tokens.xsd](contratos/tokens.xsd)
     - Respuesta de sesion: [sesion.xsd](contratos/sesion.xsd)
+    - Peticion de autorizacion de operacion critica: [autorizar_operacion.xsd](contratos/autorizar_operacion.xsd)
     - Error estandar (todos los servicios): [error.xsd](contratos/error.xsd)
 
     Trazabilidad: RF-01, RF-04, RNF-07, RNF-08, RNF-09, RNF-12, RNF-13, RF-30.
@@ -264,6 +265,61 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/Error"}
+
+  /api/v1/auth/autorizar-operacion:
+    post:
+      tags: [Sesiones]
+      summary: Confirmar la contrasena para una operacion critica
+      description: |
+        El usuario, ya autenticado, vuelve a escribir su contrasena y recibe un
+        **permiso de un solo uso** (JWT de tipo `operacion`) para una operacion
+        critica sobre un registro concreto:
+
+        | operacion | roles que pueden pedirla |
+        |---|---|
+        | `aprobar_reembolso` | Encargado de Reembolsos |
+        | `aprobar_disposicion` | Analista de Devoluciones, Supervisor |
+        | `reincorporar_inventario` | Encargado del Centro de Devoluciones, Supervisor |
+        | `cerrar_investigacion` | Supervisor |
+
+        El permiso dura **5 minutos**, solo sirve dentro de la sesion actual, y
+        se envia al servicio que ejecuta la operacion en el header
+        `X-Autorizacion-Operacion`. Ese servicio lo borra de Redis
+        (`devoluciones:operacion_autorizada:<jti>`) al usarlo: un segundo
+        intento recibe `403 autorizacion_operacion_usada`.
+
+        Una contrasena incorrecta cuenta como intento fallido para el bloqueo
+        de la cuenta (RNF-12). Limite: 10 autorizaciones por minuto por usuario.
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: {operacion: aprobar_reembolso, recurso_id: "57", password: "tu-contrasena"}
+          application/xml:
+            example: |
+              <autorizacion><operacion>aprobar_reembolso</operacion><recurso_id>57</recurso_id><password>tu-contrasena</password></autorizacion>
+      responses:
+        "201":
+          description: Permiso emitido
+          content:
+            application/json:
+              example: {token_operacion: "eyJhbGciOi...", expires_in: 300,
+                        operacion: aprobar_reembolso, recurso_id: "57",
+                        header: X-Autorizacion-Operacion}
+        "400": {$ref: "#/components/responses/E400"}
+        "401":
+          description: Contrasena incorrecta, o token ausente, invalido o revocado
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "403": {$ref: "#/components/responses/E403"}
+        "423":
+          description: Cuenta bloqueada por intentos fallidos
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "429": {$ref: "#/components/responses/E429"}
 
   /health:
     get:
