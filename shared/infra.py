@@ -49,6 +49,17 @@ def cerrar_conexion(exc=None):
         conn.close()
 
 
+def confirmar():
+    """Confirma la transaccion ya, antes de responder.
+
+    Normalmente el commit ocurre en cerrar_conexion, DESPUES de armar la
+    respuesta. Si ese commit fallara, el cliente ya habria recibido un 200.
+    Lo usan los endpoints cuya respuesta promete que el cambio quedo guardado
+    (sincronizacion offline: la app marca la operacion como confirmada).
+    """
+    _conexion().commit()
+
+
 def consultar(sql, params=None, uno=False):
     with _conexion().cursor() as cur:
         cur.execute(sql, params or ())

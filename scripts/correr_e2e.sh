@@ -71,7 +71,7 @@ fi
 
 if [ "$MODO" = "todo" ] || [ "$MODO" = "servicios" ]; then
   for servicio in auth ventas-catalogos devoluciones evidencias logistica \
-                  inspecciones reembolsos-costos analisis-auditoria; do
+                  inspecciones reembolsos-costos analisis-auditoria sincronizacion; do
     correr docker compose run --rm -e INTEGRACION=1 "$servicio" \
       python -m pytest -v -p no:cacheprovider tests/test_integracion.py
   done

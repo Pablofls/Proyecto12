@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Envio de operaciones capturadas sin conexion (POST /api/v1/sincronizacion/operaciones).
+     Los datos de cada operacion dependen de su tipo; el servicio los valida
+     uno por uno y responde por operacion (aceptada, conflicto, rechazada). -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="Uuid">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="Datos">
+    <xs:sequence>
+      <xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="Operacion">
+    <xs:sequence>
+      <xs:element name="id_operacion" type="Uuid"/>
+      <xs:element name="tipo">
+        <xs:simpleType><xs:restriction base="xs:string"><xs:minLength value="1"/><xs:maxLength value="40"/></xs:restriction></xs:simpleType>
+      </xs:element>
+      <xs:element name="capturado_en" type="xs:dateTime"/>
+      <xs:element name="datos" type="Datos"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="sincronizacion">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="dispositivo_id">
+          <xs:simpleType><xs:restriction base="xs:string"><xs:pattern value="[A-Za-z0-9_.:\-]{1,64}"/></xs:restriction></xs:simpleType>
+        </xs:element>
+        <xs:element name="operaciones">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="item" type="Operacion" minOccurs="1" maxOccurs="50"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

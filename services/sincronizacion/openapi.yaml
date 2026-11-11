@@ -1,0 +1,86 @@
+openapi: 3.0.3
+info:
+  title: Servicio de sincronizacion offline
+  version: 1.0.0
+  description: >-
+    Recibe las operaciones que las apps Android y de escritorio capturaron sin
+    conexion. Cada operacion trae un id_operacion (UUID del dispositivo): si llega
+    repetida se devuelve el resultado guardado y no se aplica otra vez. Una
+    operacion solo esta confirmada cuando vuelve con estado "aceptada". JSON/XML,
+    JWT, PostgreSQL, Redis y MongoDB. Dominio 20 del tercer parcial; RF-09, RF-12 a RF-15.
+servers: [{url: /}]
+security: [{bearerAuth: []}]
+components:
+  securitySchemes: {bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}}
+  schemas:
+    Operacion:
+      type: object
+      required: [id_operacion, tipo, capturado_en, datos]
+      properties:
+        id_operacion: {type: string, format: uuid, description: Lo genera el dispositivo al capturar; se reutiliza en cada reintento}
+        tipo: {type: string, enum: [estado_recoleccion, recepcion, evidencia]}
+        capturado_en: {type: string, format: date-time, description: Con zona horaria; maximo 7 dias atras}
+        datos:
+          type: object
+          description: >-
+            estado_recoleccion = {recoleccion_id, estado_esperado, estado, ubicacion: {latitud, longitud}};
+            recepcion = {devolucion_id, coincide_expediente};
+            evidencia = {devolucion_id, comentario, archivo: {nombre, contenido_base64, sha256}}
+    Lote:
+      type: object
+      required: [dispositivo_id, operaciones]
+      properties:
+        dispositivo_id: {type: string, pattern: '^[A-Za-z0-9_.:-]{1,64}$'}
+        operaciones: {type: array, minItems: 1, maxItems: 50, items: {$ref: '#/components/schemas/Operacion'}}
+    Resultado:
+      type: object
+      properties:
+        id_operacion: {type: string}
+        tipo: {type: string}
+        estado: {type: string, enum: [aceptada, conflicto, rechazada, reintentar]}
+        repetida: {type: boolean, description: true si ya se habia recibido; no se aplico de nuevo}
+        devolucion_id: {type: integer, nullable: true}
+        respuesta: {type: object, description: Solo si fue aceptada}
+        motivo: {type: object, description: 'Conflicto o rechazo: codigo, tipo, mensaje, detalles (p. ej. estado_servidor)'}
+paths:
+  /api/v1/sincronizacion/operaciones:
+    post:
+      summary: Enviar la cola de operaciones pendientes
+      description: >-
+        Roles Recolector, Operador de Almacen, Encargado del Centro y Coordinador.
+        Se procesan en orden. 409 de negocio = conflicto (el servidor cambio mientras
+        no habia red); otro error = rechazada. Solo en linea (siempre rechazadas con
+        requiere_conexion) autorizar_devolucion, programar_recoleccion, aprobar_reembolso,
+        aprobar_disposicion, reincorporar_inventario, cerrar_investigacion.
+        "reintentar" = falla temporal; enviar de nuevo con el mismo id.
+      requestBody:
+        required: true
+        content:
+          application/json: {schema: {$ref: '#/components/schemas/Lote'}}
+          application/xml: {schema: {$ref: '#/components/schemas/Lote'}}
+      responses:
+        '200': {description: Resultado por operacion, content: {application/json: {schema: {type: object, properties: {resultados: {type: array, items: {$ref: '#/components/schemas/Resultado'}}}}}}}
+        '400': {description: Envio mal formado (dispositivo u operaciones)}
+        '401': {description: No autenticado}
+        '403': {description: Rol sin operaciones offline}
+        '413': {description: Envio mayor a 16 MB}
+        '429': {description: Mas de 30 envios por minuto}
+    get:
+      summary: Historial de operaciones sincronizadas
+      parameters:
+        - {name: estado, in: query, schema: {type: string, enum: [aceptada, conflicto, rechazada]}}
+        - {name: dispositivo_id, in: query, schema: {type: string}}
+        - {name: devolucion_id, in: query, schema: {type: integer}}
+        - {name: pagina, in: query, schema: {type: integer}}
+        - {name: por_pagina, in: query, schema: {type: integer}}
+      responses: {'200': {description: Lista paginada (propias; Supervisor y Administrador ven todas)}, '401': {description: No autenticado}}
+  /api/v1/sincronizacion/operaciones/{id_operacion}:
+    get:
+      summary: Estado de una operacion cuya respuesta no llego
+      parameters: [{name: id_operacion, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses: {'200': {description: Operacion}, '404': {description: No existe o no es tuya}}
+  /api/v1/sincronizacion/tipos:
+    get:
+      summary: Tipos que se pueden capturar sin conexion y limites
+      responses: {'200': {description: Catalogo}}
+  /health: {get: {security: [], summary: Salud de PostgreSQL, Redis y MongoDB, responses: {'200': {description: OK}, '503': {description: Degradado}}}}
