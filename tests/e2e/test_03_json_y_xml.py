@@ -73,7 +73,7 @@ def test_error_en_xml_sigue_el_formato_comun(ctx):
 
 def test_devolucion_creada_con_cuerpo_xml(ctx):
     xml = (f"<devolucion><venta_detalle_id>{ctx.linea['id']}</venta_detalle_id>"
-           f"<motivo_id>{ctx.motivo}</motivo_id>"
+           f"<motivo_id>{flujo.motivo_libre(ctx)}</motivo_id>"
            f"<descripcion_problema>{flujo.DESCRIPCION}</descripcion_problema>"
            "<cantidad_devuelta>1</cantidad_devuelta></devolucion>")
     assert cumple(xml, xsd("devoluciones", "devolucion_nueva.xsd")) == []

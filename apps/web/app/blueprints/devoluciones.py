@@ -156,6 +156,8 @@ def nueva():
                v.id AS venta_id, v.folio_venta, v.fecha_venta, v.cliente_id,
                p.nombre AS producto, p.sku, p.clasificacion_temperatura,
                l.numero_lote, l.fecha_caducidad,
+               pol.dias_plazo, (v.fecha_venta + pol.dias_plazo) AS fecha_limite,
+               (v.fecha_venta + pol.dias_plazo) >= CURRENT_DATE AS dentro_del_plazo,
                (SELECT COALESCE(SUM(d.cantidad_devuelta), 0)
                   FROM devoluciones d
                  WHERE d.venta_detalle_id = vd.id
@@ -165,6 +167,8 @@ def nueva():
           JOIN ventas v    ON v.id = vd.venta_id
           JOIN lotes l     ON l.id = vd.lote_id
           JOIN productos p ON p.id = l.producto_id
+          JOIN politicas_devolucion pol
+                           ON pol.clasificacion_temperatura = p.clasificacion_temperatura
          WHERE vd.id = %s AND v.eliminado_en IS NULL
         """,
         (venta_detalle_id,), uno=True,
@@ -189,6 +193,26 @@ def nueva():
             errores.append("Describe el problema con al menos 10 caracteres.")
         if cantidad < 1 or cantidad > disponible:
             errores.append(f"La cantidad debe estar entre 1 y {disponible}.")
+        # RN-16: misma politica (tabla politicas_devolucion) que el servicio de
+        # devoluciones, para que el modo monolitico no acepte lo que la API rechaza.
+        if not linea["dentro_del_plazo"]:
+            errores.append(
+                f"El plazo para devolver este producto vencio el "
+                f"{linea['fecha_limite'].strftime('%d/%m/%Y')} "
+                f"({linea['dias_plazo']} dias desde la compra).")
+        if motivo_id:
+            abierta = consultar(
+                """
+                SELECT folio_devolucion FROM devoluciones
+                 WHERE venta_detalle_id = %s AND motivo_id = %s
+                   AND eliminado_en IS NULL AND estado NOT IN ('rechazada', 'cerrada')
+                 LIMIT 1
+                """,
+                (venta_detalle_id, motivo_id), uno=True,
+            )
+            if abierta:
+                errores.append(f"Ya tienes la solicitud {abierta['folio_devolucion']} "
+                               "abierta para este producto con el mismo motivo.")
 
         if errores:
             for e in errores:

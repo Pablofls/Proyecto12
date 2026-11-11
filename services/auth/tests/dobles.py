@@ -82,13 +82,22 @@ class BaseFalsa:
             "admin@demo.com": {"id": 1, "nombre": "Admin",
                                "email": "admin@demo.com",
                                "rol": "Administrador"},
+            "almacen@demo.com": {"id": 5, "nombre": "Oscar Almacen",
+                                 "email": "almacen@demo.com",
+                                 "rol": "Operador de Almacen", "tienda_id": 2},
+            "reembolsos@demo.com": {"id": 6, "nombre": "Rita Reembolsos",
+                                    "email": "reembolsos@demo.com",
+                                    "rol": "Encargado de Reembolsos"},
         }
         for u in self.usuarios.values():
+            u.setdefault("tienda_id", None)
             u.update(password_hash=generate_password_hash(PASSWORD),
                      estado="activo", bloqueado_hasta=None)
         self.sentencias = []
 
     def consultar(self, sql, params=None, uno=False):
+        if "WHERE u.id = %s" in sql:
+            return next((u for u in self.usuarios.values() if u["id"] == params[0]), None)
         if "FROM usuarios u" in sql:
             return self.usuarios.get(params[0])
         if "FROM usuarios WHERE id" in sql:

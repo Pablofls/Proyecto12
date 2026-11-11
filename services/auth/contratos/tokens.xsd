@@ -26,6 +26,15 @@
       <xs:enumeration value="Analista de Devoluciones"/>
       <xs:enumeration value="Encargado de Reembolsos"/>
       <xs:enumeration value="Administrador"/>
+      <xs:enumeration value="Recolector"/>
+      <xs:enumeration value="Operador de Almacen"/>
+      <xs:enumeration value="Supervisor"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="TiendaId">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]*"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -45,6 +54,8 @@
               <xs:element name="nombre" type="xs:string"/>
               <xs:element name="email" type="xs:string"/>
               <xs:element name="rol" type="Rol"/>
+              <!-- Sucursal del usuario; vacia si opera en todas. -->
+              <xs:element name="tienda_id" type="TiendaId" minOccurs="0"/>
             </xs:all>
           </xs:complexType>
         </xs:element>

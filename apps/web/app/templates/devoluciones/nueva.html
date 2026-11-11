@@ -12,6 +12,8 @@
     <dt>Caducidad</dt><dd>{{ linea.fecha_caducidad.strftime('%d/%m/%Y') if linea.fecha_caducidad else 'No aplica' }}</dd>
     <dt>Fecha de compra</dt><dd>{{ linea.fecha_venta.strftime('%d/%m/%Y') }}</dd>
     <dt>Unidades disponibles</dt><dd>{{ disponible }} de {{ linea.cantidad }}</dd>
+    <dt>Plazo para devolver</dt>
+    <dd>{{ linea.dias_plazo }} dias: hasta el {{ linea.fecha_limite.strftime('%d/%m/%Y') }}{% if not linea.dentro_del_plazo %} (vencido){% endif %}</dd>
   </dl>
 </div>
 

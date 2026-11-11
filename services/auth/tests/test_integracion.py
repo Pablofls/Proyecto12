@@ -239,6 +239,31 @@ class IntegracionAuth(unittest.TestCase):
                 self.assertEqual(codigo, 403)
                 self.assertEqual(cuerpo["error"]["tipo"], "sin_permiso")
 
+    def test_autorizar_operacion_deja_permiso_de_un_solo_uso_en_redis(self):  # RN-13
+        _, tokens = self._abrir("Encargado de Reembolsos")
+        codigo, cuerpo = _http(SERVICIO_URL, "POST", PREFIJO + "/autorizar-operacion",
+                               {"operacion": "aprobar_reembolso", "recurso_id": "999999",
+                                "password": os.environ["PASSWORD_DEMO"]},
+                               token=tokens["access_token"])
+        self.assertEqual(codigo, 201)
+        claims = _claims(cuerpo["token_operacion"])
+        self.assertEqual((claims["typ"], claims["op"], claims["recurso"]),
+                         ("operacion", "aprobar_reembolso", "999999"))
+        clave = f"devoluciones:operacion_autorizada:{claims['jti']}"
+        r = get_redis()
+        self.assertTrue(0 < r.ttl(clave) <= 300)
+        r.delete(clave)  # la prueba no ejecuta la operacion: no deja el permiso vivo
+        self.assertTrue(_sql("SELECT 1 FROM bitacora WHERE accion = 'autorizacion_operacion' "
+                             "AND usuario_id = %s AND detalle LIKE %s",
+                             (int(claims["sub"]), "%999999%"), uno=True))
+        # Un analista no puede autorizar reembolsos.
+        _, analista = self._abrir("Analista de Devoluciones")
+        codigo, cuerpo = _http(SERVICIO_URL, "POST", PREFIJO + "/autorizar-operacion",
+                               {"operacion": "aprobar_reembolso", "recurso_id": "999999",
+                                "password": os.environ["PASSWORD_DEMO"]},
+                               token=analista["access_token"])
+        self.assertEqual(codigo, 403)
+
     def test_credenciales_malas_quedan_en_el_historial_sin_revelar_nada(self):
         email = _email_de_rol("Cliente")
         codigo, cuerpo = _http(SERVICIO_URL, "POST", PREFIJO + "/login",
