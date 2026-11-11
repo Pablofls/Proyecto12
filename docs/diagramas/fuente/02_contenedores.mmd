@@ -1,0 +1,37 @@
+flowchart TB
+    USR(["Usuarios de los 7 roles<br/><small>navegador web</small>"]):::actor
+
+    subgraph VM["VM de Google Compute Engine · Docker Compose"]
+        direction TB
+        APP["<b>devoluciones_app</b><br/>Python 3.11 · Flask · Jinja2<br/>Gunicorn (3 workers) · puerto 8000<br/><small>Monolito modular MVC: 9 blueprints + /health</small>"]:::impl
+        PG[("<b>devoluciones_postgres</b><br/>PostgreSQL 16-alpine<br/><small>ventas, devoluciones, inspecciones,<br/>reembolsos, costos, bitácora<br/>reglas en triggers (RN-04, RN-06, RN-07)</small>")]:::db
+        RD[("<b>devoluciones_redis</b><br/>Redis 7-alpine · AOF<br/><small>sesiones, intentos fallidos,<br/>bloqueo temporal</small>")]:::db
+        V1[/"volumen postgres_data"/]:::db
+        V2[/"volumen redis_data"/]:::db
+    end
+
+    subgraph FUT["Diseñado para parciales posteriores (no desplegado)"]
+        direction LR
+        MS["10 microservicios<br/><small>devoluciones, ventas, evidencias,<br/>inspección, clasificación, reembolsos,<br/>logística, causa raíz, notificaciones, auditoría</small>"]:::futuro
+        MG[("MongoDB<br/><small>inspecciones, evidencias_metadatos,<br/>eventos, resultados_analisis</small>")]:::futuro
+        BK["Bucket GCS<br/><small>fotos y documentos</small>"]:::futuro
+        MOV["App móvil<br/><small>JSON</small>"]:::futuro
+        ESC["App escritorio<br/><small>XML</small>"]:::futuro
+    end
+
+    USR -->|"HTTP :8000 · HTML (formularios)"| APP
+    APP -->|"SQL parametrizado · psycopg<br/>postgres:5432 (red interna)"| PG
+    APP -->|"RESP · redis:6379 (red interna)"| RD
+    PG --- V1
+    RD --- V2
+    APP -.-> MS
+    MS -.-> MG
+    APP -.-> BK
+    MOV -.-> MS
+    ESC -.-> MS
+    classDef impl fill:#E8F1FB,stroke:#1F5FAD,stroke-width:2px,color:#0B2545
+    classDef db fill:#E6F4EA,stroke:#2E7D32,stroke-width:2px,color:#123D16
+    classDef actor fill:#FFF3DF,stroke:#B86E00,stroke-width:2px,color:#4A2C00
+    classDef ext fill:#F2EAF8,stroke:#6F3D96,stroke-width:1.5px,color:#321A45
+    classDef futuro fill:#F5F5F5,stroke:#9A9A9A,stroke-width:1.5px,stroke-dasharray:6 4,color:#666666
+    classDef nota fill:#FFFDE7,stroke:#C9B800,stroke-width:1px,color:#4D4500

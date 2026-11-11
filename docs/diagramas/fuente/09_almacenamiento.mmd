@@ -1,0 +1,43 @@
+flowchart LR
+    APP["Monolito Flask"]:::impl
+
+    subgraph PG["PostgreSQL 16 · datos transaccionales (implementado)"]
+        direction TB
+        SEG["<b>Seguridad y auditoría</b><br/>roles · usuarios · intentos_acceso · bitacora"]:::db
+        CATA["<b>Catálogos</b><br/>proveedores · productos · lotes<br/>tiendas · rutas · transportistas · motivos"]:::db
+        TRX["<b>Proceso de devolución</b><br/>ventas · venta_detalle · devoluciones<br/>recolecciones · recepciones · inspecciones_ref<br/>disposiciones · inventario_recuperado"]:::db
+        FIN["<b>Financiero</b><br/>reembolsos · costos"]:::db
+        EVI["<b>evidencias</b><br/>tipo · etapa · bucket · objeto · mime · tamaño"]:::db
+        REG["Reglas en la base: FK NOT NULL (RN-01) · UNIQUE folio (RN-02)<br/>UNIQUE reembolso (RN-03) · triggers RN-04 / RN-06 / RN-07<br/>eliminación lógica (eliminado_en)"]:::nota
+    end
+
+    subgraph RD["Redis 7 · datos temporales (implementado)"]
+        direction TB
+        K1["devoluciones:sesion:{id}<br/><small>sesión del usuario</small>"]:::db
+        K2["devoluciones:intentos:{correo}<br/><small>contador · TTL 15 min</small>"]:::db
+        K3["devoluciones:bloqueo:{correo}<br/><small>bloqueo · TTL 15 min</small>"]:::db
+    end
+
+    subgraph MG["MongoDB · datos flexibles (diseñado, no implementado)"]
+        direction TB
+        M1["inspecciones<br/><small>detalle y condiciones de cadena de frío</small>"]:::futuro
+        M2["evidencias_metadatos"]:::futuro
+        M3["eventos<br/><small>correlation_id</small>"]:::futuro
+        M4["resultados_analisis<br/><small>Pareto · agrupaciones · ranking</small>"]:::futuro
+    end
+
+    subgraph BK["Google Cloud Storage · archivos (diseñado)"]
+        B1["fotografías y documentos<br/><small>acceso por URL firmada</small>"]:::futuro
+    end
+
+    APP --> PG
+    APP --> RD
+    APP -.-> MG
+    TRX -. "inspecciones_ref.mongo_doc_id<br/>(hoy NULL)" .-> M1
+    EVI -. "bucket + objeto" .-> B1
+    classDef impl fill:#E8F1FB,stroke:#1F5FAD,stroke-width:2px,color:#0B2545
+    classDef db fill:#E6F4EA,stroke:#2E7D32,stroke-width:2px,color:#123D16
+    classDef actor fill:#FFF3DF,stroke:#B86E00,stroke-width:2px,color:#4A2C00
+    classDef ext fill:#F2EAF8,stroke:#6F3D96,stroke-width:1.5px,color:#321A45
+    classDef futuro fill:#F5F5F5,stroke:#9A9A9A,stroke-width:1.5px,stroke-dasharray:6 4,color:#666666
+    classDef nota fill:#FFFDE7,stroke:#C9B800,stroke-width:1px,color:#4D4500

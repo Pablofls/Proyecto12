@@ -5,6 +5,7 @@
 | Requerimiento | Implementacion distribuida | Evidencia automatizada |
 |---|---|---|
 | RF-12 a RF-15 | `services/logistica/app.py`: programacion, asignacion, estados y recepcion | `services/logistica/tests/test_api.py` |
+| Dominio 20: sincronizacion offline (RF-09, RF-12 a RF-15) | `services/sincronizacion/app.py`: cola de operaciones con `id_operacion` (idempotencia), conflicto por `estado_esperado`, fotos con SHA-256, operaciones criticas solo en linea; tabla `operaciones_offline` (migracion 017) | `services/sincronizacion/tests/test_integracion.py` (reintento y doble envio sin duplicados, conflicto, integridad de la foto) y `test_reglas.py`; guia para las apps en `docs/GUIA_SINCRONIZACION.md` |
 | RF-16, RF-17; RN-05 a RN-07 | `services/inspecciones/app.py`: documento MongoDB, referencia PostgreSQL y calculo de aptitud | `services/inspecciones/tests/test_reglas.py` |
 | RF-18, RF-19 | `services/inspecciones/app.py`: disposicion validada y etiqueta de inventario | Swagger y prueba integrada en VM |
 | RF-20, RF-21; RN-03, RN-04 | `services/reembolsos_costos/app.py`: reembolso unico con lock Redis | `services/reembolsos_costos/tests/test_api.py` |

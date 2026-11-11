@@ -1,0 +1,52 @@
+flowchart LR
+    subgraph ACT["Usuarios (7 roles)"]
+        direction TB
+        CLI(["Cliente<br/><small>solicita y consulta su devolución</small>"]):::actor
+        ANA(["Analista de Devoluciones<br/><small>autoriza, decide destino, analiza causas</small>"]):::actor
+        COO(["Coordinador de Logística<br/><small>programa recolección, ruta y transportista</small>"]):::actor
+        ENC(["Encargado del Centro<br/><small>confirma recepción</small>"]):::actor
+        INS(["Inspector<br/><small>inspección física y cadena de frío</small>"]):::actor
+        REE(["Encargado de Reembolsos<br/><small>aprueba o rechaza el reembolso</small>"]):::actor
+        ADM(["Administrador<br/><small>usuarios, roles, catálogos, bitácora</small>"]):::actor
+    end
+
+    SYS["<b>Plataforma de Devoluciones y<br/>Logística Inversa con Análisis de Causa Raíz</b><br/><small>Proyecto 12 · Equipo 02<br/>Monolito web Flask · PostgreSQL · Redis</small>"]:::impl
+
+    subgraph ORG["Organizaciones externas (registradas como catálogo)"]
+        direction TB
+        PROV["Proveedores<br/><small>origen de productos y lotes</small>"]:::ext
+        TIE["Tiendas<br/><small>punto de venta original</small>"]:::ext
+        TRA["Transportistas<br/><small>ejecutan la recolección</small>"]:::ext
+    end
+
+    subgraph INF["Infraestructura"]
+        direction TB
+        GCP["Google Cloud Platform<br/><small>Compute Engine (VM)</small>"]:::ext
+        GCS["Google Cloud Storage<br/><small>fotos y documentos</small>"]:::futuro
+    end
+
+    CLI -->|"solicitud, evidencias, consulta de estado"| SYS
+    ANA -->|"autorización, disposición, panel de causas"| SYS
+    COO -->|"recolección y estados"| SYS
+    ENC -->|"recepción en el centro"| SYS
+    INS -->|"resultado de inspección"| SYS
+    REE -->|"reembolso"| SYS
+    ADM -->|"administración y auditoría"| SYS
+
+    SYS -.->|"lotes y proveedor responsable"| PROV
+    SYS -.->|"venta original por tienda"| TIE
+    SYS -.->|"ruta y transportista asignado"| TRA
+    SYS ==>|"se ejecuta en"| GCP
+    SYS -.->|"archivos de evidencia (diseñado)"| GCS
+
+    subgraph LEY["Leyenda"]
+        direction LR
+        L1["Implementado"]:::impl
+        L2["Diseñado, no implementado"]:::futuro
+    end
+    classDef impl fill:#E8F1FB,stroke:#1F5FAD,stroke-width:2px,color:#0B2545
+    classDef db fill:#E6F4EA,stroke:#2E7D32,stroke-width:2px,color:#123D16
+    classDef actor fill:#FFF3DF,stroke:#B86E00,stroke-width:2px,color:#4A2C00
+    classDef ext fill:#F2EAF8,stroke:#6F3D96,stroke-width:1.5px,color:#321A45
+    classDef futuro fill:#F5F5F5,stroke:#9A9A9A,stroke-width:1.5px,stroke-dasharray:6 4,color:#666666
+    classDef nota fill:#FFFDE7,stroke:#C9B800,stroke-width:1px,color:#4D4500

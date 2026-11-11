@@ -29,15 +29,15 @@ nuevos.
 | 8014 | disposicion-inventario | 14 disposicion + 15 inventario inverso | nuevo |
 | 8017 | notificaciones | 17 notificaciones | nuevo |
 | 8018 | reportes-analitica | 18 reportes + 19 analitica predictiva + Pareto y alertas que hoy viven en 8008 | nuevo |
-| 8020 | sincronizacion | 20 sincronizacion offline | nuevo |
+| 8020 | sincronizacion | 20 sincronizacion offline | **implementado** (rama `david/sincronizacion`) |
 | 8021 | integraciones-monitoreo | 21 integraciones + 22 monitoreo | nuevo |
 
 Los puertos 8009, 8012, 8015, 8016, 8019 y 8022 quedan **libres a proposito**:
 corresponden a dominios agrupados en otro contenedor. Conservar la numeracion de
 la retroalimentacion hace evidente que dominio absorbio a cual.
 
-El firewall de GCP (regla `permitir-microservicios-david`) abre 8001-8010. Si se
-aprueba esta tabla, hay que ampliarlo a 8001-8021.
+El firewall de GCP (regla `permitir-microservicios-david`) abre 8001-8021 desde
+el 2026-11-10.
 
 ## Por que se agrupan
 

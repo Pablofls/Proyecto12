@@ -1,0 +1,36 @@
+flowchart LR
+    subgraph HOY["Primer parcial · implementado"]
+        direction LR
+        NAV(["Navegador web"]):::actor
+        APP["Monolito Flask"]:::impl
+        PG[("PostgreSQL")]:::db
+        RD[("Redis")]:::db
+        MON(["Monitoreo / docker healthcheck"]):::actor
+        NAV -->|"HTTP · HTML renderizado por Jinja2<br/>formularios POST · cookie de sesión firmada"| APP
+        APP -->|"SQL con parámetros ligados (psycopg)"| PG
+        APP -->|"protocolo RESP<br/>sesiones · contadores con TTL"| RD
+        MON -->|"GET /health → JSON<br/>200 ok · 503 degradado"| APP
+    end
+
+    subgraph DESPUES["Parciales posteriores · diseñado"]
+        direction LR
+        MOV(["App móvil<br/>cliente e inspector"]):::futuro
+        ESC(["App escritorio<br/>centro de devoluciones"]):::futuro
+        API["APIs REST versionadas<br/>Swagger · JWT + revocación en Redis"]:::futuro
+        SRV["Microservicios<br/>causa raíz · clasificación · notificaciones · …"]:::futuro
+        MG[("MongoDB")]:::futuro
+        BK["Bucket GCS"]:::futuro
+        MOV -.->|"JSON"| API
+        ESC -.->|"XML (validado con XSD, sin XXE)"| API
+        API -.-> SRV
+        SRV -.->|"eventos · resultados_analisis"| MG
+        SRV -.->|"URLs firmadas"| BK
+    end
+
+    APP -. "se descompone en" .-> SRV
+    classDef impl fill:#E8F1FB,stroke:#1F5FAD,stroke-width:2px,color:#0B2545
+    classDef db fill:#E6F4EA,stroke:#2E7D32,stroke-width:2px,color:#123D16
+    classDef actor fill:#FFF3DF,stroke:#B86E00,stroke-width:2px,color:#4A2C00
+    classDef ext fill:#F2EAF8,stroke:#6F3D96,stroke-width:1.5px,color:#321A45
+    classDef futuro fill:#F5F5F5,stroke:#9A9A9A,stroke-width:1.5px,stroke-dasharray:6 4,color:#666666
+    classDef nota fill:#FFFDE7,stroke:#C9B800,stroke-width:1px,color:#4D4500

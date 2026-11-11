@@ -1,0 +1,65 @@
+flowchart TB
+    NAV(["Navegador"]):::actor
+
+    subgraph APP["devoluciones_app · Flask · create_app() en app/__init__.py"]
+        direction TB
+        subgraph CTRL["Controladores (blueprints)"]
+            direction LR
+            subgraph G1["Acceso y administración"]
+                direction TB
+                AUTH["auth<br/><small>/login · /logout</small>"]:::impl
+                USU["usuarios<br/><small>/usuarios</small>"]:::impl
+                CAT["catalogos<br/><small>/catalogos/&lt;catalogo&gt;</small>"]:::impl
+            end
+            subgraph G2["Proceso de devolución"]
+                direction TB
+                VEN["ventas<br/><small>/ventas</small>"]:::impl
+                DEV["devoluciones<br/><small>solicitud · evidencias · resolver</small>"]:::impl
+                LOG["logistica<br/><small>recolecciones · recepciones</small>"]:::impl
+                INSP["inspecciones<br/><small>registrar · disposicion · inventario</small>"]:::impl
+                REE["reembolsos<br/><small>/reembolsos</small>"]:::impl
+            end
+            subgraph G3["Análisis y monitoreo"]
+                direction TB
+                PAN["panel<br/><small>/panel · /panel/causas<br/>/panel/costos · /bitacora</small>"]:::impl
+                HEA["/health<br/><small>JSON: PostgreSQL y Redis</small>"]:::impl
+            end
+        end
+        subgraph BAJO[" "]
+            direction LR
+            subgraph PRES["Vista"]
+                direction TB
+                TPL["Plantillas Jinja2<br/><small>app/templates</small>"]:::impl
+                STA["CSS / JS<br/><small>app/static</small>"]:::impl
+            end
+            subgraph TRANS["Servicios transversales"]
+                direction LR
+                SEC["security.py<br/><small>roles_required · devolucion_visible<br/>registrar_bitacora · correlation_id</small>"]:::impl
+                DBM["db.py<br/><small>consultar / ejecutar<br/>parámetros ligados</small>"]:::impl
+                CAC["cache.py<br/><small>intentos fallidos · bloqueo</small>"]:::impl
+                CFG["config.py<br/><small>variables de entorno (.env)</small>"]:::impl
+            end
+        end
+    end
+
+    PG[("PostgreSQL")]:::db
+    RD[("Redis")]:::db
+
+    NAV -->|"HTTP"| CTRL
+    CTRL -->|"render_template"| PRES
+    CTRL -->|"permisos y bitácora"| SEC
+    CTRL -->|"SQL"| DBM
+    AUTH -->|"intentos"| CAC
+    SEC --> DBM
+    DBM --> PG
+    CAC --> RD
+    SEC -. "sesión (Flask-Session)" .-> RD
+    CFG -.-> DBM
+    CFG -.-> CAC
+    style BAJO fill:none,stroke:none
+    classDef impl fill:#E8F1FB,stroke:#1F5FAD,stroke-width:2px,color:#0B2545
+    classDef db fill:#E6F4EA,stroke:#2E7D32,stroke-width:2px,color:#123D16
+    classDef actor fill:#FFF3DF,stroke:#B86E00,stroke-width:2px,color:#4A2C00
+    classDef ext fill:#F2EAF8,stroke:#6F3D96,stroke-width:1.5px,color:#321A45
+    classDef futuro fill:#F5F5F5,stroke:#9A9A9A,stroke-width:1.5px,stroke-dasharray:6 4,color:#666666
+    classDef nota fill:#FFFDE7,stroke:#C9B800,stroke-width:1px,color:#4D4500

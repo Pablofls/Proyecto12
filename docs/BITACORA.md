@@ -635,3 +635,48 @@ motivo sin otra solicitud abierta en esa linea (`flujo.motivo_libre`).
 si una linea se puede devolver, hasta cuando, cuantas unidades y que solicitudes
 siguen abiertas; la app Android lo usa para mostrar las condiciones antes de la
 solicitud.
+
+## 2026-11-10 — Servicio de sincronizacion offline (dominio 20, puerto 8020)
+
+**Que hace.** Las apps Android y de escritorio guardan operaciones mientras no
+hay red y las mandan a `POST /api/v1/sincronizacion/operaciones` cuando vuelve.
+Se aceptan sin conexion: avance de una recoleccion (Recolector, Coordinador),
+recepcion en el centro (Operador de Almacen, Encargado del Centro) y evidencias
+de esas dos etapas (comentario o foto). La respuesta trae un resultado por
+operacion: `aceptada`, `conflicto`, `rechazada` o `reintentar`.
+
+**Sin duplicados.** Cada operacion trae un `id_operacion` (UUID) que genera el
+dispositivo al capturarla y que reutiliza en cada reintento. Es la llave primaria
+de `operaciones_offline` (migracion 017): si la misma operacion llega otra vez,
+se responde el resultado guardado con `repetida: true` y no se aplica. La fila y
+el efecto se guardan en la misma transaccion, y la transaccion se confirma antes
+de responder. Dos envios simultaneos del mismo id: PostgreSQL hace esperar al
+segundo en la llave primaria y solo uno se aplica (probado con dos hilos). Si un
+id llega con otros datos se rechaza con `id_reutilizado`.
+
+**Conflictos.** El dispositivo manda el estado que vio (`estado_esperado`). Si el
+servidor cambio mientras estaba sin red (por ejemplo, el coordinador marco la
+recoleccion como fallida), la operacion queda en `conflicto` con el estado del
+servidor y no se aplica. Un 409 de negocio es conflicto; cualquier otro error es
+rechazo. Ambos se guardan: el reintento recibe la misma respuesta.
+
+**Lo que nunca es offline.** Autorizar, programar recoleccion, reembolsos,
+disposiciones, reincorporar inventario y cerrar investigaciones se rechazan con
+`requiere_conexion`: deben comprobar permisos y estado en el momento.
+
+**Evidencias seguras.** La foto viaja en base64 con su SHA-256; si no coincide se
+rechaza con `archivo_corrupto`. Se guarda en el mismo volumen privado y con el
+mismo formato que el servicio de evidencias, y los metadatos en MongoDB llevan
+el `id_operacion` como llave para no duplicarse.
+
+**Otros controles.** Captura de hace mas de 7 dias o con fecha en el futuro: se
+rechaza. La sucursal del usuario se respeta (`fuera_de_sucursal`). La recepcion
+guarda como fecha la de la captura, no la de la sincronizacion. GPS opcional en
+el avance de la recoleccion; queda en la bitacora.
+
+**Cambio en `shared/infra.py`.** Nueva funcion `confirmar()`: hace el commit antes
+de responder, para que la app nunca marque como confirmada una operacion que no
+quedo guardada. No cambia nada para los demas servicios.
+
+**Pruebas en la VM:** 24 unitarias y 9 de integracion, todas pasan.
+

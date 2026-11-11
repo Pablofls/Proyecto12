@@ -1,0 +1,43 @@
+sequenceDiagram
+    actor C as Cliente
+    actor A as Analista
+    actor L as Coord. Logística
+    actor E as Enc. Centro
+    actor I as Inspector
+    actor R as Enc. Reembolsos
+    participant W as Web Flask
+    participant P as PostgreSQL
+
+    C->>W: GET /ventas/{id} (consulta su compra)
+    W->>P: SELECT venta + venta_detalle
+    C->>W: POST /devoluciones/nueva (línea de venta, motivo, descripción)
+    W->>P: INSERT devoluciones · folio desde seq_folio_devolucion
+    W->>P: INSERT bitacora (usuario, fecha, acción)
+    Note over P: estado = solicitada
+    C->>W: POST /devoluciones/{id}/evidencias
+    W->>P: INSERT evidencias (tipo, etapa, referencia)
+    A->>W: POST /devoluciones/{id}/resolver (autorizar / rechazar / pedir información)
+    W->>P: UPDATE devoluciones + INSERT bitacora con comentario
+    Note over P: estado = autorizada
+    L->>W: POST /logistica/recolecciones/{id}/programar (fecha, lugar, ruta, transportista)
+    W->>P: INSERT recolecciones
+    Note over P: estado = en_recoleccion
+    L->>W: POST /logistica/recolecciones/{rid}/estado
+    W->>P: UPDATE recolecciones.estado
+    E->>W: POST /logistica/recepciones/{id}
+    W->>P: INSERT recepciones
+    Note over P: estado = recibida
+    I->>W: POST /inspecciones/{id}/registrar (empaque, daños, caducidad, temperatura)
+    W->>P: INSERT inspecciones_ref (apto_para_inventario)
+    Note over P: estado = en_inspeccion
+    A->>W: POST /inspecciones/{id}/disposicion (destino)
+    W->>P: INSERT disposiciones
+    P-->>W: trigger valida destino (RN-06 / RN-07)
+    Note over P: estado = resuelta
+    R->>W: POST /reembolsos/{id}/registrar (monto, método)
+    W->>P: INSERT reembolsos
+    P-->>W: fn_validar_reembolso (autorizada, monto ≤ venta)
+    W->>P: INSERT costos (etapa = reembolso)
+    Note over P: estado = cerrada
+    A->>W: GET /panel/causas · /panel/costos · /bitacora
+    W->>P: consultas de agregación
