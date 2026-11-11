@@ -5,6 +5,7 @@
 | Requerimiento | Implementacion distribuida | Evidencia automatizada |
 |---|---|---|
 | RF-12 a RF-15 | `services/logistica/app.py`: programacion, asignacion, estados y recepcion | `services/logistica/tests/test_api.py` |
+| Dominio 20: sincronizacion offline (RF-09, RF-12 a RF-15) | `services/sincronizacion/app.py`: cola de operaciones con `id_operacion` (idempotencia), conflicto por `estado_esperado`, fotos con SHA-256, operaciones criticas solo en linea; tabla `operaciones_offline` (migracion 017) | `services/sincronizacion/tests/test_integracion.py` (reintento y doble envio sin duplicados, conflicto, integridad de la foto) y `test_reglas.py`; guia para las apps en `docs/GUIA_SINCRONIZACION.md` |
 | RF-16, RF-17; RN-05 a RN-07 | `services/inspecciones/app.py`: documento MongoDB, referencia PostgreSQL y calculo de aptitud | `services/inspecciones/tests/test_reglas.py` |
 | RF-18, RF-19 | `services/inspecciones/app.py`: disposicion validada y etiqueta de inventario | Swagger y prueba integrada en VM |
 | RF-20, RF-21; RN-03, RN-04 | `services/reembolsos_costos/app.py`: reembolso unico con lock Redis | `services/reembolsos_costos/tests/test_api.py` |
@@ -36,7 +37,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RF-01 | Inicio y cierre de sesion | `apps/web/app/blueprints/auth.py`; API: `services/auth` (`POST /api/v1/auth/login`, `/logout`) | implementado |
 | RF-02 | Recuperacion de contrasena | — | pendiente |
 | RF-03 | Administrar usuarios | `apps/web/app/blueprints/usuarios.py` | implementado |
-| RF-04 | Roles y permisos | `apps/web/app/security.py`, `db/migrations/008_roles_base.sql`; roles de la app Android (Recolector, Operador de Almacen, Supervisor) en `db/migrations/014_roles_operacion_campo.sql` y `shared/seguridad.py` | implementado |
+| RF-04 | Roles y permisos | `apps/web/app/security.py`, `db/migrations/008_roles_base.sql`; roles de la app Android (Recolector, Operador de Almacen, Supervisor) en `db/migrations/014_roles_operacion_campo.sql` y `shared/seguridad.py`; control por sucursal (`db/migrations/015_sucursal_usuario.sql`, `condicion_tienda`/`exigir_tienda`) y operaciones criticas con reconfirmacion (`POST /api/v1/auth/autorizar-operacion`, `exigir_autorizacion_operacion`); ver `docs/GUIA_SEGURIDAD.md` | implementado |
 | RF-05 | Administrar catalogos | `apps/web/app/blueprints/catalogos.py` | implementado |
 | RF-06 | Devolucion ligada a venta y producto | `db/migrations/002_venta_detalle.sql`, `apps/web/app/blueprints/devoluciones.py` | implementado |
 | RF-07 | Registrar solicitud con motivo | `devoluciones.nueva`; API: `POST /api/v1/devoluciones` (`services/devoluciones`) | implementado |
@@ -117,9 +118,10 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RN-10 | Agrupacion por atributos definidos por el negocio | `panel.causas` agrupa y filtra por motivo, producto, lote, proveedor, tienda, ruta y estado |
 | RN-11 | La clasificacion automatica es sugerencia | `clasificar-motivo` devuelve `requiere_confirmacion=true`; no modifica la devolucion |
 | RN-12 | Toda decision queda registrada con usuario y fecha | `registrar_bitacora` en cada operacion |
-| RN-13 | Cada usuario solo ejecuta lo de su rol | `roles_required` en todas las vistas |
+| RN-13 | Cada usuario solo ejecuta lo de su rol | `roles_required` en todas las vistas; en los servicios, `requiere_jwt()` sin roles solo acepta los 7 roles base, la sucursal limita los registros y las operaciones criticas exigen reconfirmar la contrasena |
 | RN-14 | Evidencias privadas por enlaces temporales | Parcial: enlaces temporales HMAC de 15 min en `services/evidencias`; falta almacenar en GCS |
 | RN-15 | No exponer informacion sensible sin autorizacion | Bitacora y errores sin datos sensibles |
+| RN-16 | Plazo de devolucion: 30 dias no refrigerado, 7 refrigerado, desde la venta; una sola solicitud abierta por linea y motivo | Tabla `politicas_devolucion` (migracion 016); `services/devoluciones/app.py` (`_exigir_plazo`, `_exigir_no_duplicada`, `GET /api/v1/devoluciones/elegibilidad`) y la misma regla en `apps/web/app/blueprints/devoluciones.py` (modo monolitico) |
 
 ## Casos de uso cubiertos
 

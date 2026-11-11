@@ -20,6 +20,31 @@ mkdir -p docs/pruebas
 : > "$SALIDA"
 fallos=0
 
+# Encabezado de la corrida: la retroalimentacion del segundo parcial pide que cada
+# resultado identifique commit, fecha y entorno, sin mezclar versiones. Todo sale
+# del propio entorno; no se escribe a mano.
+{
+  echo "# Corrida de pruebas"
+  echo "Fecha (UTC): $(date -u '+%Y-%m-%d %H:%M:%S')"
+  echo "Rama: $(git rev-parse --abbrev-ref HEAD)"
+  echo "Commit: $(git rev-parse HEAD)"
+  echo "Commit (mensaje): $(git log -1 --format=%s)"
+  if git diff --quiet HEAD -- . ':(exclude)docs/pruebas'; then
+    echo "Arbol de trabajo: limpio"
+  else
+    echo "Arbol de trabajo: CON CAMBIOS SIN COMMIT (el resultado no corresponde exactamente al commit)"
+  fi
+  echo "Host: $(uname -n) ($(uname -sr))"
+  echo "Docker: $(docker version --format '{{.Server.Version}}' 2>/dev/null)"
+  echo "Docker Compose: $(docker compose version --short 2>/dev/null)"
+  echo "PostgreSQL: $(docker compose exec -T postgres postgres --version 2>/dev/null)"
+  echo "Redis: $(docker compose exec -T redis redis-server --version 2>/dev/null | cut -d' ' -f3)"
+  echo "MongoDB: $(docker compose exec -T mongo mongod --version 2>/dev/null | head -1)"
+  echo "Migraciones aplicadas: $(docker compose exec -T postgres psql -U "${POSTGRES_USER:-devoluciones_app}" -d "${POSTGRES_DB:-devoluciones}" -tA -c 'SELECT max(version) FROM schema_migrations' 2>/dev/null)"
+  echo "Modo: $MODO"
+  echo
+} | tee -a "$SALIDA"
+
 # El login esta limitado a LOGIN_MAX_POR_MINUTO por IP (RNF-13, H-07) y todos los
 # bloques salen de la misma IP del compose. test_99 llega al 429 a proposito y cada
 # suite hace varios logins, asi que se borran los contadores antes de cada bloque.
@@ -46,12 +71,17 @@ fi
 
 if [ "$MODO" = "todo" ] || [ "$MODO" = "servicios" ]; then
   for servicio in auth ventas-catalogos devoluciones evidencias logistica \
-                  inspecciones reembolsos-costos analisis-auditoria; do
+                  inspecciones reembolsos-costos analisis-auditoria sincronizacion; do
     correr docker compose run --rm -e INTEGRACION=1 "$servicio" \
       python -m pytest -v -p no:cacheprovider tests/test_integracion.py
   done
 fi
 
+echo | tee -a "$SALIDA"
+echo "=== Resumen ===" | tee -a "$SALIDA"
+grep -E "^(=== |=+ .*(passed|failed|error|skipped).* =+$)" "$SALIDA" | grep -v "=== Resumen" | tee -a "$SALIDA.resumen" > /dev/null
+cat "$SALIDA.resumen" >> "$SALIDA"; rm -f "$SALIDA.resumen"
+echo "Bloques con fallos: $fallos" | tee -a "$SALIDA"
 echo
 echo "Salida guardada en $SALIDA ($fallos bloque(s) con fallos)."
 echo "Pega lo relevante en docs/pruebas/resultado_${FECHA}.md y actualiza docs/PRUEBAS.md."

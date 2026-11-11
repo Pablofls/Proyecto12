@@ -60,13 +60,19 @@ def ctx():
           JOIN usuarios u  ON u.id = v.cliente_id
           JOIN lotes l     ON l.id = vd.lote_id
           JOIN productos p ON p.id = l.producto_id
+          JOIN politicas_devolucion pol
+                           ON pol.clasificacion_temperatura = p.clasificacion_temperatura
          WHERE v.eliminado_en IS NULL AND p.clasificacion_temperatura = 'refrigerado'
+           -- RN-16: solo compras dentro del plazo de devolucion (seed_demo.py crea
+           -- ventas recientes cada dia que se corre).
+           AND v.fecha_venta + pol.dias_plazo >= CURRENT_DATE
          ORDER BY disponible DESC, vd.id
          LIMIT 1""", uno=True)
     if not x.linea or x.linea["disponible"] < 3:
         # 1 la retiene el proceso completo hasta el final y las pruebas de error
         # usan 1 a la vez (se liberan al terminar cada una), con una de margen.
-        pytest.skip("No hay una linea de venta refrigerada con al menos 3 unidades disponibles")
+        pytest.skip("No hay una linea de venta refrigerada dentro del plazo (RN-16) con al "
+                    "menos 3 unidades disponibles: corre seed_demo.py hoy")
     x.motivo = c.sql("SELECT id FROM motivos WHERE activo ORDER BY id LIMIT 1",
                      uno=True)["id"]
 

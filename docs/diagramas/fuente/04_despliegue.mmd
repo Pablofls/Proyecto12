@@ -1,0 +1,42 @@
+flowchart LR
+    subgraph DEVS["Equipo de desarrollo (laptops)"]
+        direction TB
+        D1["Código Python / SQL<br/><small>no se levanta compose localmente</small>"]:::actor
+    end
+    GH["GitHub<br/><small>Pablofls/Proyecto12</small>"]:::ext
+    USR(["Usuarios<br/>navegador"]):::actor
+
+    subgraph GCP["Google Cloud Platform"]
+        direction TB
+        FW{{"Regla de firewall<br/>permitir-8000-devoluciones<br/><small>tcp:8000 · rangos de origen configurables</small>"}}:::ext
+        subgraph VM["VM Compute Engine · CentOS (SELinux Enforcing)"]
+            direction TB
+            NAT[("PostgreSQL nativo de la VM<br/><small>:5432 · no usado por la app</small>")]:::futuro
+            subgraph DK["Docker Engine · docker compose"]
+                direction TB
+                APP["devoluciones_app<br/><small>imagen python:3.11-slim<br/>gunicorn :8000</small>"]:::impl
+                PG[("devoluciones_postgres<br/><small>postgres:16-alpine</small>")]:::db
+                RD[("devoluciones_redis<br/><small>redis:7-alpine</small>")]:::db
+                ENV[/".env (fuera de git)"/]:::nota
+                SRC[/"bind mount ./ → /srv/app:z"/]:::nota
+                VP[/"postgres_data"/]:::db
+                VR[/"redis_data"/]:::db
+            end
+        end
+    end
+
+    D1 -->|"git push"| GH
+    GH -->|"git pull en la VM"| SRC
+    USR -->|"HTTP :8000"| FW --> APP
+    SRC --- APP
+    ENV --- APP
+    APP --> PG
+    APP --> RD
+    PG --- VP
+    RD --- VR
+    classDef impl fill:#E8F1FB,stroke:#1F5FAD,stroke-width:2px,color:#0B2545
+    classDef db fill:#E6F4EA,stroke:#2E7D32,stroke-width:2px,color:#123D16
+    classDef actor fill:#FFF3DF,stroke:#B86E00,stroke-width:2px,color:#4A2C00
+    classDef ext fill:#F2EAF8,stroke:#6F3D96,stroke-width:1.5px,color:#321A45
+    classDef futuro fill:#F5F5F5,stroke:#9A9A9A,stroke-width:1.5px,stroke-dasharray:6 4,color:#666666
+    classDef nota fill:#FFFDE7,stroke:#C9B800,stroke-width:1px,color:#4D4500

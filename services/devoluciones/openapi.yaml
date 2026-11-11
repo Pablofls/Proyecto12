@@ -144,7 +144,10 @@ components:
             error: {codigo: 404, tipo: no_encontrado, mensaje: "No existe la devolucion 999999.",
                     detalles: null, correlation_id: 3f2a9c1e0b7d4a55}
     E409:
-      description: Regla de negocio (cantidad excedida o estado que no lo permite)
+      description: |
+        Regla de negocio: `cantidad_excedida`, `sin_disponible`, `estado_no_permite`,
+        `fuera_de_plazo` (RN-16: 30 dias no refrigerado, 7 refrigerado) o
+        `solicitud_duplicada` (ya hay una solicitud abierta con la misma linea y motivo)
       content:
         application/json:
           schema: {$ref: "#/components/schemas/Error"}
@@ -153,6 +156,42 @@ components:
                     detalles: {estado_actual: autorizada}, correlation_id: 3f2a9c1e0b7d4a55}
 
 paths:
+  /api/v1/devoluciones/elegibilidad:
+    get:
+      tags: [Devoluciones]
+      summary: Elegibilidad de una linea de venta (RN-16)
+      description: |
+        Antes de llenar la solicitud, indica si el producto se puede devolver:
+        plazo (30 dias no refrigerado, 7 refrigerado, desde la fecha de venta,
+        tabla `politicas_devolucion`), unidades disponibles y solicitudes ya
+        abiertas por motivo. No escribe nada; al registrar se vuelven a aplicar
+        las mismas reglas. Cliente (solo sus compras), Analista o Supervisor.
+      parameters:
+        - {name: venta_detalle_id, in: query, required: true, schema: {type: integer, minimum: 1}}
+      responses:
+        "200":
+          description: Elegibilidad calculada
+          content:
+            application/json:
+              example:
+                venta_detalle_id: 101
+                folio_venta: VTA-20261110-R1
+                elegible: true
+                dentro_del_plazo: true
+                fecha_venta: "2026-11-10"
+                clasificacion_temperatura: refrigerado
+                dias_plazo: 7
+                fecha_limite: "2026-11-17"
+                dias_restantes: 7
+                cantidad_comprada: 3
+                disponible: 3
+                solicitudes_abiertas: []
+                impedimentos: []
+        "400": {$ref: "#/components/responses/E400"}
+        "401": {$ref: "#/components/responses/E401"}
+        "403": {$ref: "#/components/responses/E403"}
+        "404": {$ref: "#/components/responses/E404"}
+
   /api/v1/devoluciones:
     post:
       tags: [Devoluciones]

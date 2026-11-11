@@ -1,0 +1,41 @@
+sequenceDiagram
+    actor U as Usuario
+    participant W as Flask (auth.py)
+    participant R as Redis
+    participant P as PostgreSQL
+
+    U->>W: POST /login (correo, contraseña)
+    W->>P: SELECT usuario, rol, estado, bloqueado_hasta
+    W->>R: TTL devoluciones:bloqueo:{correo}
+    alt Cuenta bloqueada (Redis o bloqueado_hasta)
+        W->>P: INSERT intentos_acceso (exitoso = false)
+        W->>P: INSERT bitacora (login_bloqueado)
+        W-->>U: 429 · cuenta bloqueada temporalmente
+    else Credenciales incorrectas
+        W->>W: check_password_hash() falla
+        W->>P: INSERT intentos_acceso (exitoso = false, IP)
+        W->>R: INCR devoluciones:intentos:{correo} · EXPIRE 15 min
+        opt 5 intentos o más
+            W->>R: SETEX devoluciones:bloqueo:{correo} 15 min
+            W->>P: UPDATE usuarios.bloqueado_hasta · INSERT bitacora
+        end
+        W-->>U: 401 · mensaje genérico (no revela si el correo existe)
+    else Credenciales correctas
+        W->>R: DEL intentos y bloqueo
+        W->>P: INSERT intentos_acceso (exitoso = true) · bitacora (login)
+        W->>R: SET devoluciones:sesion:{id} (id, nombre, rol)
+        W-->>U: 302 → /panel · cookie firmada HttpOnly, SameSite=Lax
+    end
+
+    Note over U,P: Cada petición protegida posterior
+    U->>W: GET /ruta protegida + cookie
+    W->>R: GET devoluciones:sesion:{id}
+    alt Rol no permitido (roles_required)
+        W->>P: INSERT bitacora (acceso_denegado)
+        W-->>U: 403
+    else Recurso de otro cliente (devolucion_visible)
+        W-->>U: 403 / 404
+    else Autorizado
+        W-->>U: 200 · página
+    end
+    Note over W,R: JWT de corta duración, token de renovación y revocación<br/>en Redis quedan diseñados para las APIs del segundo parcial

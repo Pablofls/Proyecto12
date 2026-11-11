@@ -1,0 +1,37 @@
+flowchart LR
+    INT(["Internet<br/><small>usuarios</small>"]):::actor
+
+    subgraph GCP["Red VPC de GCP"]
+        direction LR
+        FW{{"Firewall GCP<br/><small>permite solo tcp:8000</small>"}}:::ext
+        subgraph VM["VM · IP externa"]
+            direction LR
+            subgraph HOST["Puertos publicados en el host"]
+                direction TB
+                P8000["0.0.0.0:8000<br/><small>público</small>"]:::impl
+                P55432["127.0.0.1:55432<br/><small>solo local de la VM</small>"]:::nota
+                P56379["127.0.0.1:56379<br/><small>solo local de la VM</small>"]:::nota
+            end
+            subgraph NET["Red bridge de Docker Compose (DNS interno)"]
+                direction TB
+                APP["app<br/><small>:8000</small>"]:::impl
+                PG[("postgres<br/><small>:5432</small>")]:::db
+                RD[("redis<br/><small>:6379</small>")]:::db
+            end
+        end
+    end
+
+    INT -->|"HTTP"| FW -->|"tcp:8000"| P8000 --> APP
+    APP -->|"postgres:5432"| PG
+    APP -->|"redis:6379"| RD
+    P55432 -. "cliente psql desde la VM" .-> PG
+    P56379 -. "redis-cli desde la VM" .-> RD
+    INT -. "bloqueado: 55432 / 56379 / 5432" .-x FW
+
+    N1["Pendiente: HTTPS / TLS (RNF-14)<br/>hoy el tráfico viaja en HTTP"]:::futuro
+    classDef impl fill:#E8F1FB,stroke:#1F5FAD,stroke-width:2px,color:#0B2545
+    classDef db fill:#E6F4EA,stroke:#2E7D32,stroke-width:2px,color:#123D16
+    classDef actor fill:#FFF3DF,stroke:#B86E00,stroke-width:2px,color:#4A2C00
+    classDef ext fill:#F2EAF8,stroke:#6F3D96,stroke-width:1.5px,color:#321A45
+    classDef futuro fill:#F5F5F5,stroke:#9A9A9A,stroke-width:1.5px,stroke-dasharray:6 4,color:#666666
+    classDef nota fill:#FFFDE7,stroke:#C9B800,stroke-width:1px,color:#4D4500
