@@ -13,6 +13,7 @@ import os
 import unittest
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 import psycopg2
 import psycopg2.extras
@@ -41,11 +42,12 @@ def _sql(sentencia, params=(), uno=False):
         conn.close()
 
 
-def _http(base, metodo, ruta, cuerpo=None, token=None):
+def _http(base, metodo, ruta, cuerpo=None, token=None, extras=None):
     """Peticion HTTP real; devuelve (codigo, cuerpo_json). No lanza por 4xx."""
     cabeceras = {"Content-Type": "application/json"}
     if token:
         cabeceras["Authorization"] = f"Bearer {token}"
+    cabeceras.update(extras or {})
     peticion = urllib.request.Request(
         base + ruta, method=metodo, headers=cabeceras,
         data=json.dumps(cuerpo).encode() if cuerpo is not None else None)
@@ -80,6 +82,15 @@ def _login(rol):
 
 def _logout(token):
     _http(AUTH_URL, "POST", "/api/v1/auth/logout", token=token)
+
+
+def _permiso(token, operacion, recurso):
+    codigo, cuerpo = _http(AUTH_URL, "POST", "/api/v1/auth/autorizar-operacion",
+        {"operacion": operacion, "recurso_id": str(recurso),
+         "password": os.environ["PASSWORD_DEMO"]}, token)
+    if codigo != 201:
+        raise AssertionError(f"autorizacion respondio {codigo}: {cuerpo}")
+    return {"X-Autorizacion-Operacion": cuerpo["token_operacion"]}
 
 
 def _linea_disponible(refrigerado=None):
@@ -163,7 +174,8 @@ class IntegracionReembolsos(unittest.TestCase):
         self.ids.append(dev["id"])
         cuerpo = {"devolucion_id": dev["id"], "estado": "aprobado", "metodo": "transferencia",
                   "monto": self._valor(dev["id"])}
-        codigo, resp = _http(SERVICIO_URL, "POST", PREFIJO + "/reembolsos", cuerpo, self.encargado)
+        codigo, resp = _http(SERVICIO_URL, "POST", PREFIJO + "/reembolsos", cuerpo, self.encargado,
+                             _permiso(self.encargado,"aprobar_reembolso",dev["id"]))
         self.assertEqual(codigo, 201, resp)
         self.assertEqual(_sql("SELECT COUNT(*) AS n FROM reembolsos WHERE devolucion_id = %s",
                               (dev["id"],), uno=True)["n"], 1)
@@ -172,7 +184,8 @@ class IntegracionReembolsos(unittest.TestCase):
                               uno=True)["estado"], "cerrada")
         self.assertTrue(_sql("SELECT 1 FROM notificaciones WHERE devolucion_id = %s "
                              "AND tipo = 'reembolso_aprobado'", (dev["id"],), uno=True))
-        codigo, resp = _http(SERVICIO_URL, "POST", PREFIJO + "/reembolsos", cuerpo, self.encargado)
+        codigo, resp = _http(SERVICIO_URL, "POST", PREFIJO + "/reembolsos", cuerpo, self.encargado,
+                             _permiso(self.encargado,"aprobar_reembolso",dev["id"]))
         self.assertEqual(codigo, 409)
         self.assertEqual(resp["error"]["tipo"], "reembolso_duplicado")
         self.assertEqual(_sql("SELECT COUNT(*) AS n FROM reembolsos WHERE devolucion_id = %s",
@@ -187,7 +200,8 @@ class IntegracionReembolsos(unittest.TestCase):
         try:
             codigo, resp = _http(SERVICIO_URL, "POST", PREFIJO + "/reembolsos",
                                  {"devolucion_id": dev["id"], "estado": "aprobado",
-                                  "metodo": "tarjeta", "monto": 1}, self.encargado)
+                                  "metodo": "tarjeta", "monto": 1}, self.encargado,
+                                 _permiso(self.encargado,"aprobar_reembolso",dev["id"]))
             self.assertEqual(codigo, 409)
             self.assertEqual(resp["error"]["tipo"], "reembolso_en_proceso")
             self.assertEqual(r.get(llave), "otro-proceso")  # no libero el lock ajeno
@@ -196,12 +210,28 @@ class IntegracionReembolsos(unittest.TestCase):
         self.assertIsNone(_sql("SELECT 1 FROM reembolsos WHERE devolucion_id = %s",
                                (dev["id"],), uno=True))
 
+    def test_dos_solicitudes_simultaneas_crean_un_solo_reembolso(self):
+        dev = _sembrar_devolucion("autorizada"); self.ids.append(dev["id"])
+        cuerpo = {"devolucion_id": dev["id"], "estado": "aprobado",
+                  "metodo": "tarjeta", "monto": 1}
+        permisos = [_permiso(self.encargado,"aprobar_reembolso",dev["id"])
+                    for _ in range(2)]
+        def enviar(encabezados):
+            return _http(SERVICIO_URL,"POST",PREFIJO+"/reembolsos",cuerpo,
+                         self.encargado,encabezados)[0]
+        with ThreadPoolExecutor(max_workers=2) as ejecutor:
+            codigos=list(ejecutor.map(enviar,permisos))
+        self.assertEqual(sorted(codigos),[201,409])
+        self.assertEqual(_sql("SELECT COUNT(*) AS n FROM reembolsos WHERE devolucion_id=%s",
+                              (dev["id"],),uno=True)["n"],1)
+
     def test_no_reembolsa_si_no_esta_autorizada_ni_mas_del_valor(self):  # RN-04
         sin = _sembrar_devolucion("solicitada")
         self.ids.append(sin["id"])
         codigo, resp = _http(SERVICIO_URL, "POST", PREFIJO + "/reembolsos",
                              {"devolucion_id": sin["id"], "estado": "aprobado",
-                              "metodo": "tarjeta", "monto": 1}, self.encargado)
+                              "metodo": "tarjeta", "monto": 1}, self.encargado,
+                             _permiso(self.encargado,"aprobar_reembolso",sin["id"]))
         self.assertEqual(codigo, 409)
         self.assertEqual(resp["error"]["tipo"], "estado_no_permite")
         aut = _sembrar_devolucion("autorizada")
@@ -209,7 +239,8 @@ class IntegracionReembolsos(unittest.TestCase):
         codigo, resp = _http(SERVICIO_URL, "POST", PREFIJO + "/reembolsos",
                              {"devolucion_id": aut["id"], "estado": "aprobado",
                               "metodo": "tarjeta", "monto": self._valor(aut["id"]) + 1000},
-                             self.encargado)
+                             self.encargado,
+                             _permiso(self.encargado,"aprobar_reembolso",aut["id"]))
         self.assertEqual(codigo, 409)
         self.assertEqual(resp["error"]["tipo"], "monto_excedido")
         self.assertIsNone(_sql("SELECT 1 FROM reembolsos WHERE devolucion_id IN (%s, %s)",

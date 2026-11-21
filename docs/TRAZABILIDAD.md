@@ -1,5 +1,18 @@
 # Matriz de trazabilidad
 
+## Entrega final — Roberto
+
+| Requisito | Implementación | Prueba/evidencia |
+|---|---|---|
+| Inspección por categoría | `services/inspecciones/reglas.py` y contrato ampliado | `test_casos_finales.py` |
+| Cinco escenarios solicitados | Daño, empaque, frío, evidencia insuficiente y recuperable | 5 pruebas unitarias |
+| Disposición solo autorizada | Servicio 8014 + permiso crítico de un uso | `services/disposicion_inventario/tests` |
+| Cuarentena obligatoria | Migración 030, trigger y endpoints separados | Estado inicial y reincorporación |
+| Costos completos | Recolección, transporte, inspección, almacenamiento, reparación, reacondicionamiento, destrucción y reembolso | `/costos/{id}` |
+| Valor recuperado y costo neto | `recuperaciones_valor` y vista de impacto | `/recuperaciones` y `/comparacion-destinos/{id}` |
+| Reembolso único concurrente | Redis + restricción única PostgreSQL | prueba real con dos hilos |
+| Escritorio PySide6 XML/XSD | `apps/escritorio`, sin acceso directo a datos | `test_cliente_xml.py` |
+
 ## Ampliacion del segundo parcial
 
 | Requerimiento | Implementacion distribuida | Evidencia automatizada |
@@ -9,7 +22,7 @@
 | Dominios 21 y 22: integraciones y monitoreo (RF-05, RF-06, RF-32, RNF-22, RNF-23) | `services/integraciones_monitoreo/`: importacion idempotente de ventas del POS, exportacion para ERP/finanzas, eventos de transportista, conciliacion de ids (tabla `integraciones_ids`, migracion 018); monitoreo de servicios, bases y colas con alertas que se resuelven solas y traza por `X-Correlation-ID`. Guia: `docs/GUIA_INTEGRACIONES_MONITOREO.md` | `services/integraciones_monitoreo/tests/test_integracion.py` (ticket repetido y simultaneo sin duplicar, XML, exportacion, alerta abierta y resuelta, traza) y `test_reglas.py` |
 | Consistencia monolito / distribuido (correccion del segundo parcial) | Mismas reglas en `apps/web/app/blueprints/devoluciones.py` y `services/devoluciones`; politica en tabla compartida. Ver `docs/MONOLITICO_VS_DISTRIBUIDO.md` | `apps/web/app/tests/test_paridad.py` (8 casos por 3 caminos) y `scripts/prueba_recuperacion.py` (servicios caidos sin duplicados) |
 | RF-16, RF-17; RN-05 a RN-07 | `services/inspecciones/app.py`: documento MongoDB, referencia PostgreSQL y calculo de aptitud | `services/inspecciones/tests/test_reglas.py` |
-| RF-18, RF-19 | `services/inspecciones/app.py`: disposicion validada y etiqueta de inventario | Swagger y prueba integrada en VM |
+| RF-18, RF-19 | `services/disposicion_inventario/app.py`: decisión autorizada, cuarentena y reincorporación | Swagger y prueba integrada en VM |
 | RF-20, RF-21; RN-03, RN-04 | `services/reembolsos_costos/app.py`: reembolso unico con lock Redis | `services/reembolsos_costos/tests/test_api.py` |
 | RF-27 | `services/reembolsos_costos/app.py`: costo y desglose por etapa | Swagger y prueba integrada en VM |
 | RNF-08, RNF-09 | `shared/seguridad.py` (`requiere_jwt`, `comprobar_en_redis`) usado por los ocho servicios | casos 401 y 403 de cada suite |

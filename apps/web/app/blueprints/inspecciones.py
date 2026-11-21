@@ -28,7 +28,7 @@ bp = Blueprint("inspecciones", __name__, url_prefix="/inspecciones")
 MINUTOS_MAX_FUERA_REFRIGERACION = 240
 
 DESTINOS = [
-    ("inventario", "Regresar a inventario"),
+    ("reintegrar", "Reintegrar a inventario (ingresa en cuarentena)"),
     ("reparacion", "Reparacion"),
     ("reacondicionamiento", "Reacondicionamiento"),
     ("reciclaje", "Reciclaje"),
@@ -277,10 +277,18 @@ def disposicion(devolucion_id):
 
         if api_client.habilitados():
             try:
+                permiso = api_client.solicitar(
+                    "auth", "POST", "/api/v1/auth/autorizar-operacion",
+                    datos={"operacion": "aprobar_disposicion",
+                           "recurso_id": str(devolucion_id),
+                           "password": request.form.get("password_confirmacion", "")},
+                )["token_operacion"]
                 api_client.solicitar(
-                    "inspecciones", "POST",
-                    f"/api/v1/inspecciones/{devolucion_id}/disposicion",
-                    datos={"destino": destino, "justificacion": justificacion},
+                    "disposicion", "POST",
+                    "/api/v1/disposicion-inventario/disposiciones",
+                    datos={"devolucion_id": devolucion_id, "destino": destino,
+                           "justificacion": justificacion},
+                    encabezados_extra={"X-Autorizacion-Operacion": permiso},
                 )
                 etapa_costo = ETAPA_COSTO_POR_DESTINO.get(destino)
                 if etapa_costo and costo_disposicion is not None and costo_disposicion > 0:
@@ -334,6 +342,19 @@ def disposicion(devolucion_id):
 @roles_required(ENCARGADO_CENTRO, ANALISTA)
 def inventario():
     """Inventario de productos recuperados y sus etiquetas (RF-19, HU-17)."""
+    if api_client.habilitados():
+        try:
+            articulos = api_client.solicitar(
+                "disposicion", "GET", "/api/v1/disposicion-inventario/inventario"
+            )["datos"]
+            pendientes = api_client.solicitar(
+                "disposicion", "GET", "/api/v1/disposicion-inventario/inventario/pendientes"
+            )["datos"]
+        except api_client.ErrorServicio as exc:
+            flash(exc.mensaje, "error")
+            articulos, pendientes = [], []
+        return render_template("inspecciones/inventario.html", articulos=articulos,
+                               por_etiquetar=pendientes)
     articulos = consultar(
         """
         SELECT ir.id, ir.etiqueta_codigo, ir.estado, ir.fecha_ingreso,
@@ -389,14 +410,14 @@ def etiquetar(disposicion_id):
     if api_client.habilitados():
         try:
             resultado = api_client.solicitar(
-                "inspecciones", "POST",
-                f"/api/v1/inspecciones/inventario/{disposicion_id}/etiqueta",
-                datos={},
+                "disposicion", "POST",
+                f"/api/v1/disposicion-inventario/inventario/{disposicion_id}/cuarentena",
+                datos={"ubicacion": request.form.get("ubicacion", "CUARENTENA-A")},
             )
         except api_client.ErrorServicio as exc:
             flash(exc.mensaje, "error")
             return redirect(url_for("inspecciones.inventario"))
-        flash(f"Articulo etiquetado como {resultado['etiqueta_codigo']}.", "ok")
+        flash(f"Articulo {resultado['etiqueta_codigo']} ingresado en cuarentena.", "ok")
         return redirect(url_for("inspecciones.inventario"))
 
     etiqueta = f"REC-{disposicion['folio_devolucion'].replace('DEV-', '')}"

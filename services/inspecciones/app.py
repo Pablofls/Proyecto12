@@ -1,4 +1,7 @@
-"""Microservicio de inspecciones y disposicion (RF-16 a RF-19, RN-05 a RN-07)."""
+"""Microservicio de inspeccion tecnica (RF-16, RF-17, RN-05 a RN-07).
+
+La decision comercial y el inventario pertenecen a disposicion-inventario.
+"""
 import os
 from datetime import datetime, timezone
 from flask import Blueprint, Flask, g, request
@@ -6,10 +9,10 @@ from shared import docs, mongo, respuestas
 from shared.infra import cerrar_conexion, consultar, ejecutar, registrar_bitacora, salud_postgres, salud_redis
 from shared.respuestas import ErrorApi, leer_cuerpo, responder
 from shared.seguridad import ANALISTA, ENCARGADO_CENTRO, INSPECTOR, requiere_jwt
+from reglas import evaluar
 
 NOMBRE="inspecciones"; CONTRATOS=os.path.join(os.path.dirname(__file__),"contratos")
 api=Blueprint(NOMBRE,__name__,url_prefix="/api/v1/inspecciones")
-DESTINOS={"inventario","reparacion","reacondicionamiento","reciclaje","devolucion_proveedor","desecho","donacion"}
 
 def _bool(v): return v is True or str(v).strip().lower() in ("true","1","si")
 def _bool_estricto(v, campo):
@@ -18,19 +21,32 @@ def _bool_estricto(v, campo):
     if isinstance(v, str) and v.strip().lower() in ("false","0","no"): return False
     raise ErrorApi(400,"validacion",f"{campo} debe ser booleano.")
 def evaluar_aptitud(refrigerado, danos, caducidad_vencida, cadena_frio_rota, minutos_fuera):
-    motivos=[]
-    if danos: motivos.append("danos fisicos visibles")
-    if caducidad_vencida: motivos.append("caducidad vencida")
-    if refrigerado and cadena_frio_rota: motivos.append("cadena de frio rota")
-    if refrigerado and minutos_fuera is not None and minutos_fuera > 30: motivos.append("mas de 30 minutos fuera de refrigeracion")
-    return not motivos, motivos
-
+    """Compatibilidad para consumidores anteriores; delega en reglas.evaluar."""
+    dictamen=evaluar({"danos":danos,"caducidad_vencida":caducidad_vencida,
+        "cadena_frio_rota":cadena_frio_rota,"minutos_fuera_refrigeracion":minutos_fuera,
+        "evidencia_suficiente":True},"refrigerado" if refrigerado else "no_refrigerado")
+    return dictamen["apto_para_inventario"],dictamen["motivos"]
 def _expediente(dev_id, bloquear=False):
     fila=consultar("""SELECT d.id,d.folio_devolucion,d.estado,p.clasificacion_temperatura,p.id AS producto_id
       FROM devoluciones d JOIN venta_detalle vd ON vd.id=d.venta_detalle_id JOIN lotes l ON l.id=vd.lote_id JOIN productos p ON p.id=l.producto_id
       WHERE d.id=%s AND d.eliminado_en IS NULL""" + (" FOR UPDATE OF d" if bloquear else ""),(dev_id,),uno=True)
     if not fila: raise ErrorApi(404,"no_encontrado",f"No existe la devolucion {dev_id}.")
     return fila
+
+@api.get("/pendientes")
+@requiere_jwt(INSPECTOR,ENCARGADO_CENTRO)
+def pendientes():
+    filas=consultar("""SELECT d.id,d.folio_devolucion,d.estado,d.fecha_solicitud,
+      p.nombre AS producto,p.sku,p.clasificacion_temperatura,l.numero_lote,
+      EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP-d.fecha_solicitud))/3600 AS horas_pendiente
+      FROM devoluciones d JOIN venta_detalle vd ON vd.id=d.venta_detalle_id
+      JOIN lotes l ON l.id=vd.lote_id JOIN productos p ON p.id=l.producto_id
+      WHERE d.estado IN ('recibida','en_inspeccion') AND d.eliminado_en IS NULL
+      AND NOT EXISTS(SELECT 1 FROM inspecciones_ref i WHERE i.devolucion_id=d.id)
+      ORDER BY d.fecha_solicitud""")
+    for fila in filas:
+        fila["prioridad"]="urgente" if float(fila["horas_pendiente"])>=48 else "normal"
+    return responder({"datos":filas})
 
 @api.post("")
 @requiere_jwt(INSPECTOR)
@@ -47,20 +63,32 @@ def registrar():
     refrigerado=exp["clasificacion_temperatura"]=="refrigerado"
     temperatura=datos.get("temperatura_recepcion")
     if refrigerado and (temperatura in (None,"") or minutos is None): raise ErrorApi(400,"validacion","Temperatura y minutos son obligatorios para producto refrigerado.")
-    danos=_bool_estricto(datos.get("danos",False),"danos")
-    caducidad=_bool_estricto(datos.get("caducidad_vencida",False),"caducidad_vencida")
-    cadena=_bool_estricto(datos.get("cadena_frio_rota",False),"cadena_frio_rota")
-    apto,motivos=evaluar_aptitud(refrigerado,danos,caducidad,cadena,minutos)
-    doc={"devolucion_id":dev_id,"inspector_id":g.usuario["id"],"fecha":datetime.now(timezone.utc),"producto":{"clasificacion_temperatura":exp["clasificacion_temperatura"]},"condiciones":{"estado_empaque":empaque,"danos":danos,"caducidad_vencida":caducidad,"cadena_frio_rota":cadena,"minutos_fuera_refrigeracion":minutos,"temperatura_recepcion":temperatura},"observaciones":str(datos.get("observaciones") or ""),"resultado":{"apto_para_inventario":apto,"motivos":motivos}}
+    condiciones={
+        "estado_empaque":empaque,
+        "danos":_bool_estricto(datos.get("danos",False),"danos"),
+        "empaque_alterado":_bool_estricto(datos.get("empaque_alterado",False),"empaque_alterado"),
+        "faltantes":_bool_estricto(datos.get("faltantes",False),"faltantes"),
+        "caducidad_vencida":_bool_estricto(datos.get("caducidad_vencida",False),"caducidad_vencida"),
+        "cadena_frio_rota":_bool_estricto(datos.get("cadena_frio_rota",False),"cadena_frio_rota"),
+        "evidencia_suficiente":_bool_estricto(datos.get("evidencia_suficiente",True),"evidencia_suficiente"),
+        "condicion_transporte":str(datos.get("condicion_transporte") or "adecuada").strip(),
+        "minutos_fuera_refrigeracion":minutos,
+        "temperatura_recepcion":float(temperatura) if temperatura not in (None,"") else None,
+    }
+    if condiciones["condicion_transporte"] not in ("adecuada","inadecuada","desconocida"):
+        raise ErrorApi(400,"validacion","condicion_transporte es invalida.")
+    dictamen=evaluar(condiciones,exp["clasificacion_temperatura"])
+    doc={"devolucion_id":dev_id,"inspector_id":g.usuario["id"],"fecha":datetime.now(timezone.utc),"producto":{"clasificacion_temperatura":exp["clasificacion_temperatura"]},"condiciones":condiciones,"observaciones":str(datos.get("observaciones") or ""),"resultado":dictamen}
     col=mongo.get_mongo().inspecciones; col.create_index("devolucion_id",unique=True,name="uq_inspeccion_devolucion")
     insertado=col.insert_one(doc)
     try:
-        nueva=ejecutar("""INSERT INTO inspecciones_ref(devolucion_id,inspector_id,resultado_general,mongo_doc_id,apto_para_inventario)
-          VALUES(%s,%s,%s,%s,%s) RETURNING id,devolucion_id,resultado_general,mongo_doc_id,apto_para_inventario,fecha_inspeccion""",(dev_id,g.usuario["id"],("apto" if apto else "no apto: "+", ".join(motivos))[:50],str(insertado.inserted_id),apto),devolver=True)
+        resumen=("apto" if dictamen["apto_para_inventario"] else "; ".join(dictamen["motivos"]))[:50]
+        nueva=ejecutar("""INSERT INTO inspecciones_ref(devolucion_id,inspector_id,resultado_general,mongo_doc_id,apto_para_inventario,estado_dictamen,recomendacion)
+          VALUES(%s,%s,%s,%s,%s,%s,%s) RETURNING id,devolucion_id,resultado_general,mongo_doc_id,apto_para_inventario,estado_dictamen,recomendacion,fecha_inspeccion""",(dev_id,g.usuario["id"],resumen,str(insertado.inserted_id),dictamen["apto_para_inventario"],dictamen["estado"],dictamen["recomendacion"]),devolver=True)
         ejecutar("UPDATE devoluciones SET estado='en_inspeccion' WHERE id=%s",(dev_id,))
     except Exception:
         col.delete_one({"_id":insertado.inserted_id}); raise
-    registrar_bitacora("inspeccion_registrada","devoluciones",dev_id,f"Resultado: {'apto' if apto else 'no apto'}; Mongo {insertado.inserted_id}")
+    registrar_bitacora("inspeccion_registrada","devoluciones",dev_id,f"Dictamen: {dictamen['estado']}; recomendacion: {dictamen['recomendacion']}; Mongo {insertado.inserted_id}")
     return responder({**nueva,"detalle":mongo.a_json(doc)},201,headers={"Location":f"/api/v1/inspecciones/{dev_id}"})
 
 @api.get("/<int:devolucion_id>")
@@ -82,29 +110,6 @@ def actualizar(devolucion_id):
     mongo.get_mongo().inspecciones.update_one({"devolucion_id":devolucion_id},{"$set":set_mongo})
     registrar_bitacora("inspeccion_actualizada","devoluciones",devolucion_id,"Se actualizo el detalle semiestructurado en MongoDB")
     return detalle(devolucion_id)
-
-@api.post("/<int:devolucion_id>/disposicion")
-@requiere_jwt(ANALISTA)
-def disponer(devolucion_id):
-    datos=leer_cuerpo(os.path.join(CONTRATOS,"disposicion.xsd")); destino=str(datos.get("destino") or "").strip(); just=str(datos.get("justificacion") or "").strip()
-    if destino not in DESTINOS: raise ErrorApi(400,"validacion","Destino invalido.")
-    exp=_expediente(devolucion_id,True); insp=consultar("SELECT apto_para_inventario FROM inspecciones_ref WHERE devolucion_id=%s",(devolucion_id,),uno=True)
-    if not insp: raise ErrorApi(409,"sin_inspeccion","No se decide disposicion sin inspeccion.")
-    if destino=="inventario" and not insp["apto_para_inventario"]: raise ErrorApi(409,"no_apto_inventario","La inspeccion impide regresar el producto a inventario.")
-    if consultar("SELECT id FROM disposiciones WHERE devolucion_id=%s",(devolucion_id,),uno=True): raise ErrorApi(409,"disposicion_duplicada","Ya existe una disposicion.")
-    nueva=ejecutar("INSERT INTO disposiciones(devolucion_id,analista_id,destino,justificacion) VALUES(%s,%s,%s,%s) RETURNING *",(devolucion_id,g.usuario["id"],destino,just or None),devolver=True)
-    ejecutar("UPDATE devoluciones SET estado='resuelta' WHERE id=%s",(devolucion_id,)); registrar_bitacora("disposicion_registrada","devoluciones",devolucion_id,f"Destino: {destino}")
-    return responder(nueva,201)
-
-@api.post("/inventario/<int:disposicion_id>/etiqueta")
-@requiere_jwt(ENCARGADO_CENTRO)
-def etiquetar(disposicion_id):
-    fila=consultar("""SELECT ds.id,ds.destino,d.id AS devolucion_id,d.folio_devolucion,p.id AS producto_id FROM disposiciones ds JOIN devoluciones d ON d.id=ds.devolucion_id JOIN venta_detalle vd ON vd.id=d.venta_detalle_id JOIN lotes l ON l.id=vd.lote_id JOIN productos p ON p.id=l.producto_id WHERE ds.id=%s""",(disposicion_id,),uno=True)
-    if not fila: raise ErrorApi(404,"no_encontrado",f"No existe la disposicion {disposicion_id}.")
-    if fila["destino"]!="inventario": raise ErrorApi(409,"destino_no_etiquetable","Solo se etiqueta destino inventario.")
-    etiqueta=f"REC-{fila['folio_devolucion'].replace('DEV-','')}"
-    nueva=ejecutar("INSERT INTO inventario_recuperado(disposicion_id,producto_id,etiqueta_codigo) VALUES(%s,%s,%s) ON CONFLICT(disposicion_id) DO UPDATE SET disposicion_id=EXCLUDED.disposicion_id RETURNING *",(disposicion_id,fila["producto_id"],etiqueta),devolver=True)
-    registrar_bitacora("inventario_recuperado","devoluciones",fila["devolucion_id"],f"Etiqueta {etiqueta}"); return responder(nueva,201)
 
 def create_app():
     app=Flask(__name__); app.json.sort_keys=False; respuestas.registrar(app,NOMBRE); app.teardown_appcontext(cerrar_conexion); app.register_blueprint(api); docs.registrar(app,os.path.join(os.path.dirname(__file__),"openapi.yaml"))

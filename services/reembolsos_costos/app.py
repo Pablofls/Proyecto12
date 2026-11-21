@@ -7,17 +7,18 @@ from shared import docs, respuestas
 from shared.infra import PREFIJO, cerrar_conexion, consultar, ejecutar, get_redis, registrar_bitacora, salud_postgres, salud_redis
 from shared.respuestas import ErrorApi, leer_cuerpo, responder
 from shared.seguridad import (ANALISTA, COORDINADOR, ENCARGADO_CENTRO,
-                              ENCARGADO_REEMBOLSOS, INSPECTOR, requiere_jwt)
+                              ENCARGADO_REEMBOLSOS, INSPECTOR,
+                              exigir_autorizacion_operacion, requiere_jwt)
 
 NOMBRE="reembolsos-costos"; CONTRATOS=os.path.join(os.path.dirname(__file__),"contratos")
 api=Blueprint("reembolsos_costos",__name__,url_prefix="/api/v1/reembolsos-costos")
 METODOS={"transferencia","tarjeta","efectivo","vale"}; ESTADOS={"aprobado","rechazado"}
-ETAPAS={"transporte","inspeccion","almacenamiento","reacondicionamiento","destruccion","reembolso","otros"}
+ETAPAS={"recoleccion","transporte","inspeccion","almacenamiento","reparacion","reacondicionamiento","destruccion","reembolso","otros"}
 ETAPAS_POR_ROL={
-    COORDINADOR:{"transporte"},
+    COORDINADOR:{"recoleccion","transporte"},
     ENCARGADO_CENTRO:{"almacenamiento"},
     INSPECTOR:{"inspeccion"},
-    ANALISTA:{"reacondicionamiento","destruccion","otros"},
+    ANALISTA:{"reparacion","reacondicionamiento","destruccion","otros"},
     ENCARGADO_REEMBOLSOS:{"reembolso"},
 }
 
@@ -44,6 +45,10 @@ def registrar_reembolso():
     if decision not in ESTADOS: raise ErrorApi(400,"validacion","estado debe ser aprobado o rechazado.")
     if decision=="aprobado" and metodo not in METODOS: raise ErrorApi(400,"validacion","Metodo de reembolso invalido.")
     if decision=="rechazado": monto,metodo=0,None
+    if decision == "aprobado":
+        # La confirmacion se consume antes del lock. Dos peticiones que intenten
+        # reutilizarla no pueden aprobar dos veces, incluso si llegan juntas.
+        exigir_autorizacion_operacion("aprobar_reembolso", dev_id)
     llave=f"{PREFIJO}lock:reembolso:{dev_id}"; valor=uuid.uuid4().hex; r=get_redis()
     if not r.set(llave,valor,nx=True,ex=30): raise ErrorApi(409,"reembolso_en_proceso","Otro proceso esta resolviendo este reembolso.")
     try:
@@ -88,8 +93,42 @@ def registrar_costo():
 @api.get("/costos/<int:devolucion_id>")
 @requiere_jwt(ENCARGADO_REEMBOLSOS,ANALISTA)
 def costos(devolucion_id):
-    _devolucion(devolucion_id); desglose=consultar("SELECT etapa,SUM(monto) AS subtotal FROM costos WHERE devolucion_id=%s GROUP BY etapa ORDER BY etapa",(devolucion_id,)); total=sum(float(x["subtotal"]) for x in desglose)
-    return responder({"devolucion_id":devolucion_id,"desglose":desglose,"costo_total":total})
+    _devolucion(devolucion_id)
+    desglose=consultar("SELECT etapa,SUM(monto) AS subtotal FROM costos WHERE devolucion_id=%s GROUP BY etapa ORDER BY etapa",(devolucion_id,))
+    recuperaciones=consultar("SELECT concepto,monto,fecha FROM recuperaciones_valor WHERE devolucion_id=%s ORDER BY fecha",(devolucion_id,))
+    impacto=consultar("SELECT costo_total,valor_recuperado,costo_neto FROM vista_impacto_economico_devolucion WHERE devolucion_id=%s",(devolucion_id,),uno=True)
+    return responder({"devolucion_id":devolucion_id,"desglose":desglose,
+                      "recuperaciones":recuperaciones,**impacto})
+
+@api.post("/recuperaciones")
+@requiere_jwt(ANALISTA,ENCARGADO_REEMBOLSOS)
+def registrar_recuperacion():
+    datos=leer_cuerpo(os.path.join(CONTRATOS,"recuperacion.xsd"))
+    try: dev_id=int(datos.get("devolucion_id"))
+    except (TypeError,ValueError): raise ErrorApi(400,"validacion","devolucion_id debe ser entero.")
+    monto=_decimal(datos,"monto"); concepto=str(datos.get("concepto") or "").strip()
+    if dev_id < 1 or len(concepto) < 3: raise ErrorApi(400,"validacion","Devolucion y concepto son obligatorios.")
+    _devolucion(dev_id)
+    disposicion=consultar("SELECT id FROM disposiciones WHERE devolucion_id=%s",(dev_id,),uno=True)
+    nuevo=ejecutar("""INSERT INTO recuperaciones_valor
+      (devolucion_id,disposicion_id,monto,concepto,registrado_por)
+      VALUES(%s,%s,%s,%s,%s) RETURNING *""",
+      (dev_id,disposicion["id"] if disposicion else None,monto,concepto,g.usuario["id"]),devolver=True)
+    registrar_bitacora("valor_recuperado_registrado","devoluciones",dev_id,f"{concepto}: {monto}")
+    return responder(nuevo,201)
+
+@api.get("/comparacion-destinos/<int:devolucion_id>")
+@requiere_jwt(ANALISTA,ENCARGADO_REEMBOLSOS)
+def comparacion_destinos(devolucion_id):
+    """Compara escenarios suministrados sin inventar una recomendacion automatica."""
+    _devolucion(devolucion_id)
+    base=consultar("SELECT costo_total,valor_recuperado,costo_neto FROM vista_impacto_economico_devolucion WHERE devolucion_id=%s",(devolucion_id,),uno=True)
+    destinos=consultar("""SELECT ds.destino,COALESCE(SUM(c.monto),0) AS costo_operativo
+      FROM disposiciones ds LEFT JOIN costos c ON c.devolucion_id=ds.devolucion_id
+       AND c.etapa IN ('reparacion','reacondicionamiento','destruccion','otros')
+      WHERE ds.devolucion_id=%s GROUP BY ds.destino""",(devolucion_id,))
+    return responder({"devolucion_id":devolucion_id,"impacto_actual":base,"destinos":destinos,
+      "nota":"La comparacion es economica; la autorizacion humana sigue siendo obligatoria."})
 
 def create_app():
     app=Flask(__name__); app.json.sort_keys=False; respuestas.registrar(app,NOMBRE); app.teardown_appcontext(cerrar_conexion); app.register_blueprint(api); docs.registrar(app,os.path.join(os.path.dirname(__file__),"openapi.yaml"))

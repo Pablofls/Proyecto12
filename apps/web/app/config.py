@@ -44,6 +44,7 @@ class Config:
         "devoluciones": os.environ.get("DEVOLUCIONES_SERVICE_URL", "http://devoluciones:8000"),
         "logistica": os.environ.get("LOGISTICA_SERVICE_URL", "http://logistica:8000"),
         "inspecciones": os.environ.get("INSPECCIONES_SERVICE_URL", "http://inspecciones:8000"),
+        "disposicion": os.environ.get("DISPOSICION_SERVICE_URL", "http://disposicion-inventario:8000"),
         "reembolsos": os.environ.get("REEMBOLSOS_SERVICE_URL", "http://reembolsos-costos:8000"),
         "ventas": os.environ.get("VENTAS_SERVICE_URL", "http://ventas-catalogos:8000"),
         "evidencias": os.environ.get("EVIDENCIAS_SERVICE_URL", "http://evidencias:8000"),

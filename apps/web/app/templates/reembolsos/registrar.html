@@ -29,6 +29,11 @@
     {% for valor, texto in metodos %}<option value="{{ valor }}">{{ texto }}</option>{% endfor %}
   </select>
 
+  <label for="password_confirmacion">Confirma tu contrasena al aprobar</label>
+  <input type="password" id="password_confirmacion" name="password_confirmacion"
+         autocomplete="current-password">
+  <p class="nota">La aprobación usa una autorización de un solo uso. Para rechazar no es necesaria.</p>
+
   <div class="acciones">
     <button class="boton" type="submit" name="decision" value="aprobado">Aprobar reembolso</button>
     <button class="boton peligro" type="submit" name="decision" value="rechazado">Rechazar</button>
