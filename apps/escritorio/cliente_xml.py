@@ -1,11 +1,30 @@
 """Cliente HTTP exclusivamente XML para la aplicacion de escritorio."""
 import json
 import os
+import sys
 import uuid
 from pathlib import Path
 
 import requests
 from lxml import etree
+
+
+def raiz_recursos():
+    """Raiz del repositorio en desarrollo o del paquete temporal de PyInstaller."""
+    return Path(getattr(sys, "_MEIPASS", Path(__file__).parents[2]))
+
+
+def ruta_configuracion():
+    """Permite configurar el ejecutable sin reconstruirlo."""
+    configurada = os.environ.get("DEVOLUCIONES_DESKTOP_CONFIG")
+    if configurada:
+        return Path(configurada)
+    if getattr(sys, "frozen", False):
+        externa = Path(sys.executable).with_name("config.json")
+        if externa.exists():
+            return externa
+        return raiz_recursos() / "apps" / "escritorio" / "config.example.json"
+    return Path(__file__).with_name("config.json")
 
 
 class ErrorServicio(Exception):
@@ -55,13 +74,12 @@ def validar_xsd(xml, ruta):
 
 class ClienteXml:
     def __init__(self, configuracion=None, sesion=None):
-        ruta = Path(configuracion or os.environ.get(
-            "DEVOLUCIONES_DESKTOP_CONFIG", Path(__file__).with_name("config.json")))
+        ruta = Path(configuracion) if configuracion else ruta_configuracion()
         if ruta.exists():
             self.servicios = json.loads(ruta.read_text(encoding="utf-8"))
         else:
-            self.servicios = json.loads(Path(__file__).with_name(
-                "config.example.json").read_text(encoding="utf-8"))
+            ejemplo = raiz_recursos() / "apps" / "escritorio" / "config.example.json"
+            self.servicios = json.loads(ejemplo.read_text(encoding="utf-8"))
         self.http = sesion or requests.Session()
         self.access_token = None
         self.refresh_token = None
@@ -90,7 +108,7 @@ class ClienteXml:
             if respuesta_xsd and respuesta.status_code < 400:
                 validar_xsd(respuesta.content, respuesta_xsd)
             if respuesta.status_code >= 400:
-                error_xsd = Path(__file__).parents[2] / "shared" / "contratos" / "error.xsd"
+                error_xsd = raiz_recursos() / "shared" / "contratos" / "error.xsd"
                 validar_xsd(respuesta.content, error_xsd)
             xml = etree.fromstring(respuesta.content)
             contenido = _valor(xml)
@@ -105,8 +123,8 @@ class ClienteXml:
         return contenido
 
     def login(self, email, password):
-        xsd = Path(__file__).parents[2] / "services" / "auth" / "contratos" / "login.xsd"
-        respuesta_xsd = Path(__file__).parents[2] / "services" / "auth" / "contratos" / "tokens.xsd"
+        xsd = raiz_recursos() / "services" / "auth" / "contratos" / "login.xsd"
+        respuesta_xsd = raiz_recursos() / "services" / "auth" / "contratos" / "tokens.xsd"
         respuesta = self.solicitar("auth", "POST", "/api/v1/auth/login",
             raiz="login", datos={"email": email, "password": password}, xsd=xsd,
             respuesta_xsd=respuesta_xsd, autenticado=False)
@@ -122,7 +140,7 @@ class ClienteXml:
         self.http.cookies.clear()
 
     def autorizar(self, operacion, recurso_id, password):
-        xsd = Path(__file__).parents[2] / "services" / "auth" / "contratos" / "autorizar_operacion.xsd"
+        xsd = raiz_recursos() / "services" / "auth" / "contratos" / "autorizar_operacion.xsd"
         return self.solicitar("auth", "POST", "/api/v1/auth/autorizar-operacion",
             raiz="autorizacion", datos={"operacion": operacion,
             "recurso_id": recurso_id, "password": password}, xsd=xsd)["token_operacion"]

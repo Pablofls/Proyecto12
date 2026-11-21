@@ -1,0 +1,189 @@
+{
+  "simulacion": "SIM-6480AEC3",
+  "fecha": "2026-11-21",
+  "pasos": [
+    {
+      "numero": 1,
+      "paso": "Compra generada por POS/ERP",
+      "actor": "Sistema externo",
+      "componente": "PostgreSQL",
+      "resultado": {
+        "venta_id": 33,
+        "folio": "VTA-SIM-20261121-6480AEC3",
+        "detalle_id": 80,
+        "producto": "Leche entera 1 L",
+        "clasificacion": "refrigerado"
+      }
+    },
+    {
+      "numero": 2,
+      "paso": "Compra consultada por el cliente",
+      "actor": "Ana López",
+      "componente": "ventas-catálogos",
+      "resultado": {
+        "folio": "VTA-SIM-20261121-6480AEC3",
+        "lineas": 1
+      }
+    },
+    {
+      "numero": 3,
+      "paso": "Elegibilidad validada",
+      "actor": "Ana López",
+      "componente": "devoluciones",
+      "resultado": {
+        "elegible": true,
+        "disponible": 1,
+        "fecha_limite": "2026-11-28"
+      }
+    },
+    {
+      "numero": 4,
+      "paso": "Solicitud de devolución registrada",
+      "actor": "Ana López",
+      "componente": "devoluciones",
+      "resultado": {
+        "devolucion_id": 56,
+        "folio": "DEV-2026-0056",
+        "estado": "solicitada"
+      }
+    },
+    {
+      "numero": 5,
+      "paso": "Evidencia inicial agregada",
+      "actor": "Ana López",
+      "componente": "evidencias + MongoDB",
+      "resultado": {
+        "id": 2,
+        "devolucion_id": 56,
+        "tipo": "comentario",
+        "metadatos_id": "6b020af7e47d575fc0f7f65b"
+      }
+    },
+    {
+      "numero": 6,
+      "paso": "Devolución autorizada",
+      "actor": "Josué Berdeal",
+      "componente": "devoluciones",
+      "resultado": {
+        "estado": "autorizada"
+      }
+    },
+    {
+      "numero": 7,
+      "paso": "Recolección programada",
+      "actor": "David Muñoz",
+      "componente": "logística",
+      "resultado": {
+        "id": 20,
+        "devolucion_id": 56,
+        "fecha_programada": "2026-11-22",
+        "lugar": "Domicilio del cliente — simulación integral",
+        "estado": "programada"
+      }
+    },
+    {
+      "numero": 8,
+      "paso": "Ruta y transportista asignados",
+      "actor": "David Muñoz",
+      "componente": "logística",
+      "resultado": {
+        "id": 20,
+        "estado": "asignada",
+        "ruta_id": 1,
+        "transportista_id": 1
+      }
+    },
+    {
+      "numero": 9,
+      "paso": "Producto en tránsito",
+      "actor": "Transportista",
+      "componente": "logística",
+      "resultado": {
+        "id": 20,
+        "estado": "en_transito"
+      }
+    },
+    {
+      "numero": 10,
+      "paso": "Recolección completada",
+      "actor": "Transportista",
+      "componente": "logística",
+      "resultado": {
+        "id": 20,
+        "estado": "completada"
+      }
+    },
+    {
+      "numero": 11,
+      "paso": "Recepción confirmada",
+      "actor": "Roberto Sandoval",
+      "componente": "logística",
+      "resultado": {
+        "id": 16,
+        "devolucion_id": 56,
+        "fecha_recepcion": "2026-11-21T21:19:52.367796+00:00",
+        "coincide_expediente": true,
+        "estado_resultante": "recibida"
+      }
+    },
+    {
+      "numero": 12,
+      "paso": "Inspección registrada desde el cliente XML",
+      "actor": "Valentina Pérez",
+      "componente": "app escritorio → inspecciones",
+      "resultado": {
+        "inspeccion_id": "18",
+        "estado_dictamen": "concluido",
+        "apto_para_inventario": "true",
+        "recomendacion": "reintegrar"
+      }
+    },
+    {
+      "numero": 13,
+      "paso": "Evidencia de inspección agregada",
+      "actor": "Valentina Pérez",
+      "componente": "evidencias + MongoDB",
+      "resultado": {
+        "id": 3,
+        "devolucion_id": 56,
+        "tipo": "comentario",
+        "metadatos_id": "6b020af8e47d575fc0f7f65c"
+      }
+    },
+    {
+      "numero": 14,
+      "paso": "Dictamen recuperado desde PostgreSQL y MongoDB",
+      "actor": "Inspector",
+      "componente": "inspecciones",
+      "resultado": {
+        "referencia": {
+          "id": 18,
+          "devolucion_id": 56,
+          "inspector_id": 4,
+          "fecha_inspeccion": "2026-11-21T21:19:52.617443+00:00",
+          "resultado_general": "apto",
+          "mongo_doc_id": "6b020af8d88a7a5397ff4709",
+          "apto_para_inventario": true,
+          "estado_dictamen": "concluido",
+          "recomendacion": "reintegrar"
+        },
+        "detalle_mongo": true
+      }
+    }
+  ],
+  "resultado_final": {
+    "id": 56,
+    "folio_devolucion": "DEV-2026-0056",
+    "estado": "en_inspeccion",
+    "recibido": true,
+    "inspeccionado": true
+  },
+  "cumplimiento": {
+    "venta_vinculada_a_detalle": true,
+    "evidencia_postgresql_y_mongodb": true,
+    "recoleccion_y_recepcion": true,
+    "inspeccion_exclusivamente_xml_xsd": true,
+    "reglas_en_microservicio": true,
+    "auditoria_generada": true
+  }
+}

@@ -1,5 +1,16 @@
 # Aplicacion de escritorio del centro de devoluciones
 
+## Ejecutable para el centro de devoluciones
+
+Instala las dependencias de construcción y ejecuta `construir.ps1`. El resultado
+es `dist/CentroDevoluciones.exe` y utiliza el `config.json` situado junto a él.
+Los XSD requeridos se empaquetan dentro del ejecutable.
+
+```powershell
+python -m pip install -r apps/escritorio/requirements.txt -r apps/escritorio/requirements-build.txt
+powershell -ExecutionPolicy Bypass -File apps/escritorio/construir.ps1
+```
+
 Cliente PySide6 de Roberto para centros de devolución. No accede directamente
 a PostgreSQL, MongoDB ni Redis y no repite reglas del negocio: consume los
 microservicios desplegados. La interfaz comparte colores, tarjetas, tablas y

@@ -13,10 +13,10 @@ from PySide6.QtWidgets import (
     QTextEdit, QVBoxLayout, QWidget,
 )
 
-from cliente_xml import ClienteXml, ErrorServicio
+from cliente_xml import ClienteXml, ErrorServicio, raiz_recursos
 from tema import ESTILO
 
-RAIZ = Path(__file__).parents[2]
+RAIZ = raiz_recursos()
 INSPECTOR = "Inspector"
 CENTRO = "Encargado del Centro de Devoluciones"
 ANALISTA = "Analista de Devoluciones"
