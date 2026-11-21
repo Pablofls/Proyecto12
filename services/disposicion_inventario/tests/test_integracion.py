@@ -65,9 +65,10 @@ def sembrar():
     inspector=sql("""SELECT u.id FROM usuarios u JOIN roles r ON r.id=u.rol_id
         WHERE r.nombre='Inspector' ORDER BY u.id LIMIT 1""",uno=True)
     if not linea or not inspector: raise unittest.SkipTest("Faltan datos seed")
-    dev=sql("""INSERT INTO devoluciones(venta_detalle_id,motivo_id,descripcion,cantidad_devuelta,
-        estado,folio_devolucion) VALUES(%s,1,'Integracion disposicion',1,'en_inspeccion',
-        'DEV-INT-'||floor(random()*1000000)::text) RETURNING id""",(linea["id"],),uno=True)
+    motivo=sql("SELECT id FROM motivos WHERE activo ORDER BY id LIMIT 1",uno=True)
+    dev=sql("""INSERT INTO devoluciones(venta_detalle_id,motivo_id,descripcion_problema,
+        cantidad_devuelta,estado) VALUES(%s,%s,'Integracion disposicion',1,'en_inspeccion')
+        RETURNING id""",(linea["id"],motivo["id"]),uno=True)
     sql("""INSERT INTO inspecciones_ref(devolucion_id,inspector_id,resultado_general,
         apto_para_inventario,estado_dictamen,recomendacion)
         VALUES(%s,%s,'apto',TRUE,'concluido','reintegrar')""",(dev["id"],inspector["id"]))
