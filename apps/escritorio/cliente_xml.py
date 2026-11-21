@@ -65,6 +65,7 @@ class ClienteXml:
         self.http = sesion or requests.Session()
         self.access_token = None
         self.refresh_token = None
+        self.usuario = None
 
     def solicitar(self, servicio, metodo, ruta, *, raiz=None, datos=None,
                   xsd=None, respuesta_xsd=None, token_operacion=None, autenticado=True):
@@ -110,7 +111,15 @@ class ClienteXml:
             raiz="login", datos={"email": email, "password": password}, xsd=xsd,
             respuesta_xsd=respuesta_xsd, autenticado=False)
         self.access_token, self.refresh_token = respuesta["access_token"], respuesta["refresh_token"]
+        self.usuario = respuesta.get("usuario") or {}
         return respuesta
+
+    def cerrar_sesion_local(self):
+        """El cliente de escritorio no persiste secretos entre sesiones."""
+        self.access_token = None
+        self.refresh_token = None
+        self.usuario = None
+        self.http.cookies.clear()
 
     def autorizar(self, operacion, recurso_id, password):
         xsd = Path(__file__).parents[2] / "services" / "auth" / "contratos" / "autorizar_operacion.xsd"
