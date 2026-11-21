@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtGui import QColor, QIcon, QPalette
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout, QFrame,
     QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox, QPushButton,
@@ -421,6 +421,7 @@ class Controlador:
 
 def crear_aplicacion(argv=None):
     app = QApplication.instance() or QApplication(argv or sys.argv)
+    app.setWindowIcon(QIcon(str(RAIZ / "apps/escritorio/assets/orvia-hoja.png")))
     app.setApplicationName("Centro de devoluciones"); app.setStyle("Fusion"); app.setStyleSheet(ESTILO)
     return app
 

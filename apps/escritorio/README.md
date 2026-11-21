@@ -5,6 +5,7 @@
 Instala las dependencias de construcción y ejecuta `construir.ps1`. El resultado
 es `dist/CentroDevoluciones.exe` y utiliza el `config.json` situado junto a él.
 Los XSD requeridos se empaquetan dentro del ejecutable.
+El ejecutable y sus ventanas utilizan la hoja verde de Orvia como identidad visual.
 
 ```powershell
 python -m pip install -r apps/escritorio/requirements.txt -r apps/escritorio/requirements-build.txt

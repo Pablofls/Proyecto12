@@ -3,6 +3,7 @@ from pathlib import Path
 raiz = Path(SPECPATH).parents[1]
 datos = [
     (str(raiz / "apps/escritorio/config.example.json"), "apps/escritorio"),
+    (str(raiz / "apps/escritorio/assets/orvia-hoja.png"), "apps/escritorio/assets"),
 ]
 for patron in (
     "shared/contratos/*.xsd",
@@ -34,6 +35,7 @@ exe = EXE(
     a.datas,
     [],
     name="CentroDevoluciones",
+    icon=str(raiz / "apps/escritorio/assets/orvia.ico"),
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
