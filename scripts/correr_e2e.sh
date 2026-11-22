@@ -63,6 +63,11 @@ correr() {
   [ "${PIPESTATUS[0]}" -eq 0 ] || fallos=$((fallos + 1))
 }
 
+# Los 14 microservicios (docker-compose.yml). Si se agrega uno, se suma aqui.
+SERVICIOS="auth ventas-catalogos devoluciones evidencias logistica inspecciones
+           reembolsos-costos analisis-auditoria clasificacion-motivos causa-raiz
+           proveedores reportes-analitica sincronizacion integraciones-monitoreo"
+
 if [ "$MODO" = "todo" ] || [ "$MODO" = "e2e" ]; then
   # El repositorio se monta en /repo para que la suite vea tests/, shared/ y los XSD.
   correr docker compose run --rm -v "$PWD":/repo -w /repo -e PYTHONPATH=/repo \
@@ -77,12 +82,20 @@ if [ "$MODO" = "todo" ] || [ "$MODO" = "paridad" ]; then
 fi
 
 if [ "$MODO" = "todo" ] || [ "$MODO" = "servicios" ]; then
-  for servicio in auth ventas-catalogos devoluciones evidencias logistica \
-                  inspecciones reembolsos-costos analisis-auditoria sincronizacion \
-                  integraciones-monitoreo; do
+  for servicio in $SERVICIOS; do
     correr docker compose run --rm -e INTEGRACION=1 "$servicio" \
       python -m pytest -v -p no:cacheprovider tests/test_integracion.py
   done
+fi
+
+if [ "$MODO" = "todo" ] || [ "$MODO" = "unitarias" ]; then
+  # Sin INTEGRACION: las pruebas de integracion se saltan solas.
+  for servicio in $SERVICIOS; do
+    correr docker compose run --rm "$servicio" \
+      python -m pytest -q -p no:cacheprovider tests
+  done
+  correr docker compose exec -T app sh -c "cd apps/web && PYTHONPATH=/srv/app:. python -m unittest \
+    app.tests.test_api_client app.tests.test_exportacion app.tests.test_microservicios app.tests.test_notificaciones"
 fi
 
 echo | tee -a "$SALIDA"

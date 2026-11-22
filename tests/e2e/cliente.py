@@ -30,6 +30,13 @@ SERVICIOS = {
     "ventas": ("VENTAS_URL", "http://ventas-catalogos:8000"),
     "evidencias": ("EVIDENCIAS_URL", "http://evidencias:8000"),
     "analisis": ("ANALISIS_URL", "http://analisis-auditoria:8000"),
+    # Tercer parcial
+    "motivos": ("MOTIVOS_URL", "http://clasificacion-motivos:8000"),
+    "causa_raiz": ("CAUSA_RAIZ_URL", "http://causa-raiz:8000"),
+    "proveedores": ("PROVEEDORES_URL", "http://proveedores:8000"),
+    "reportes": ("REPORTES_URL", "http://reportes-analitica:8000"),
+    "sincronizacion": ("SINCRONIZACION_URL", "http://sincronizacion:8000"),
+    "integraciones": ("INTEGRACIONES_URL", "http://integraciones-monitoreo:8000"),
 }
 
 PREFIJO_API = {
@@ -41,6 +48,13 @@ PREFIJO_API = {
     "ventas": "/api/v1/ventas",
     "evidencias": "/api/v1/evidencias",
     "analisis": "/api/v1/analisis",
+    "motivos": "/api/v1/motivos",
+    "causa_raiz": "/api/v1/causa-raiz",
+    "proveedores": "/api/v1/proveedores",
+    "reportes": "/api/v1/reportes",
+    "sincronizacion": "/api/v1/sincronizacion",
+    "integraciones": "/api/v1/integraciones",
+    "monitoreo": "/api/v1/monitoreo",
 }
 
 CLIENTE = "Cliente"
