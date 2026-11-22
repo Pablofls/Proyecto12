@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 class ApiError(val status: Int, override val message: String) : Exception(message)
 
-/** Usa los puertos reales del Compose de Orvia-Oficial. Nunca inventa endpoints. */
+/** Cliente del punto de entrada unico de Orvia (reverse proxy). */
 class OrviaApi {
     private val client = OkHttpClient.Builder()
         .connectTimeout(12, TimeUnit.SECONDS)
@@ -28,18 +28,17 @@ class OrviaApi {
             uri.query == null && uri.userInfo == null && uri.fragment == null
     } catch (_: Exception) { false }
 
-    private fun url(host: String, port: Int, path: String): String {
+    fun url(host: String, path: String): String {
         require(hostValid(host)) { "Usa http(s)://IP-o-dominio sin puerto. Ej: http://10.0.2.2" }
-        require(port in 8001..8022) { "Puerto fuera de Orvia" }
         require(path.startsWith("/") && !path.startsWith("//")) { "Ruta no valida" }
-        return "${host.trimEnd('/')}:$port$path"
+        return "${host.trimEnd('/')}$path"
     }
 
-    fun call(host: String, port: Int, path: String, method: String = "GET",
+    fun call(host: String, path: String, method: String = "GET",
              token: String? = null, payload: JSONObject? = null): JSONObject {
         val body = if (method == "GET" || method == "DELETE") null
             else (payload ?: JSONObject()).toString().toRequestBody("application/json; charset=utf-8".toMediaType())
-        val request = Request.Builder().url(url(host, port, path))
+        val request = Request.Builder().url(url(host, path))
             .header("Accept", "application/json")
             .header("X-Correlation-ID", java.util.UUID.randomUUID().toString())
             .apply { if (!token.isNullOrEmpty()) header("Authorization", "Bearer $token") }
@@ -55,7 +54,7 @@ class OrviaApi {
             .addFormDataPart("archivo", photo.name,
                 photo.bytes.toRequestBody("image/jpeg".toMediaType()))
             .build()
-        val request = Request.Builder().url(url(host, 8007, "/api/v1/evidencias"))
+        val request = Request.Builder().url(url(host, "/api/v1/evidencias"))
             .header("Accept", "application/json")
             .header("Authorization", "Bearer $token")
             .post(body).build()

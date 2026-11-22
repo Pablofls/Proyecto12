@@ -771,7 +771,7 @@ fun OrviaRoot(model: OrviaViewModel, onCamera: () -> Unit, onGallery: () -> Unit
             fontSize = 12.sp, color = Muted, lineHeight = 19.sp)
     }
     Spacer(Modifier.height(13.dp))
-    Text("Avisos push y correo requieren el futuro microservicio 8017; no están simulados en esta app.",
+    Text("Avisos push y correo requieren el futuro servicio de notificaciones; no están simulados en esta app.",
         color = Muted, fontSize = 11.sp)
 }
 
@@ -784,7 +784,7 @@ fun OrviaRoot(model: OrviaViewModel, onCamera: () -> Unit, onGallery: () -> Unit
 }
 
 @Composable private fun AlertsView(vm: OrviaViewModel) {
-    Title("MONITOREO", "Alertas operativas", "Alertas reales de Orvia (servicio 8021). No son notificaciones push.")
+    Title("MONITOREO", "Alertas operativas", "Alertas reales de Orvia a través del acceso seguro. No son notificaciones push.")
     OutlinedButton(onClick = vm::refreshData, enabled = !vm.busy,
         modifier = Modifier.fillMaxWidth()) {
         Icon(Icons.Outlined.Refresh, contentDescription = null)
@@ -795,7 +795,7 @@ fun OrviaRoot(model: OrviaViewModel, onCamera: () -> Unit, onGallery: () -> Unit
         OrviaCard {
             Text("No se recibieron alertas activas", fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
-            Text("También puede indicar que el servicio no está disponible. Comprueba 8021/health.",
+            Text("También puede indicar que el servicio no está disponible. Comprueba /servicios/integraciones-monitoreo/health.",
                 color = Muted, fontSize = 12.sp)
         }
     }

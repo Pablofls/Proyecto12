@@ -1,0 +1,8 @@
+services:
+  proxy:
+    ports:
+      - "0.0.0.0:${PROXY_HTTPS_PORT:-443}:8443"
+    volumes:
+      - ./infra/nginx/conf.d/orvia-tls.conf:/etc/nginx/conf.d/orvia.conf:ro,z
+      - ${TLS_CERT_PATH:?Define TLS_CERT_PATH}:/etc/nginx/certs/orvia.crt:ro,z
+      - ${TLS_KEY_PATH:?Define TLS_KEY_PATH}:/etc/nginx/certs/orvia.key:ro,z

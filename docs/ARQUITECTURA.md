@@ -1,5 +1,19 @@
 # Arquitectura del monolito
 
+## Punto de entrada y red
+
+Nginx funciona como único punto de entrada del sistema. Los navegadores, la app
+Android, la app de escritorio y las integraciones consumen un solo origen por
+HTTP/HTTPS; Nginx dirige `/` al sistema web y cada prefijo `/api/v1/...` al
+microservicio propietario. Los contenedores de negocio permanecen en la red
+interna `orvia_backend` y no publican puertos en el host.
+
+Esta decisión evita que los clientes conozcan la topología interna, centraliza
+TLS, límites de peticiones, encabezados de proxy y correlation IDs, y permite
+cambiar o escalar un servicio sin modificar las aplicaciones consumidoras. La
+configuración y matriz de rutas están en `infra/nginx/` y
+`docs/REVERSE_PROXY.md`.
+
 ## Ampliacion distribuida del segundo parcial
 
 | Puerto | Servicio | Responsabilidad | Persistencia |

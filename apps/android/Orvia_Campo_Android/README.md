@@ -23,26 +23,26 @@
 El login muestra un campo **Servidor Orvia**. Introduce solo la base del host (sin puerto):
 
 - **Emulador y Docker en tu misma PC:** `http://10.0.2.2`.
-- **Emulador con la VM de Orvia en otro equipo:** usa una IP privada o túnel/VPN que desde el emulador alcance los puertos 8001, 8002, 8006, 8007 y 8020.
+- **Emulador con la VM de Orvia en otro equipo:** usa el dominio o una IP privada que permita alcanzar el reverse proxy por HTTP/HTTPS.
 - **Teléfono físico:** una IP/dominio accesible desde el teléfono.
 
 **Importante:** `10.0.2.2` significa *la máquina que ejecuta el emulador*, no una VM remota. Si Orvia corre en otra VM, `10.0.2.2` **no** apunta mágicamente a esa VM.
 
-**Seguridad:** HTTP se admite solo en el build `debug` para desarrollo controlado; la versión `release` deshabilita tráfico HTTP sin cifrar. En un escenario real configura HTTPS por proxy, VPN y permisos de firewall. **No publiques indiscriminadamente los puertos 8001–8021 ni envíes tokens JWT por HTTP en una red pública.**
+**Seguridad:** HTTP se admite solo en el build `debug` para desarrollo controlado; la versión `release` deshabilita tráfico HTTP sin cifrar. En un escenario real usa HTTPS en el reverse proxy. Los puertos internos de los microservicios no deben publicarse.
 
 ## 3. Qué está implementado realmente
 
 | Perfil | Función | API existente |
 | --- | --- | --- |
-| Todos los roles autorizados | Login JWT, refresh, logout | `auth:8001` |
-| Cliente | Lista de ventas reales; selección de línea de venta | `ventas-catalogos:8006` |
-| Cliente | Motivos, elegibilidad y creación de devolución | `8006` + `devoluciones:8002` |
-| Cliente | Adjuntar fotografía JPEG real al expediente | `evidencias:8007` |
-| Recolector / Coordinador | Captura de avance de recolección e identificación por QR/ID numérico | `sincronizacion:8020` |
-| Recolector | Captura puntual de GPS (con permiso) | `8020` |
-| Recolector / Operador / Centro | Foto/comentario de evidencia de campo | `8020` |
-| Operador / Centro | Recepción con cotejo y control de duplicados | `8020` |
-| Roles de campo | Cola cifrada offline con UUID constante, reintentos y resolución de conflicto | `8020` |
+| Todos los roles autorizados | Login JWT, refresh, logout | `/api/v1/auth` mediante Nginx |
+| Cliente | Lista de ventas reales; selección de línea de venta | `/api/v1/ventas` |
+| Cliente | Motivos, elegibilidad y creación de devolución | `/api/v1/catalogos` + `/api/v1/devoluciones` |
+| Cliente | Adjuntar fotografía JPEG real al expediente | `/api/v1/evidencias` |
+| Recolector / Coordinador | Captura de avance de recolección e identificación por QR/ID numérico | `/api/v1/sincronizacion` |
+| Recolector | Captura puntual de GPS (con permiso) | `/api/v1/sincronizacion` |
+| Recolector / Operador / Centro | Foto/comentario de evidencia de campo | `/api/v1/sincronizacion` |
+| Operador / Centro | Recepción con cotejo y control de duplicados | `/api/v1/sincronizacion` |
+| Roles de campo | Cola cifrada offline con UUID constante, reintentos y resolución de conflicto | `/api/v1/sincronizacion` |
 
 La cola guarda **un UUID por operación**, timestamp con zona, y opcionalmente fotografía JPEG junto a su SHA-256. Nunca se marca como confirmada hasta `estado: aceptada` del servidor. `conflicto` y `rechazada` se conservan en pantalla para revisión manual, sin reintentos automáticos con ID modificado.
 
@@ -69,9 +69,7 @@ El proyecto no tiene datos inventados: los indicadores muestran cifras reales de
 ```bash
 cd ~/Orvia-Oficial
 docker compose ps
-for puerto in 8001 8002 8006 8007 8020; do
-  echo "== $puerto =="; curl -sS -o /dev/null -w '%{http_code}\n' "http://localhost:$puerto/health"
-done
+python scripts/probar_proxy.py --base http://localhost
 ```
 
 Cada servicio debe responder 200 si se encuentra saludable. Tener un servicio `Up` sin un HTTP saludable no prueba su funcionalidad.
