@@ -53,10 +53,10 @@ liberar_limite_login() {
   # Todos los contadores de limite (login, registro de devoluciones, sincronizacion...):
   # los bloques corren seguidos con los mismos usuarios y el limite por minuto de
   # uno frenaria al siguiente (H-07). Solo contadores: no toca sesiones ni bloqueos.
-  docker compose exec -T redis redis-cli --scan --pattern 'devoluciones:limite:*' \
-    | while read -r clave; do
-        [ -n "$clave" ] && docker compose exec -T redis redis-cli DEL "$clave" > /dev/null
-      done
+  # Se borran dentro del contenedor de una vez: un `docker compose exec` dentro de
+  # un `while read` se come la entrada y solo borraba la primera clave.
+  docker compose exec -T redis sh -c \
+    "redis-cli --scan --pattern 'devoluciones:limite:*' | xargs -r redis-cli DEL" > /dev/null
 }
 
 correr() {
