@@ -50,7 +50,10 @@ fallos=0
 # suite hace varios logins, asi que se borran los contadores antes de cada bloque.
 # Solo claves de limite: no toca sesiones, intentos fallidos ni bloqueos de cuentas.
 liberar_limite_login() {
-  docker compose exec -T redis redis-cli --scan --pattern 'devoluciones:limite:*:login' \
+  # Todos los contadores de limite (login, registro de devoluciones, sincronizacion...):
+  # los bloques corren seguidos con los mismos usuarios y el limite por minuto de
+  # uno frenaria al siguiente (H-07). Solo contadores: no toca sesiones ni bloqueos.
+  docker compose exec -T redis redis-cli --scan --pattern 'devoluciones:limite:*' \
     | while read -r clave; do
         [ -n "$clave" ] && docker compose exec -T redis redis-cli DEL "$clave" > /dev/null
       done
@@ -100,7 +103,7 @@ fi
 
 echo | tee -a "$SALIDA"
 echo "=== Resumen ===" | tee -a "$SALIDA"
-grep -E "^(=== |=+ .*(passed|failed|error|skipped).* =+$|Ran [0-9]+ tests|OK$|FAILED \\()" "$SALIDA" | grep -v "=== Resumen" | tee -a "$SALIDA.resumen" > /dev/null
+grep -E "^(=== |=+ .*(passed|failed|error|skipped).* =+$|[0-9]+ (passed|failed)|Ran [0-9]+ tests|OK$|FAILED \\()" "$SALIDA" | grep -v "=== Resumen" | tee -a "$SALIDA.resumen" > /dev/null
 cat "$SALIDA.resumen" >> "$SALIDA"; rm -f "$SALIDA.resumen"
 echo "Bloques con fallos: $fallos" | tee -a "$SALIDA"
 echo
