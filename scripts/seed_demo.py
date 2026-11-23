@@ -158,10 +158,13 @@ def crear_ventas_recientes(cur, clientes):
     hoy = date.today()
     cur.execute("SELECT id FROM tiendas ORDER BY id")
     tiendas = [f["id"] for f in cur.fetchall()]
+    # El lote problematico queda fuera: sus 24 unidades y su 66.7 % de devolucion
+    # son exactos para la demo de causa raiz y para test_integracion_trazabilidad.
     cur.execute("""
         SELECT l.id, p.clasificacion_temperatura
           FROM lotes l JOIN productos p ON p.id = l.producto_id
-         ORDER BY l.id""")
+         WHERE l.numero_lote <> %s
+         ORDER BY l.id""", (LOTE_PROBLEMATICO,))
     lotes = cur.fetchall()
     refrigerados = [l["id"] for l in lotes if l["clasificacion_temperatura"] == "refrigerado"]
     normales = [l["id"] for l in lotes if l["clasificacion_temperatura"] != "refrigerado"]
