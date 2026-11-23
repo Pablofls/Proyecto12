@@ -28,5 +28,6 @@ def test_las_rutas_del_servicio_son_exactamente_las_probadas(cliente):
     reales = {str(r) for r in cliente.application.url_map.iter_rules() if str(r).startswith("/api/")}
     esperadas = {"/api/v1/reportes", "/api/v1/reportes/<nombre>", "/api/v1/graficas/<nombre>",
                  "/api/v1/analitica/tendencias", "/api/v1/analitica/pronosticos",
-                 "/api/v1/analitica/anomalias", "/api/v1/analitica/alertas-fraude"}
+                 "/api/v1/analitica/anomalias", "/api/v1/analitica/factores",
+                     "/api/v1/analitica/alertas-fraude"}
     assert reales == esperadas

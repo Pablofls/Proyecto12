@@ -1,0 +1,30 @@
+{# Orvia: barra superior única. Una instancia compartida para todas las vistas con sesión. #}
+<header id="orvia-topbar" class="orvia-topbar" aria-label="Barra superior de Orvia">
+  <div class="orvia-topbar-search" id="orvia-topbar-search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6"/></svg>
+    <input id="orvia-global-search" type="search" autocomplete="off"
+           aria-label="Buscar en Orvia" placeholder="Buscar..." aria-controls="orvia-topbar-results" aria-expanded="false">
+    <kbd class="orvia-topbar-shortcut" aria-hidden="true">Ctrl K</kbd>
+    <div id="orvia-topbar-results" class="orvia-topbar-results" hidden aria-label="Módulos autorizados"></div>
+  </div>
+  <div class="orvia-topbar-actions">
+    <div class="orvia-topbar-notification" aria-label="Notificaciones">
+      {% include "_campanita.html" %}
+    </div>
+    <div class="orvia-topbar-account">
+      {% set partes_nombre = usuario_actual.nombre.split() if usuario_actual.nombre else [] %}
+      <button id="orvia-account-trigger" class="orvia-topbar-user" type="button"
+              aria-expanded="false" aria-controls="orvia-account-menu" aria-haspopup="true">
+        <span class="orvia-topbar-avatar" aria-hidden="true">{{ (partes_nombre[0][0] if partes_nombre else 'O')|upper }}{{ (partes_nombre[-1][0] if partes_nombre|length > 1 else 'V')|upper }}</span>
+        <span class="orvia-topbar-person"><strong>{{ usuario_actual.nombre }}</strong><small>{{ rol_actual }}</small></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="orvia-account-menu" class="orvia-topbar-user-menu" hidden>
+        <div class="orvia-topbar-account-detail">{{ usuario_actual.nombre }}<span>{{ rol_actual }}</span></div>
+        <form action="{{ url_for('auth.logout') }}" method="post">
+          <button type="submit">Cerrar sesión</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</header>

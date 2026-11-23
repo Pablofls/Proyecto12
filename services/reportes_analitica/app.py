@@ -4,6 +4,7 @@
   escriben con la biblioteca estandar (ver formatos.py).
 - Datos listos para Highcharts (pareto, tendencia, tasas).
 - Tendencias, pronosticos y anomalias con estadistica explicable (RN-09).
+- Analisis de varios factores: cruza dos dimensiones y dice donde se concentra la tasa (GET /analitica/factores).
 - Pareto y alertas de posible fraude, que antes vivian solo en analisis-auditoria.
 
 Es de solo lectura: no escribe en el expediente. Cada descarga queda en la
@@ -12,7 +13,7 @@ Las series de tasa usan solo meses cuyas ventas ya cumplieron el plazo de
 devolucion y los meses con menos de 20 unidades no se interpretan: una tasa
 con pocas ventas es ruido.
 
-Trazabilidad: RF-23, RF-25, RF-26, RF-28, RN-09, RN-15, RNF-11, RNF-16.
+Trazabilidad: RF-23, RF-24, RF-25, RF-26, RF-28, RN-09, RN-15, RNF-11, RNF-16.
 """
 import os
 from datetime import date, datetime, timezone
@@ -327,6 +328,35 @@ def anomalias():
                       "metodo": "puntaje z robusto de los residuos de la tendencia lineal",
                       "nota": "Una anomalia es un dato distinto de lo esperado, no una causa (RN-09)."},
                      raiz="anomalias")
+
+
+@analitica.get("/factores")
+@requiere_jwt(*LECTORES)
+def factores():
+    """Cruza dos factores (p. ej. proveedor y tienda) para ver donde se concentra la tasa de devolucion.
+
+    Cada combinacion lleva su intervalo de confianza del 95 % y una lectura explicable: viene de un factor,
+    del otro, de ambos o solo de la combinacion. Orienta la investigacion; no determina causas (RN-09).
+    """
+    espec = [("por", "enum", tuple(datos.DIMENSIONES_TASA), "proveedor"),
+             ("con", "enum", tuple(datos.DIMENSIONES_TASA), "tienda"),
+             ("desde", "fecha", None, None), ("hasta", "fecha", None, None),
+             ("limite", "entero", (1, 100), 20), ("solo_distinguibles", "enum", ("true", "false"), "false")]
+    valores = _leer_filtros(espec)
+    if valores["por"] == valores["con"]:
+        raise ErrorApi(400, "validacion", "por y con deben ser factores distintos.")
+    resultado = estadistica.analizar_cruce(datos.tasas_cruzadas(valores["por"], valores["con"],
+                                                                valores["desde"], valores["hasta"]))
+    celdas = resultado["celdas"]
+    if valores["solo_distinguibles"] == "true":
+        celdas = [c for c in celdas if c["distinguible"]]
+    resultado = {**resultado, "total_celdas": len(celdas), "celdas": celdas[:valores["limite"]]}
+    return responder({"por": valores["por"], "con": valores["con"], **resultado,
+                      "metodo": "tasa = unidades devueltas / vendidas por combinacion; intervalo de Wilson del 95 %; "
+                                "una combinacion es distinguible si el extremo bajo del intervalo supera la tasa promedio",
+                      "nota": "Es una senal para revisar donde investigar, no una causa (RN-09). "
+                              "Solo se juzgan combinaciones con 20 unidades vendidas o mas."},
+                     raiz="factores")
 
 
 @analitica.get("/alertas-fraude")

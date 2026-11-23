@@ -112,10 +112,13 @@ apps/
     wsgi.py           Punto de entrada de gunicorn
     requirements.txt  Dependencias del web
     Dockerfile        Imagen del monolito web (contexto de build: raiz del repo)
-services/             Un microservicio por carpeta (auth, devoluciones, logistica,
+services/             Un microservicio por carpeta: auth, devoluciones, logistica,
                       inspecciones, reembolsos_costos, ventas_catalogos,
-                      evidencias, analisis_auditoria). Cada uno trae Dockerfile,
-                      app.py, openapi.yaml, contratos/ (XSD) y tests/
+                      evidencias, analisis_auditoria (solo auditoria),
+                      sincronizacion, integraciones_monitoreo,
+                      clasificacion_motivos, causa_raiz, proveedores y
+                      reportes_analitica. Cada uno trae Dockerfile, app.py,
+                      openapi.yaml, contratos/ (XSD) y tests/
 shared/               Libreria comun de los microservicios (JWT, respuestas
                       JSON/XML, paginacion, Mongo, XSD). Se copia en cada imagen
 db/
@@ -131,8 +134,9 @@ docs/                 Documentacion tecnica del equipo
 docker-compose.yml    Entorno completo (solo se ejecuta en la VM)
 ```
 
-Los puertos de la VM son: 8000 web, 8001 a 8008 los microservicios (ver
-`docs/SETUP.md`). El contexto de build de cada servicio es la raiz del
+Los puertos de la VM son: 8000 web, 8001 a 8008 los microservicios originales y,
+del tercer parcial, 8010, 8011, 8013, 8018, 8020 y 8021 (el reparto completo y lo
+que falta por construir esta en `docs/PUERTOS.md`; el arranque, en `docs/SETUP.md`). El contexto de build de cada servicio es la raiz del
 repositorio para poder copiar `shared/`.
 
 ## Migraciones: la regla mas importante
@@ -142,7 +146,12 @@ creas una migracion nueva con el siguiente numero. `scripts/migrate.py` guarda
 un checksum de cada archivo y avisa si alguien rompio esta regla, porque en ese
 momento la base de la VM y el repositorio dejan de coincidir.
 
-Numeracion actual: 001 a 012. La siguiente que crees es `013_...sql`.
+Numeracion actual: 001 a 018 y 040 a 045. Para que dos personas no creen el mismo
+numero, cada integrante usa su rango (David 014-019, Persona 2 020-029,
+Persona 3 030-039, Persona 4 040-049; ver `docs/PUERTOS.md`). La siguiente que
+crees es la primera libre **de tu rango**. `scripts/migrate.py` aplica por orden de
+nombre, asi que los huecos no importan; si tu migracion depende de una tabla de
+otro rango, avisale antes.
 
 ## Convenciones de codigo
 
@@ -153,6 +162,12 @@ Numeracion actual: 001 a 012. La siguiente que crees es `013_...sql`.
 - Toda operacion importante llama a `registrar_bitacora(...)` (RF-30, RN-12).
 - Toda vista lleva `@roles_required(...)` o `@login_required` (RNF-09, RN-13).
 - Nunca metas contrasenas, tokens ni datos sensibles en la bitacora (RNF-16).
+- La bitacora es de **solo agregar** (migracion 045): ningun codigo, prueba ni
+  script puede hacer `UPDATE`, `DELETE` ni `TRUNCATE` sobre `bitacora`; la base lo
+  rechaza. Si una prueba crea filas ahi, esas filas se quedan.
+- En los microservicios, `requiere_jwt()` sin roles solo admite los roles base y
+  deja fuera a `Supervisor`, `Recolector` y `Operador de Almacen`. Nombra los roles
+  de cada endpoint (o usa `TODOS_LOS_ROLES` si es para cualquier rol).
 
 ## Documentacion que debes mantener al dia
 
@@ -162,3 +177,6 @@ Numeracion actual: 001 a 012. La siguiente que crees es `013_...sql`.
 | `docs/BITACORA.md` | Cuando tomas una decision tecnica que otro deberia entender |
 | `docs/ARQUITECTURA.md` | Cuando agregas un modulo o cambias la estructura |
 | `docs/SETUP.md` | Cuando cambia el procedimiento de arranque |
+| `docs/PUERTOS.md` | Cuando agregas un contenedor o cambias un puerto o un rango de migraciones |
+| `docs/FICHAS_MICROSERVICIOS.md` | Cuando agregas un servicio o cambias sus endpoints, reglas o roles |
+| `docs/PRUEBAS.md` | Cuando agregas pruebas o cambia su resultado en la VM |

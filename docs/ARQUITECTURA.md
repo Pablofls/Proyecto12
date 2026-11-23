@@ -20,12 +20,83 @@ sesion siga activa y que el token no haya sido revocado. La ficha individual y
 el guion de evidencias estan en `docs/MICROSERVICIOS_AVANCE_ROBERTO.md`.
 
 El web conserva un modo de contingencia independiente y expone
-`/integracion/servicios` para que un administrador consulte los ocho health
-checks. En la rama `roberto/integracion-web-microservicios`, el login, las
+`/integracion/servicios` para que un administrador consulte los health
+checks (ocho en el segundo parcial; en el tercero se suman los de la tabla de la
+seccion siguiente). En la rama `roberto/integracion-web-microservicios`, el login, las
 consultas de ventas/devoluciones y las mutaciones del proceso completo se
 ejecutan por HTTP contra las API. El cliente comun (`apps/web/app/api_client.py`) conserva
 JWT en la sesion Redis, renueva access tokens y propaga correlation ids. La
 matriz exacta esta en `docs/INTEGRACION_WEB_MICROSERVICIOS.md`.
+
+## Ampliacion del tercer parcial: calidad y causa raiz
+
+Persona 4 agrega los servicios que llevan una devolucion repetida hasta su causa
+y hasta la correccion comprobada. Los puertos y el reparto entre integrantes estan
+en `docs/PUERTOS.md`; la ficha de cada servicio, en `docs/FICHAS_MICROSERVICIOS.md`.
+
+| Puerto | Servicio | Responsabilidad | Persistencia | Migracion |
+|---:|---|---|---|---|
+| 8006 | ventas-catalogos (ampliado) | Ademas de ventas y catalogos: lotes, numeros de serie, trazabilidad hasta tienda, venta y recorrido, y tasas de devolucion | PostgreSQL + Redis | 040 |
+| 8008 | analisis-auditoria | Queda **solo auditoria** (bitacora y eventos). El analisis que tenia esta aislado y obsoleto | PostgreSQL + MongoDB + Redis | 045 |
+| 8010 | clasificacion-motivos | Categorias de origen de la falla y submotivos con versiones; la sugerencia automatica la revisa una persona | PostgreSQL + Redis | 041 |
+| 8011 | causa-raiz | Alertas, investigaciones, hipotesis, evidencias, acciones CAPA y medicion de su eficacia | PostgreSQL + Redis | 043, 044 |
+| 8013 | proveedores | Indicadores de calidad por proveedor y reclamaciones con seguimiento | PostgreSQL + Redis | 042 |
+| 8018 | reportes-analitica | Reportes (JSON, XML, CSV, Excel, PDF), datos para Highcharts, tendencias, pronosticos, anomalias y analisis de varios factores. Solo lectura | PostgreSQL + Redis | ninguna |
+
+### El flujo de causa raiz
+
+1. El sistema detecta un patron raro (por ejemplo, muchas devoluciones de un mismo lote)
+   y genera una **alerta**. La alerta solo *propone* investigar.
+2. Una persona abre la investigacion, junta evidencia y escribe hipotesis (5 porques,
+   Ishikawa), que luego verifica.
+3. Marca la causa como confirmada o inconclusa. Confirmar exige evidencia y una
+   hipotesis verificada.
+4. Crea acciones CAPA con responsable y fecha, y mide si funcionaron.
+5. Un supervisor, distinto del analista, la cierra reconfirmando su contrasena.
+
+Los estados y los servicios que intervienen estan en
+[docs/diagramas/causa_raiz.md](diagramas/causa_raiz.md); el uso de la API, en
+`docs/GUIA_CAUSA_RAIZ.md`. **El analisis apoya la decision, nunca la toma**
+(RN-09, RN-11): una sugerencia de motivo no modifica la devolucion y una alerta no
+abre una investigacion por si sola.
+
+### Quien escribe cada dato
+
+Cada tabla nueva tiene **un solo servicio** que escribe en ella, aunque todos
+comparten el mismo PostgreSQL:
+
+| Servicio | Escribe | Solo lee |
+|---|---|---|
+| ventas-catalogos | `series_producto` (ademas de los catalogos y ventas de siempre) | devoluciones, recolecciones, inspecciones, disposiciones |
+| clasificacion-motivos | `submotivos`, `submotivos_versiones`, `clasificaciones_motivo` | `categorias_motivo` (catalogo fijo que carga la migracion 041), `devoluciones`, `motivos` |
+| proveedores | `reclamaciones_proveedor`, `reclamacion_devoluciones`, `seguimiento_reclamacion` | proveedores, lotes, devoluciones, inspecciones, costos |
+| causa-raiz | `alertas_patron`, `investigaciones`, `hipotesis`, `evidencias_investigacion`, `seguimiento_investigacion`, `acciones_capa`, `mediciones_eficacia` | ventas, lotes, devoluciones, politicas de devolucion |
+| reportes-analitica | nada | ventas, lotes, devoluciones, costos |
+| analisis-auditoria | nada (el analisis obsoleto aun escribe sus snapshots en MongoDB) | `bitacora`, eventos de MongoDB |
+
+La excepcion es `bitacora`: la escriben todos los servicios y la base solo admite
+agregar (migracion 045: `UPDATE`, `DELETE` y `TRUNCATE` fallan). Esa proteccion es del
+esquema; frena a la aplicacion o a una inyeccion SQL, no a quien administre PostgreSQL
+y desactive el trigger a proposito.
+
+### Reglas de diseno de esta ampliacion
+
+- **La auditoria no depende del analisis.** `auditoria.py` no importa nada del analisis y
+  solo tiene rutas GET; pruebas lo hacen cumplir. El analisis se retiro por completo
+  (`docs/MIGRACION_ANALISIS_8008.md`): `retirado.py` solo responde 410 con los sucesores.
+- **Una tasa solo se compara con ventas que ya pudieron devolverse.** Las ventas de los
+  ultimos dias aun pueden recibir devoluciones (plazo de `politicas_devolucion`, RN-16);
+  contarlas haria parecer que la tasa baja. Lo aplican la medicion de eficacia de
+  `causa-raiz` y las series de `reportes-analitica`, y ninguna da un veredicto con
+  menos de 20 unidades vendidas.
+- **Cerrar una investigacion es una operacion critica.** `causa-raiz` consume el permiso
+  de un solo uso que emite `auth` (`cerrar_investigacion`), guardado en Redis, y valida
+  las reglas de negocio antes de consumirlo.
+- **Los servicios no se llaman entre si.** Se coordinan por la base y por Redis, de modo
+  que la caida de uno no apaga a los demas.
+- **PDF y Excel sin librerias nuevas.** `reportes-analitica` los escribe con la
+  biblioteca estandar porque `CLAUDE.md` pide acordar las dependencias con el equipo; si
+  se prefiere `reportlab` y `openpyxl`, solo cambia `formatos.py`.
 
 ## Por que un monolito ahora
 
@@ -161,6 +232,7 @@ Los diagramas viven como Mermaid en `docs/diagramas/` y renderizan en GitHub:
 | Datos PostgreSQL (logico y fisico) | [docs/diagramas/datos_postgresql.md](diagramas/datos_postgresql.md) |
 | Datos MongoDB | [docs/diagramas/datos_mongodb.md](diagramas/datos_mongodb.md) |
 | Claves de Redis | [docs/diagramas/redis_claves.md](diagramas/redis_claves.md) |
+| Causa raiz: estados y servicios (tercer parcial) | [docs/diagramas/causa_raiz.md](diagramas/causa_raiz.md) |
 
 El documento tecnico integral, que los reune con el diseno de cada servicio, los
 contratos, la seguridad y las evidencias pendientes, es

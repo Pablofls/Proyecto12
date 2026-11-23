@@ -1,8 +1,8 @@
 """La auditoria esta separada del analisis y es de solo lectura. No necesita base de datos.
 
 Correccion del profe: "separarla del analisis, para que cambiar el analisis nunca
-toque la auditoria". Estas pruebas hacen cumplir esa regla: si alguien la rompe,
-fallan.
+toque la auditoria". El analisis se retiro por completo (etapa 4 de docs/MIGRACION_ANALISIS_8008.md):
+estas pruebas hacen cumplir que no vuelva a mezclarse y que sus rutas sigan respondiendo 410.
 Trazabilidad: RF-30, RN-12, RN-13, RNF-16, RNF-23.
 """
 import ast
@@ -10,9 +10,9 @@ import os
 
 import pytest
 
-import analisis
 import app as servicio
 import auditoria
+import retirado
 import shared.seguridad as seguridad
 
 DIRECTORIO = os.path.dirname(os.path.dirname(__file__))
@@ -46,8 +46,10 @@ def test_auditoria_no_comparte_estado_con_el_analisis():
     assert not simbolos & {"calcular_pareto", "clasificar_descripcion", "PALABRAS_MOTIVO", "SQL_SNAPSHOTS", "TTL"}
 
 
-def test_el_analisis_si_depende_de_la_auditoria_para_su_alias():
-    assert "auditoria" in importaciones("analisis.py")
+def test_el_codigo_del_analisis_ya_no_existe_en_el_servicio():
+    for archivo in ("analisis.py", "contratos/clasificacion.xsd", "tests/test_pareto.py"):
+        assert not os.path.exists(os.path.join(DIRECTORIO, archivo)), archivo
+    assert importaciones("retirado.py") <= {"flask", "shared"}        # el stub no tiene logica ni toca la auditoria
 
 
 def test_la_auditoria_es_de_solo_lectura():
@@ -58,69 +60,54 @@ def test_la_auditoria_es_de_solo_lectura():
         assert r.methods - {"HEAD", "OPTIONS"} == {"GET"}, r
 
 
-def test_los_nombres_de_ruta_del_analisis_no_cambiaron():
-    """Postman, la suite E2E y la web siguen usando estas rutas mientras migran."""
-    reales = {(m.lower(), str(r)) for r in servicio.create_app().url_map.iter_rules()
-              if r.endpoint.startswith("analisis.") for m in r.methods if m in ("GET", "POST")}
-    assert reales == set(RUTAS_ANALISIS)
-
-
-# --------------------------------------------------------------------------- interruptor de corte
+# --------------------------------------------------------------------------- rutas retiradas
 @pytest.fixture
-def cliente(monkeypatch):
-    monkeypatch.delenv("ANALISIS_HABILITADO", raising=False)
+def cliente():
     return servicio.create_app().test_client()
 
 
-def test_con_el_analisis_habilitado_exige_token_y_avisa_que_es_obsoleto(cliente):
-    r = cliente.get("/api/v1/analisis/pareto")
-    assert r.status_code == 401 and r.headers["Deprecation"] == "true"
-    assert 'rel="successor-version"' in r.headers["Link"] and "reportes-analitica" in r.headers["Link"]
-    assert "clasificacion-motivos" in cliente.post("/api/v1/analisis/clasificar-motivo").headers["Link"]
-    assert cliente.get("/api/v1/analisis/eventos").headers["Link"] == '</api/v1/auditoria/eventos>; rel="successor-version"'
+def test_las_rutas_del_analisis_responden_410_sin_pedir_token_y_nombran_su_sucesor(cliente):
+    for metodo, ruta in RUTAS_ANALISIS:
+        r = getattr(cliente, metodo)(ruta)
+        assert r.status_code == 410, ruta
+        assert r.json["error"]["tipo"] == "servicio_movido"
+        assert r.headers["Deprecation"] == "true"
+        detalles = r.json["error"]["detalles"]
+        assert "reportes-analitica" in detalles["pareto"] and "clasificacion-motivos" in detalles["clasificar-motivo"]
+        assert detalles["eventos"] == "/api/v1/auditoria/eventos"
 
 
-def test_las_rutas_sin_sucesor_solo_llevan_deprecation(cliente):
-    for ruta in ("/api/v1/analisis/resumen",):
-        r = cliente.get(ruta)
-        assert r.headers["Deprecation"] == "true" and "Link" not in r.headers
+def test_cualquier_metodo_y_ruta_bajo_analisis_responde_410(cliente):
+    for metodo in ("get", "post", "put", "patch", "delete"):
+        assert getattr(cliente, metodo)("/api/v1/analisis/lo-que-sea/anidado").status_code == 410, metodo
+    assert cliente.get("/api/v1/analisis").status_code == 410
 
 
-def test_la_auditoria_nunca_se_marca_obsoleta(cliente):
+def test_el_stub_es_la_unica_ruta_de_analisis(cliente):
+    reglas = [str(r) for r in cliente.application.url_map.iter_rules() if "analisis" in str(r)]
+    assert sorted(reglas) == ["/api/v1/analisis", "/api/v1/analisis/<path:resto>"]
+    assert retirado.bp.url_prefix == "/api/v1/analisis"
+
+
+def test_la_auditoria_nunca_se_marca_obsoleta_y_sigue_pidiendo_token(cliente):
     for ruta in RUTAS_AUDITORIA:
         r = cliente.get(ruta)
         assert r.status_code == 401 and "Deprecation" not in r.headers and "Link" not in r.headers
 
 
-@pytest.mark.parametrize("valor", ["false", "False", "0", "no", " FALSE "])
-def test_con_el_analisis_apagado_responde_410_sin_pedir_token(monkeypatch, valor):
-    monkeypatch.setenv("ANALISIS_HABILITADO", valor)
-    c = servicio.create_app().test_client()
-    for metodo, ruta in RUTAS_ANALISIS:
-        r = getattr(c, metodo)(ruta)
-        assert r.status_code == 410, ruta
-        assert r.json["error"]["tipo"] == "servicio_movido"
-        assert "reportes-analitica" in r.json["error"]["detalles"]["pareto"]
-
-
-def test_con_el_analisis_apagado_la_auditoria_sigue_en_pie(monkeypatch):
-    monkeypatch.setenv("ANALISIS_HABILITADO", "false")
-    c = servicio.create_app().test_client()
-    for ruta in RUTAS_AUDITORIA:
-        assert c.get(ruta).status_code == 401          # sigue exigiendo token, no 410
-
-
-@pytest.mark.parametrize("valor", ["true", "1", "", "cualquier cosa"])
-def test_solo_se_apaga_con_un_valor_explicito(monkeypatch, valor):
-    monkeypatch.setenv("ANALISIS_HABILITADO", valor)
-    assert analisis.habilitado() is True
+def test_health_dice_que_el_analisis_esta_retirado(monkeypatch, cliente):
+    from shared import mongo as modulo_mongo
+    monkeypatch.setattr(servicio, "salud_postgres", lambda: {"ok": True})
+    monkeypatch.setattr(servicio, "salud_redis", lambda: {"ok": True})
+    monkeypatch.setattr(modulo_mongo, "salud_mongo", lambda: {"ok": True})
+    r = cliente.get("/health")
+    assert r.status_code == 200 and r.json["analisis"] == "retirado"
 
 
 # --------------------------------------------------------------------------- auditoria con la base simulada
 @pytest.fixture
 def api(monkeypatch):
     estado = {"rol": "Analista de Devoluciones", "consultas": [], "triggers": ["trg_bitacora_inmutable", "trg_bitacora_sin_truncate"]}
-    monkeypatch.delenv("ANALISIS_HABILITADO", raising=False)
     monkeypatch.setattr(seguridad, "decodificar", lambda token, tipo="access": {
         "sub": "7", "rol": estado["rol"], "nombre": "P", "sid": "s", "jti": "j"})
     monkeypatch.setattr(seguridad, "comprobar_en_redis", lambda claims: None)

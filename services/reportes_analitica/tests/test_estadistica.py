@@ -193,3 +193,81 @@ def test_pareto_vacio_y_con_etiqueta_nula():
 
 def test_pareto_desempata_por_nombre():
     assert [c["etiqueta"] for c in e.pareto([("z", 5, 1), ("a", 5, 1)])["categorias"]] == ["a", "z"]
+
+
+# --------------------------------------------------------------------------- #
+# Varios factores (analizar_cruce, intervalo de Wilson)
+# --------------------------------------------------------------------------- #
+def _cruce(celdas):
+    """celdas: {(a, b): (vendidas, devueltas)} -> filas como las entrega datos.tasas_cruzadas."""
+    return [{"a_id": a, "a_etiqueta": f"P{a}", "b_id": b, "b_etiqueta": f"T{b}", "unidades_vendidas": v,
+             "unidades_devueltas": d, "devoluciones": d} for (a, b), (v, d) in celdas.items()]
+
+
+def _rejilla(modificaciones=None, vendidas=100, base=5):
+    celdas = {(a, b): (vendidas, base) for a in (1, 2, 3) for b in (1, 2, 3)}
+    celdas.update(modificaciones or {})
+    return celdas
+
+
+def test_wilson_acota_la_tasa_y_se_estrecha_con_mas_muestra():
+    bajo, alto = e.intervalo_wilson(16, 24)
+    assert bajo < 16 / 24 * 100 < alto and 46 < bajo < 47 and 82 < alto < 83     # valores reproducibles a mano
+    ancho_chico = e.intervalo_wilson(10, 100)
+    ancho_grande = e.intervalo_wilson(100, 1000)
+    assert ancho_grande[1] - ancho_grande[0] < ancho_chico[1] - ancho_chico[0]
+
+
+def test_wilson_con_cero_devoluciones_no_baja_de_cero_y_sin_ventas_no_hay_intervalo():
+    assert e.intervalo_wilson(0, 50)[0] == 0.0 and e.intervalo_wilson(0, 50)[1] > 0
+    assert e.intervalo_wilson(5, 0) is None
+
+
+def test_una_combinacion_que_supera_a_sus_dos_factores_se_lee_como_combinacion():
+    r = e.analizar_cruce(_cruce(_rejilla({(1, 1): (100, 40)})))
+    cabeza = r["celdas"][0]
+    assert r["estado"] == "ok" and (cabeza["a_etiqueta"], cabeza["b_etiqueta"]) == ("P1", "T1")
+    assert cabeza["distinguible"] and cabeza["lectura"] == "combinacion"
+    assert r["distinguibles"] == 1 and all(c["lectura"] is None for c in r["celdas"][1:])
+
+
+def test_si_todo_un_factor_esta_alto_el_exceso_se_atribuye_a_ese_factor():
+    celdas = _rejilla({(1, 1): (100, 30), (1, 2): (100, 30), (1, 3): (100, 30)})   # P1 en todas las tiendas
+    r = e.analizar_cruce(_cruce(celdas))
+    asignadas = {(c["a_etiqueta"], c["b_etiqueta"]): c["lectura"] for c in r["celdas"] if c["distinguible"]}
+    assert asignadas and set(asignadas.values()) == {"factor_a"}
+    assert {a for a, _ in asignadas} == {"P1"}
+
+
+def test_si_todo_el_segundo_factor_esta_alto_se_atribuye_al_segundo():
+    celdas = _rejilla({(1, 2): (100, 30), (2, 2): (100, 30), (3, 2): (100, 30)})   # la tienda T2 en todos los proveedores
+    r = e.analizar_cruce(_cruce(celdas))
+    assert {c["lectura"] for c in r["celdas"] if c["distinguible"]} == {"factor_b"}
+
+
+def test_las_combinaciones_con_poca_muestra_no_se_juzgan_aunque_su_tasa_sea_enorme():
+    r = e.analizar_cruce(_cruce(_rejilla({(1, 1): (4, 4)})))        # 100 % de 4 unidades: ruido
+    assert r["omitidas_por_muestra"] == 1
+    assert all((c["a_etiqueta"], c["b_etiqueta"]) != ("P1", "T1") for c in r["celdas"])
+
+
+def test_sin_devoluciones_o_sin_muestra_dice_sin_datos_y_por_que():
+    assert e.analizar_cruce(_cruce(_rejilla(base=0)))["estado"] == "sin_datos"
+    pocas = e.analizar_cruce(_cruce(_rejilla(vendidas=10)))
+    assert pocas["estado"] == "sin_datos" and "20 unidades" in pocas["motivo"] and pocas["omitidas_por_muestra"] == 9
+    assert e.analizar_cruce([])["estado"] == "sin_datos"
+
+
+def test_una_rejilla_pareja_no_marca_nada_y_las_celdas_salen_de_mayor_a_menor_tasa():
+    r = e.analizar_cruce(_cruce(_rejilla({(2, 2): (100, 8)})))
+    assert r["distinguibles"] == 0
+    tasas = [c["tasa_pct"] for c in r["celdas"]]
+    assert tasas == sorted(tasas, reverse=True) and r["celdas"][0]["tasa_pct"] == 8.0
+
+
+def test_la_celda_trae_sus_tasas_por_factor_y_su_intervalo():
+    r = e.analizar_cruce(_cruce(_rejilla({(1, 1): (100, 40)})))
+    c = r["celdas"][0]
+    assert c["tasa_factor_a_pct"] == round((40 + 5 + 5) / 300 * 100, 2) and c["tasa_factor_b_pct"] == c["tasa_factor_a_pct"]
+    assert c["intervalo_95_pct"]["bajo"] < c["tasa_pct"] < c["intervalo_95_pct"]["alto"]
+    assert c["veces_promedio"] == round(c["tasa_pct"] / r["tasa_promedio_pct"], 2)

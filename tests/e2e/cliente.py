@@ -29,7 +29,8 @@ SERVICIOS = {
     "reembolsos": ("REEMBOLSOS_URL", "http://reembolsos-costos:8000"),
     "ventas": ("VENTAS_URL", "http://ventas-catalogos:8000"),
     "evidencias": ("EVIDENCIAS_URL", "http://evidencias:8000"),
-    "analisis": ("ANALISIS_URL", "http://analisis-auditoria:8000"),
+    # Auditoria (8008) conserva su servicio; el analisis que tenia se fue a motivos (8010) y reportes (8018).
+    "auditoria": ("AUDITORIA_URL", "http://analisis-auditoria:8000"),
     # Tercer parcial
     "motivos": ("MOTIVOS_URL", "http://clasificacion-motivos:8000"),
     "causa_raiz": ("CAUSA_RAIZ_URL", "http://causa-raiz:8000"),
@@ -47,11 +48,11 @@ PREFIJO_API = {
     "reembolsos": "/api/v1/reembolsos-costos",
     "ventas": "/api/v1/ventas",
     "evidencias": "/api/v1/evidencias",
-    "analisis": "/api/v1/analisis",
+    "auditoria": "/api/v1/auditoria",
     "motivos": "/api/v1/motivos",
     "causa_raiz": "/api/v1/causa-raiz",
     "proveedores": "/api/v1/proveedores",
-    "reportes": "/api/v1/reportes",
+    "reportes": "/api/v1",   # reportes, graficas y analitica comparten el prefijo base
     "sincronizacion": "/api/v1/sincronizacion",
     "integraciones": "/api/v1/integraciones",
     "monitoreo": "/api/v1/monitoreo",
@@ -319,8 +320,5 @@ def borrar_devoluciones(ids):
         db.eventos.delete_many({"datos.devolucion_id": {"$in": lista}})
         db.inspecciones.delete_many({"devolucion_id": {"$in": lista}})
         db.evidencias_metadatos.delete_many({"devolucion_id": {"$in": lista}})
-        db.resultados_analisis.delete_many(
-            {"tipo_analisis": "snapshot_devolucion",
-             "devolucion_id": {"$in": lista}})
     except Exception as exc:  # noqa: BLE001
         print(f"[E2E][limpieza] MongoDB no se pudo limpiar ({type(exc).__name__})")

@@ -36,8 +36,31 @@ Los puertos 8009, 8012, 8015, 8016, 8019 y 8022 quedan **libres a proposito**:
 corresponden a dominios agrupados en otro contenedor. Conservar la numeracion de
 la retroalimentacion hace evidente que dominio absorbio a cual.
 
-El firewall de GCP (regla `permitir-microservicios-david`) abre 8001-8021 desde
-el 2026-11-10.
+## Firewall de GCP
+
+Proyecto `integracion-505116`, red `default`. Solo se abren los puertos que tienen un
+servicio, y los microservicios solo para las IPs del equipo, no para todo internet:
+
+| Regla | Puertos | Origen |
+|---|---|---|
+| `permitir-8000-devoluciones` | tcp:8000 (monolito web) | cualquier IP |
+| `permitir-servicios-8001-8008` | tcp:8001-8008 (microservicios originales) | dos IPs del equipo |
+| `permitir-servicios-8010-8021` | tcp:8010, 8011, 8013, 8018, 8020 y 8021 (tercer parcial) | las mismas dos IPs |
+
+Verificado el 2026-11-22 desde una de esas IPs: el `/health` de los seis puertos nuevos
+responde 200 y 8009, 8012, 8014 y 8019 siguen cerrados. Desde otra IP no se ve nada: hay
+que sumarla a la regla (el comando reemplaza la lista completa, asi que se repiten las
+IPs actuales; se ven con `gcloud compute firewall-rules describe permitir-servicios-8010-8021`).
+Las IPs no se escriben en el repositorio.
+
+```bash
+gcloud compute firewall-rules update permitir-servicios-8010-8021 \
+  --source-ranges=IP_1/32,IP_2/32,IP_NUEVA/32
+```
+
+Al agregar un servicio con puerto nuevo, se agrega ese puerto a la regla correspondiente
+y se actualiza esta tabla. Antes decia que una regla `permitir-microservicios-david` abria
+8001-8021; esa regla no existe en el proyecto (se comprobo el 2026-11-22).
 
 ## Por que se agrupan
 

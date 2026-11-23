@@ -89,6 +89,9 @@ if [ "$MODO" = "todo" ] || [ "$MODO" = "servicios" ]; then
     correr docker compose run --rm -e INTEGRACION=1 "$servicio" \
       python -m pytest -v -p no:cacheprovider tests/test_integracion.py
   done
+  # Trazabilidad de lotes y series (tercer parcial): segundo archivo de la misma imagen.
+  correr docker compose run --rm -e INTEGRACION=1 ventas-catalogos \
+    python -m pytest -v -p no:cacheprovider tests/test_integracion_trazabilidad.py
 fi
 
 if [ "$MODO" = "todo" ] || [ "$MODO" = "unitarias" ]; then

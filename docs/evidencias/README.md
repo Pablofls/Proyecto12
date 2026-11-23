@@ -286,3 +286,30 @@ bash scripts/evidencias_vm.sh
 Ejecuta los comandos de las secciones 3 a 7 y guarda la salida real en `docs/evidencias/bases/` (`docker.txt`,
 `postgresql.txt`, `mongodb.txt`, `redis.txt`, `volumen.txt`), con los JWT ocultos. Incluye el caso del candado de Redis
 (409 `reembolso_en_proceso`). Se versionan como transcripciones; las capturas de pantalla de estas mismas salidas son opcionales.
+
+## Evidencia con curl (servicios del tercer parcial)
+
+Los servicios nuevos (`clasificacion-motivos`, `causa-raiz`, `proveedores`, `reportes-analitica` y lo
+nuevo de `ventas-catalogos` y `analisis-auditoria`) no tienen coleccion de Postman. Su evidencia sale de
+`curl` real, con el mismo contenido que pide el enunciado: URL y metodo, objetivo, cabeceras, cuerpo JSON
+o XML, respuesta completa, codigo HTTP, efecto en PostgreSQL y al menos un error controlado por endpoint.
+
+```bash
+cd ~/Proyecto12                                   # en la VM, con los servicios levantados y seed_demo aplicado
+python3 scripts/evidencias/ejecutar.py clasificacion      # tambien: proveedores, causa_raiz, reportes, trazabilidad, auditoria, todos
+```
+
+- Escribe `docs/evidencias/ejecuciones/<servicio>.md`: por cada caso, el `curl` listo para copiar, la
+  respuesta tal como llego, las verificaciones y la consulta SQL que muestra el efecto en la base.
+- **Nada se pega a mano.** Un caso que no cumple lo esperado queda marcado **FALLA** con su respuesta real y
+  el programa termina con codigo distinto de cero. Si la corrida se interrumpe, escribe lo que alcanzo y lo dice.
+- La contrasena de demo se lee de `PASSWORD_DEMO` o del `.env` de la VM; no se imprime ni va en la linea de
+  comandos de `curl` (viaja por stdin). Los tokens salen como `$TOKEN_<ROL>` y cualquier JWT, como `***jwt***`.
+- Los datos que crea cada corrida se borran al terminar (la bitacora no, porque es de solo agregar).
+- Un cuerpo puede llevar el marcador `$PASSWORD_DEMO` (reconfirmar la contrasena para cerrar una investigacion): se envia la
+  real y en el archivo se ve el marcador. El permiso de operacion que emite auth tambien se oculta.
+- El login admite 10 por minuto por IP (RNF-13): `todos` espera 62 s entre servicios.
+- Es solo biblioteca estandar. Las pruebas del propio motor: `python3 -m pytest scripts/evidencias/test_motor.py`.
+- Para agregar un servicio: un modulo `scripts/evidencias/casos_<servicio>.py` con `ejecutar(c)` y registrarlo en
+  `SERVICIOS` de `ejecutar.py`.
+

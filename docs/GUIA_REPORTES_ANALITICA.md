@@ -97,6 +97,22 @@ no distorsiona. Anomalia con |z| ≥ 3.5.
 - `tipo=meses`: cada mes contra la tendencia de su propia serie, para que una serie
   que sube de forma regular no marque como anomalo su ultimo mes.
 
+**`/analitica/factores`** (RF-23, RF-24): analisis de **varios factores a la vez**. Las tasas por
+una sola dimension pueden esconder que el problema esta en una combinacion (por ejemplo, un
+proveedor solo en una tienda). Cruza dos factores con venta (`por` y `con`: proveedor, tienda,
+producto o lote; distintos entre si) y para cada combinacion devuelve:
+
+- la tasa (unidades devueltas entre vendidas) y cuantas veces supera el promedio global;
+- su **intervalo de confianza de Wilson del 95 %**: una combinacion es `distinguible` solo si el
+  extremo bajo del intervalo supera la tasa promedio, para que pocas ventas no parezcan culpables;
+- la tasa de cada factor por separado y una **lectura** explicable: `combinacion` (supera a los dos
+  factores por separado), `factor_a`, `factor_b`, `ambos_factores` o `sin_atribucion`.
+
+Las combinaciones con menos de 20 unidades vendidas no se juzgan (`omitidas_por_muestra`). Con
+`solo_distinguibles=true` se listan solo las que destacan y `limite` acota la lista (por omision 20).
+Es una senal para decidir donde investigar, no una causa (RN-09); `ruta` y `transportista` quedan
+fuera porque no existe "vendido por ruta".
+
 **`/analitica/alertas-fraude`** (RF-25): frecuencia alta en 90 dias, multiples rechazos o
 monto reembolsado elevado. Son indicadores preventivos; no acusan ni bloquean.
 
@@ -114,6 +130,7 @@ GET /api/v1/reportes/devoluciones?formato=xlsx&desde=2026-10-01&hasta=2026-10-31
 GET /api/v1/reportes/pareto?dimension=proveedor&medida=costo&formato=pdf
 GET /api/v1/graficas/tendencia?medida=tasa&dimension=proveedor&referencia_id=2&horizonte=3
 GET /api/v1/analitica/anomalias?tipo=objetos&por=tienda
+GET /api/v1/analitica/factores?por=proveedor&con=tienda&solo_distinguibles=true
 ```
 
 ## Lo que no hace todavia

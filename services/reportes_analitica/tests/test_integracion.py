@@ -120,6 +120,39 @@ class IntegracionReportes(unittest.TestCase):
         filas = list(csv.reader(io.StringIO(crudo.decode("utf-8-sig"))))
         self.assertAlmostEqual(sum(float(f[9]) for f in filas[1:]), float(esperado), places=2)
 
+    def test_factores_cada_combinacion_coincide_con_la_base(self):
+        """Cada celda del cruce proveedor x tienda se contrasta con una consulta independiente."""
+        r = self.json("/analitica/factores?por=proveedor&con=tienda&limite=100")
+        self.assertEqual(r["estado"], "ok")
+        self.assertGreaterEqual(len(r["celdas"]), 1)
+        for c in r["celdas"][:10]:
+            esperado = _sql("""
+                SELECT SUM(vd.cantidad) AS vendidas,
+                       COALESCE(SUM((SELECT SUM(d.cantidad_devuelta) FROM devoluciones d
+                                      WHERE d.venta_detalle_id = vd.id AND d.eliminado_en IS NULL)), 0) AS devueltas
+                  FROM venta_detalle vd JOIN ventas v ON v.id = vd.venta_id JOIN lotes l ON l.id = vd.lote_id
+                 WHERE v.eliminado_en IS NULL AND l.proveedor_id = %s AND v.tienda_id = %s""",
+                (c["a_id"], c["b_id"]), uno=True)
+            self.assertEqual((c["unidades_vendidas"], c["unidades_devueltas"]),
+                             (int(esperado["vendidas"]), int(esperado["devueltas"])), (c["a_etiqueta"], c["b_etiqueta"]))
+            self.assertLessEqual(c["intervalo_95_pct"]["bajo"], c["tasa_pct"])
+            self.assertGreaterEqual(c["intervalo_95_pct"]["alto"], c["tasa_pct"])
+        tasas = [c["tasa_pct"] for c in r["celdas"]]
+        self.assertEqual(tasas, sorted(tasas, reverse=True))
+
+    def test_factores_senala_el_lote_problematico_de_la_demo(self):
+        r = self.json("/analitica/factores?por=lote&con=proveedor&solo_distinguibles=true&limite=100")
+        lote = [c for c in r["celdas"] if "L-2026-PROB-01" in c["a_etiqueta"]]
+        self.assertEqual(len(lote), 1, "el lote problematico debe aparecer como distinguible")
+        self.assertTrue(lote[0]["distinguible"])
+        self.assertIsNotNone(lote[0]["lectura"])
+        self.assertGreaterEqual(lote[0]["veces_promedio"], 2)
+
+    def test_factores_valida_y_exige_permiso(self):
+        self.assertEqual(self.get("/analitica/factores?por=tienda&con=tienda")[0], 400)
+        self.assertEqual(self.get("/analitica/factores?por=ruta")[0], 400)
+        self.assertEqual(self.get("/analitica/factores", self.cliente)[0], 403)
+
     def test_tasas_suman_las_unidades_de_toda_la_base(self):
         vendidas = _sql("SELECT COALESCE(SUM(vd.cantidad),0) AS n FROM venta_detalle vd JOIN ventas v "
                         "ON v.id = vd.venta_id WHERE v.eliminado_en IS NULL", uno=True)["n"]

@@ -324,6 +324,66 @@ paths:
         '403':
           description: Rol sin permiso
       security: *id001
+  /api/v1/analitica/factores:
+    get:
+      summary: Cruce de dos factores - donde se concentra la tasa de devolucion
+      description: Cruza dos factores con venta (proveedor, tienda, producto o lote) y calcula la tasa de cada combinacion
+        con su intervalo de confianza de Wilson del 95 %. Una combinacion es distinguible si el extremo bajo del intervalo
+        supera la tasa promedio; su lectura dice si el exceso parece venir del primer factor, del segundo, de ambos o solo
+        de la combinacion. Solo se juzgan combinaciones con 20 unidades vendidas o mas. Orienta la revision humana; no determina
+        causas (RN-09).
+      parameters:
+      - name: por
+        in: query
+        schema: &id008
+          type: string
+          enum:
+          - proveedor
+          - tienda
+          - producto
+          - lote
+          default: proveedor
+      - name: con
+        in: query
+        schema:
+          type: string
+          enum:
+          - proveedor
+          - tienda
+          - producto
+          - lote
+          default: tienda
+      - name: desde
+        in: query
+        schema: *id006
+      - name: hasta
+        in: query
+        schema: *id007
+      - name: limite
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: solo_distinguibles
+        in: query
+        schema:
+          type: string
+          enum:
+          - 'true'
+          - 'false'
+          default: 'false'
+      responses:
+        '200':
+          description: Combinaciones con tasa, intervalo y lectura
+        '400':
+          description: Filtro invalido o por y con iguales
+        '401':
+          description: Sin token
+        '403':
+          description: Rol sin permiso
+      security: *id001
   /api/v1/analitica/alertas-fraude:
     get:
       summary: 'Posible fraude: senales explicables (solo Administrador y Analista)'

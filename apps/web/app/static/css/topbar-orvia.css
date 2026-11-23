@@ -1,0 +1,59 @@
+/* Orvia - barra superior global. No invade HTML de negocio ni el sidebar. */
+#orvia-topbar, #orvia-topbar * { box-sizing:border-box; }
+#orvia-topbar.orvia-topbar {
+  --ov-line:#e9edf3; --ov-ink:#102136; --ov-green:#078b58;
+  display:flex; align-items:center; gap:24px;
+  position:relative; z-index:1150;
+  width:calc(100% - 258px); max-width:none; min-width:0;
+  height:92px; min-height:92px; margin:0 0 0 258px; padding:16px 31px;
+  background:#fff; border:0; border-bottom:1px solid var(--ov-line);
+  box-shadow:none; color:var(--ov-ink); font-family:Inter,'Segoe UI',Arial,sans-serif;
+}
+#orvia-topbar .orvia-topbar-search {position:relative;flex:1;max-width:770px;min-width:0}
+#orvia-topbar .orvia-topbar-search>svg {position:absolute;left:17px;top:50%;transform:translateY(-50%);width:22px;height:22px;color:#283d5b;pointer-events:none}
+#orvia-topbar #orvia-global-search {
+  width:100%;height:52px;min-width:0;border:1px solid #edf0f5;border-radius:12px;
+  background:#f6f8fa;padding:0 72px 0 55px;outline:0;
+  color:#192b47;font:400 15px/1.3 Inter,'Segoe UI',Arial,sans-serif;
+}
+#orvia-topbar #orvia-global-search::placeholder {color:#8a99b0}
+#orvia-topbar #orvia-global-search:focus {border-color:#71b89c;box-shadow:0 0 0 3px #078b581b}
+#orvia-topbar .orvia-topbar-shortcut {position:absolute;right:14px;top:50%;transform:translateY(-50%);border-radius:6px;padding:5px 8px;background:#fff;color:#8594ab;font:400 12px/1.2 Inter,'Segoe UI',sans-serif}
+#orvia-topbar .orvia-topbar-actions {display:flex;align-items:center;gap:16px;margin-left:auto;flex:none}
+#orvia-topbar .orvia-topbar-notification {min-height:42px;display:flex;align-items:center;gap:10px;position:relative}
+#orvia-topbar .campanita {position:relative}
+#orvia-topbar .campanita-boton {width:42px;height:42px;display:grid;place-items:center;border-radius:11px;color:#233752}
+#orvia-topbar .campanita-boton:hover {background:#f2f6f9}
+#orvia-topbar .campanita-panel {z-index:1250;right:0;top:46px;max-width:min(370px,92vw)}
+#orvia-topbar .orvia-topbar-account {position:relative}
+#orvia-topbar .orvia-topbar-user {display:flex;align-items:center;gap:11px;max-width:280px;padding:5px;border:0;border-radius:10px;background:transparent;text-align:left;color:#1b2c43;cursor:pointer}
+#orvia-topbar .orvia-topbar-user:hover {background:#f5f8f9}
+#orvia-topbar .orvia-topbar-user>svg {width:17px;height:17px;flex:none;color:#5a6f8b}
+#orvia-topbar .orvia-topbar-avatar {width:44px;height:44px;display:grid;place-items:center;flex:none;border-radius:50%;background:#d8eee6;color:#087b53;font:700 15px/1 Inter,'Segoe UI',sans-serif}
+#orvia-topbar .orvia-topbar-person {display:flex;flex-direction:column;min-width:0;max-width:165px;gap:4px}
+#orvia-topbar .orvia-topbar-person strong {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;font-weight:650}
+#orvia-topbar .orvia-topbar-person small {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:#7485a1}
+#orvia-topbar .orvia-topbar-user-menu {position:absolute;right:0;top:59px;width:245px;padding:12px;border:1px solid var(--ov-line);border-radius:12px;background:white;box-shadow:0 13px 40px #0c234025;z-index:1250}
+#orvia-topbar .orvia-topbar-user-menu[hidden] {display:none!important}
+#orvia-topbar .orvia-topbar-account-detail {padding:8px 6px 12px;margin-bottom:8px;border-bottom:1px solid var(--ov-line);font-size:12px;color:#5f728d;overflow-wrap:anywhere}
+#orvia-topbar .orvia-topbar-account-detail span {display:block;margin-top:5px;color:#8392a6}
+#orvia-topbar .orvia-topbar-user-menu form {margin:0;padding:0}
+#orvia-topbar .orvia-topbar-user-menu button {width:100%;padding:11px;text-align:left;border:0;border-radius:8px;background:#fff;color:#a52b38;cursor:pointer;font-weight:600}
+#orvia-topbar .orvia-topbar-user-menu button:hover {background:#fff2f3}
+#orvia-topbar .orvia-topbar-results {position:absolute;top:calc(100% + 8px);left:0;right:0;max-height:320px;overflow-y:auto;padding:7px;border:1px solid var(--ov-line);border-radius:12px;background:white;box-shadow:0 16px 48px #10213622;z-index:1260}
+#orvia-topbar .orvia-topbar-results[hidden] {display:none!important}
+#orvia-topbar .orvia-topbar-results a {display:flex;align-items:center;min-height:42px;padding:9px 12px;border-radius:8px;color:#243d58;text-decoration:none;font-size:14px}
+#orvia-topbar .orvia-topbar-results a:hover,#orvia-topbar .orvia-topbar-results a:focus-visible {background:#ecf6f1;color:#006b45}
+#orvia-topbar .orvia-topbar-results p {margin:0;padding:12px;color:#657891;font-size:13px}
+#orvia-topbar :is(button,input,a):focus-visible {outline:2px solid #078b58;outline-offset:2px}
+@media(max-width:760px) {
+  #orvia-topbar.orvia-topbar {width:100%;margin-left:0;padding:12px 12px 12px 68px;height:70px;min-height:70px;gap:8px}
+  #orvia-topbar .orvia-topbar-shortcut,#orvia-topbar .orvia-topbar-person,#orvia-topbar .orvia-topbar-user>svg{display:none}
+  #orvia-topbar .orvia-topbar-search>svg{left:10px;width:18px;height:18px}
+  #orvia-topbar #orvia-global-search {height:43px;padding:0 10px 0 37px;font-size:12px}
+  #orvia-topbar .orvia-topbar-avatar {width:36px;height:36px}
+  #orvia-topbar .orvia-topbar-user{padding:2px}
+  #orvia-topbar .orvia-topbar-actions{gap:6px}
+  #orvia-topbar .campanita-boton{width:36px;height:36px}
+}
+@media(prefers-reduced-motion:reduce) { #orvia-topbar *{scroll-behavior:auto!important;transition:none!important;} }

@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
-  title: Servicio de auditoria (y analisis obsoleto) - Plataforma de devoluciones
+  title: Servicio de auditoria - Plataforma de devoluciones
   version: 1.0.0
   description: 'Auditoria: consulta de la bitacora (solo lectura, solo agrega) y eventos por correlation id. RF-30,
     RN-12, RNF-23. El analisis (clasificar motivo, Pareto, alertas de fraude, sincronizar, resumen) se separo: su
-    sucesor es clasificacion-motivos (8010) y reportes-analitica (8018). Sus rutas siguen disponibles pero obsoletas
-    hasta que los clientes migren. JSON/XML y JWT.'
+    sucesor es clasificacion-motivos (8010) y reportes-analitica (8018). Sus rutas fueron retiradas y responden 410.
+    JSON/XML y JWT.'
 servers:
 - url: /
 paths:
@@ -38,213 +38,27 @@ paths:
           description: Error interno
         '503': &id008
           description: Dependencia no disponible
-  /api/v1/analisis/sincronizar:
-    post:
-      summary: Actualiza MongoDB desde PostgreSQL sin modificar transacciones
-      responses:
-        '200':
-          description: Actualiza MongoDB desde PostgreSQL sin modificar transacciones
-          content:
-            application/json:
-              schema:
-                type: object
-            application/xml:
-              schema:
-                type: object
-        '400': *id001
-        '401': *id002
-        '403': *id003
-        '404': *id004
-        '409': *id005
-        '415': *id006
-        '500': *id007
-        '503': *id008
-      security:
-      - bearerAuth: []
-      deprecated: true
-      description: 'OBSOLETO: el analisis se separo de la auditoria. Sin sucesor (solo contaba snapshots). Sigue
-        funcionando igual mientras los clientes migran; con ANALISIS_HABILITADO=false responde 410. Cada respuesta
-        lleva Deprecation: true y, si hay sucesor, Link rel=successor-version. Ver docs/MIGRACION_ANALISIS_8008.md.'
-  /api/v1/analisis/pareto:
-    get:
-      summary: Pareto MongoDB mediante pipeline; Redis TTL 600s
-      responses:
-        '200':
-          description: Pareto MongoDB mediante pipeline; Redis TTL 600s
-          content:
-            application/json:
-              schema:
-                type: object
-            application/xml:
-              schema:
-                type: object
-        '400': *id001
-        '401': *id002
-        '403': *id003
-        '404': *id004
-        '409': *id005
-        '415': *id006
-        '500': *id007
-        '503': *id008
+  /api/v1/analisis/{ruta}:
+    get: &retirada
+      summary: RETIRADO - el analisis ya no se ofrece aqui (410)
+      description: 'El analisis (clasificar motivo, Pareto, alertas de fraude, sincronizar, resumen y el alias de eventos)
+        se separo de la auditoria y su codigo se retiro. Cualquier metodo y cualquier ruta bajo /api/v1/analisis responde
+        410 servicio_movido, aun sin token, con los sucesores en detalles: clasificacion-motivos (8010) POST /api/v1/motivos/sugerencias,
+        reportes-analitica (8018) GET /api/v1/analitica/alertas-fraude y GET /api/v1/reportes/pareto, y esta misma API
+        GET /api/v1/auditoria/eventos. Lleva Deprecation: true.'
       parameters:
-      - name: dimension
-        in: query
-        required: false
-        schema:
-          type: string
-      - name: medida
-        in: query
-        required: false
-        schema:
-          type: string
-      - name: desde
-        in: query
-        required: false
-        schema:
-          type: string
-      - name: hasta
-        in: query
-        required: false
-        schema:
-          type: string
-      security:
-      - bearerAuth: []
-      deprecated: true
-      description: 'OBSOLETO: el analisis se separo de la auditoria. Sucesor: reportes-analitica: GET /api/v1/reportes/pareto.
-        Sigue funcionando igual mientras los clientes migran; con ANALISIS_HABILITADO=false responde 410. Cada respuesta
-        lleva Deprecation: true y, si hay sucesor, Link rel=successor-version. Ver docs/MIGRACION_ANALISIS_8008.md.'
-  /api/v1/analisis/resumen:
-    get:
-      summary: Resumen de analítica guardada en MongoDB
-      responses:
-        '200':
-          description: Resumen de analítica guardada en MongoDB
-          content:
-            application/json:
-              schema:
-                type: object
-            application/xml:
-              schema:
-                type: object
-        '400': *id001
-        '401': *id002
-        '403': *id003
-        '404': *id004
-        '409': *id005
-        '415': *id006
-        '500': *id007
-        '503': *id008
-      security:
-      - bearerAuth: []
-      deprecated: true
-      description: 'OBSOLETO: el analisis se separo de la auditoria. Sin sucesor (solo contaba snapshots). Sigue
-        funcionando igual mientras los clientes migran; con ANALISIS_HABILITADO=false responde 410. Cada respuesta
-        lleva Deprecation: true y, si hay sucesor, Link rel=successor-version. Ver docs/MIGRACION_ANALISIS_8008.md.'
-  /api/v1/analisis/clasificar-motivo:
-    post:
-      summary: Sugiere motivos de forma explicable; requiere confirmacion humana
-      requestBody:
+      - name: ruta
+        in: path
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - descripcion
-              properties:
-                descripcion:
-                  type: string
-                  minLength: 10
-                  maxLength: 2000
-            example:
-              descripcion: El producto llego caliente y descongelado
-          application/xml:
-            schema:
-              type: object
-            example: <clasificacion><descripcion>El producto llego caliente y descongelado</descripcion></clasificacion>
-      responses:
-        '200':
-          description: Ranking de sugerencias
-          content:
-            application/json:
-              schema:
-                type: object
-            application/xml:
-              schema:
-                type: object
-        '400': *id001
-        '401': *id002
-        '403': *id003
-        '415': *id006
-        '500': *id007
-        '503': *id008
-      security:
-      - bearerAuth: []
-      deprecated: true
-      description: 'OBSOLETO: el analisis se separo de la auditoria. Sucesor: clasificacion-motivos: POST /api/v1/motivos/sugerencias.
-        Sigue funcionando igual mientras los clientes migran; con ANALISIS_HABILITADO=false responde 410. Cada respuesta
-        lleva Deprecation: true y, si hay sucesor, Link rel=successor-version. Ver docs/MIGRACION_ANALISIS_8008.md.'
-  /api/v1/analisis/alertas-fraude:
-    get:
-      summary: Detecta indicadores preventivos para revision humana
-      responses:
-        '200':
-          description: Alertas por frecuencia, rechazos o monto
-          content:
-            application/json:
-              schema:
-                type: object
-            application/xml:
-              schema:
-                type: object
-        '401': *id002
-        '403': *id003
-        '500': *id007
-        '503': *id008
-      security:
-      - bearerAuth: []
-      deprecated: true
-      description: 'OBSOLETO: el analisis se separo de la auditoria. Sucesor: reportes-analitica: GET /api/v1/analitica/alertas-fraude.
-        Sigue funcionando igual mientras los clientes migran; con ANALISIS_HABILITADO=false responde 410. Cada respuesta
-        lleva Deprecation: true y, si hay sucesor, Link rel=successor-version. Ver docs/MIGRACION_ANALISIS_8008.md.'
-  /api/v1/analisis/eventos:
-    get:
-      summary: Consulta eventos de auditoría MongoDB
-      responses:
-        '200':
-          description: Consulta eventos de auditoría MongoDB
-          content:
-            application/json:
-              schema:
-                type: object
-            application/xml:
-              schema:
-                type: object
-        '400': *id001
-        '401': *id002
-        '403': *id003
-        '404': *id004
-        '409': *id005
-        '415': *id006
-        '500': *id007
-        '503': *id008
-      parameters:
-      - name: correlation_id
-        in: query
-        required: false
         schema:
           type: string
-      - name: servicio
-        in: query
-        required: false
-        schema:
-          type: string
-      security:
-      - bearerAuth: []
-      deprecated: true
-      description: 'OBSOLETO: el analisis se separo de la auditoria. Sucesor: este servicio: GET /api/v1/auditoria/eventos.
-        Sigue funcionando igual mientras los clientes migran; con ANALISIS_HABILITADO=false responde 410. Cada respuesta
-        lleva Deprecation: true y, si hay sucesor, Link rel=successor-version. Ver docs/MIGRACION_ANALISIS_8008.md.'
+      responses:
+        '410':
+          description: servicio_movido, con los sucesores
+    post: *retirada
+    put: *retirada
+    patch: *retirada
+    delete: *retirada
   /api/v1/auditoria:
     get:
       summary: Consulta de la bitacora transaccional (solo lectura; solo agrega, no se modifica)

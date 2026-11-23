@@ -1,12 +1,12 @@
-"""Integracion real de analisis y auditoria: proyeccion a MongoDB, Pareto con cache en Redis y auditoria.
+"""Integracion real de la auditoria y del retiro del analisis (etapa 4 de docs/MIGRACION_ANALISIS_8008.md).
 
 Sin dobles: el token sale del servicio auth real por HTTP, la peticion va al
-contenedor de analisis-auditoria y el efecto se verifica en MongoDB, Redis y PostgreSQL. Las filas que crea
+contenedor de analisis-auditoria y el efecto se verifica en PostgreSQL. Las filas que crea
 la prueba se borran al terminar, salvo las de la bitacora (es de solo agregar). Solo corre en la VM:
 
     docker compose run --rm -e INTEGRACION=1 analisis-auditoria python -m pytest -v tests/test_integracion.py
 
-Trazabilidad: RNF-28, RF-23, RF-24, RF-25, RN-09, RN-11, RNF-23.
+Trazabilidad: RNF-28, RF-30, RN-12, RNF-23.
 """
 import json
 import os
@@ -19,8 +19,6 @@ import urllib.request
 import psycopg2
 import psycopg2.extras
 
-from shared import mongo
-from shared.infra import get_redis
 
 AUTH_URL = os.environ.get("AUTH_URL", "http://auth:8000")
 SERVICIO_URL = os.environ.get("ANALISIS_URL", "http://analisis-auditoria:8000")
@@ -140,8 +138,9 @@ SKIP = unittest.skipUnless(os.environ.get("INTEGRACION") == "1",
                          "Solo en la VM: INTEGRACION=1 y el entorno levantado")
 
 
+
 @SKIP
-class IntegracionAnalisis(unittest.TestCase):
+class IntegracionAcceso(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.analista = _login("Analista de Devoluciones")
@@ -152,48 +151,6 @@ class IntegracionAnalisis(unittest.TestCase):
         _logout(cls.analista)
         _logout(cls.cliente)
 
-    def test_sincronizar_proyecta_postgres_en_mongo_sin_modificar_postgres(self):
-        antes = _sql("SELECT COUNT(*) AS n, COALESCE(MAX(id), 0) AS m FROM devoluciones "
-                     "WHERE eliminado_en IS NULL", uno=True)
-        codigo, resp = _http(SERVICIO_URL, "POST", PREFIJO + "/analisis/sincronizar",
-                             token=self.analista)
-        self.assertEqual(codigo, 200, resp)
-        self.assertEqual(resp["casos_sincronizados"], antes["n"])
-        vigentes = mongo.get_mongo().resultados_analisis.count_documents(
-            {"tipo_analisis": "snapshot_devolucion", "vigente": True})
-        self.assertEqual(vigentes, antes["n"])
-        despues = _sql("SELECT COUNT(*) AS n, COALESCE(MAX(id), 0) AS m FROM devoluciones "
-                       "WHERE eliminado_en IS NULL", uno=True)
-        self.assertEqual(antes, despues)  # solo lectura sobre PostgreSQL
-
-    def test_pareto_primero_calcula_y_luego_sale_del_cache_con_ttl(self):
-        codigo, _ = _http(SERVICIO_URL, "POST", PREFIJO + "/analisis/sincronizar", token=self.analista)
-        self.assertEqual(codigo, 200)  # sube la version del cache: la primera lectura es miss
-        ruta = PREFIJO + "/analisis/pareto?dimension=motivo&medida=frecuencia"
-        _, primera = _http(SERVICIO_URL, "GET", ruta, token=self.analista)
-        _, segunda = _http(SERVICIO_URL, "GET", ruta, token=self.analista)
-        self.assertEqual(primera["cache"], "miss")
-        self.assertEqual(segunda["cache"], "hit")
-        self.assertEqual(primera["categorias"], segunda["categorias"])
-        r = get_redis()
-        claves = list(r.scan_iter("devoluciones:cache:causas:*"))
-        self.assertTrue(claves)
-        self.assertTrue(all(0 < r.ttl(k) <= 600 for k in claves))
-        # El calculo se conserva en MongoDB para trazabilidad.
-        self.assertTrue(mongo.get_mongo().resultados_analisis.find_one({"tipo_analisis": "pareto"}))
-        if primera["categorias"]:
-            acumulados = [c["porcentaje_acumulado"] for c in primera["categorias"]]
-            self.assertEqual(acumulados, sorted(acumulados))
-            self.assertAlmostEqual(acumulados[-1], 100.0, places=1)
-
-    def test_clasificar_motivo_solo_sugiere(self):  # RN-11
-        antes = _sql("SELECT COUNT(*) AS n FROM devoluciones", uno=True)["n"]
-        codigo, resp = _http(SERVICIO_URL, "POST", PREFIJO + "/analisis/clasificar-motivo",
-                             {"descripcion": "El producto llego caducado y con mal olor"}, self.cliente)
-        self.assertEqual(codigo, 200)
-        self.assertTrue(resp["requiere_confirmacion"])
-        self.assertEqual(antes, _sql("SELECT COUNT(*) AS n FROM devoluciones", uno=True)["n"])
-
     def test_auditoria_y_eventos_solo_para_analista_o_admin(self):
         codigo, cuerpo = _http(SERVICIO_URL, "GET", PREFIJO + "/auditoria?por_pagina=5",
                                token=self.analista)
@@ -203,7 +160,8 @@ class IntegracionAnalisis(unittest.TestCase):
         codigo, _ = _http(SERVICIO_URL, "GET", PREFIJO + "/auditoria", token=self.cliente)
         self.assertEqual(codigo, 403)
         codigo, _ = _http(SERVICIO_URL, "GET", PREFIJO + "/analisis/eventos", token=self.cliente)
-        self.assertEqual(codigo, 403)
+        # El analisis esta retirado: la ruta ni siquiera pide token, responde 410.
+        self.assertEqual(codigo, 410)
 
 
 @SKIP
@@ -288,22 +246,53 @@ class IntegracionAuditoria(unittest.TestCase):
         self.assertEqual((codigo, r["paginacion"]["total"]), (200, 0))
         self.assertGreaterEqual(_sql("SELECT COUNT(*) AS n FROM bitacora", uno=True)["n"], antes)
 
-    def test_eventos_en_la_ruta_de_auditoria_y_el_alias_obsoleto_coinciden(self):
+    def test_eventos_de_la_auditoria_nunca_traen_el_campo_datos(self):
         codigo, nuevo = self.get("/auditoria/eventos?por_pagina=5")
         self.assertEqual(codigo, 200)
         self.assertTrue(all("datos" not in e for e in nuevo["datos"]))                 # RNF-16
-        peticion = urllib.request.Request(SERVICIO_URL + PREFIJO + "/analisis/eventos?por_pagina=5",
-                                          headers={"Authorization": f"Bearer {self.analista}"})
-        try:
-            with urllib.request.urlopen(peticion, timeout=15) as resp:
-                alias, cabeceras = json.loads(resp.read()), resp.headers
-        except urllib.error.HTTPError as exc:
-            if exc.code == 410:
-                self.skipTest("El analisis esta retirado (ANALISIS_HABILITADO=false): el alias ya no existe")
-            raise
-        self.assertEqual(alias["paginacion"]["total"], nuevo["paginacion"]["total"])
-        self.assertEqual(cabeceras["Deprecation"], "true")
-        self.assertIn("/api/v1/auditoria/eventos", cabeceras["Link"])
+
+
+@SKIP
+class IntegracionCorte(unittest.TestCase):
+    """El analisis esta retirado: sus rutas responden 410 con su sucesor y la auditoria sigue.
+
+    Trazabilidad: RN-12, RNF-23 y la correccion del profe de separar la auditoria del analisis
+    (docs/MIGRACION_ANALISIS_8008.md, etapas 3 y 4).
+    """
+    RUTAS = (("POST", "/analisis/clasificar-motivo", "clasificacion-motivos"),
+             ("GET", "/analisis/alertas-fraude", "reportes-analitica"),
+             ("GET", "/analisis/pareto?dimension=motivo", "reportes-analitica"),
+             ("POST", "/analisis/sincronizar", None),
+             ("GET", "/analisis/resumen", None),
+             ("GET", "/analisis/eventos", "/api/v1/auditoria/eventos"))
+
+    @classmethod
+    def setUpClass(cls):
+        cls.analista = _login("Analista de Devoluciones")
+
+    @classmethod
+    def tearDownClass(cls):
+        _logout(cls.analista)
+
+    def test_health_dice_que_el_analisis_esta_retirado(self):
+        codigo, cuerpo = _http(SERVICIO_URL, "GET", "/health")
+        self.assertEqual((codigo, cuerpo["analisis"]), (200, "retirado"))
+
+    def test_cada_ruta_del_analisis_responde_410_con_su_sucesor_aun_sin_token(self):
+        for metodo, ruta, sucesor in self.RUTAS:
+            codigo, cuerpo = _http(SERVICIO_URL, metodo, PREFIJO + ruta, {} if metodo == "POST" else None)
+            self.assertEqual(codigo, 410, ruta)
+            self.assertEqual(cuerpo["error"]["tipo"], "servicio_movido", ruta)
+            sucesores = " ".join(cuerpo["error"]["detalles"].values())
+            if sucesor:
+                self.assertIn(sucesor, sucesores, ruta)
+
+    def test_la_auditoria_sigue_funcionando(self):
+        for ruta in ("/auditoria?por_pagina=3", "/auditoria/eventos?por_pagina=3", "/auditoria/estado"):
+            codigo, _ = _http(SERVICIO_URL, "GET", PREFIJO + ruta, token=self.analista)
+            self.assertEqual(codigo, 200, ruta)
+        codigo, _ = _http(SERVICIO_URL, "GET", PREFIJO + "/auditoria")
+        self.assertEqual(codigo, 401)            # sin token sigue pidiendo credenciales
 
 
 if __name__ == "__main__":

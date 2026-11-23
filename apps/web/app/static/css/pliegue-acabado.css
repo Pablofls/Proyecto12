@@ -1,0 +1,51 @@
+/* Pliegue 20.0 · acabado premium discreto, basado en la maqueta aprobada.
+   Solo composición; no cambia permisos, datos ni acciones del worker. */
+#pliegue-codigo .pliegue-code-compose {background:#fff; border-top:1px solid #e4eee8; padding:12px 18px 17px; position:relative}
+#pliegue-codigo .pliegue-attachments {display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+#pliegue-codigo .pliegue-attachments small#pliegue-file-help {font-size:11px;color:#6f827a;line-height:1.4;flex:1 1 260px}
+#pliegue-codigo .pliegue-db-health {display:inline-flex;align-items:center;gap:6px;margin-left:auto;font-size:10px;color:#557166;white-space:nowrap;line-height:1.4}
+#pliegue-codigo .pliegue-db-health svg,.pliegue-role-dock .pliegue-db-health svg{height:14px;width:14px;flex:none}
+.pliegue-db-health[data-ok="true"]{color:#087d56!important}
+.pliegue-db-health[data-ok="false"]{color:#9c552f!important}
+#pliegue-codigo .pliegue-syntax-hint {display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:#648174;font-size:11px;line-height:1.4;margin:9px 1px 8px}
+#pliegue-codigo .pliegue-syntax-hint strong{font-weight:650;color:#286b53}
+#pliegue-codigo .pliegue-syntax-mark{font-weight:750;color:#087c58}
+#pliegue-codigo .pliegue-code-compose > textarea {box-sizing:border-box;display:block;width:100%;min-height:82px;max-height:26vh;padding:14px 15px;border:1px solid #aed7c3;border-radius:16px;font-size:13px;line-height:1.55;box-shadow:0 2px 14px #062f1910;outline-offset:1px;background:#fff}
+#pliegue-codigo .pliegue-code-compose > textarea:focus{border-color:#0a845a;box-shadow:0 0 0 2px #dbf1e7}
+#pliegue-codigo .pliegue-compose-actions{display:flex;align-items:center;flex-wrap:nowrap;gap:6px;margin-top:10px;min-width:0}
+#pliegue-codigo .pliegue-compose-actions > button[data-attachment-open],
+#pliegue-codigo .pliegue-compose-actions > button.pliegue-media-icon{box-sizing:border-box;flex:none;min-width:39px!important;width:39px!important;height:39px;min-height:39px;padding:0!important;border-radius:12px!important;border:1px solid #d5e7dd!important;background:#fff!important;color:#145b43!important;box-shadow:none!important}
+#pliegue-codigo .pliegue-compose-actions .pliegue-media-icon svg{width:19px;height:19px;display:block}
+/* La V3 ocultaba Cámara/Voz por diseño. Mostrar solo si el módulo original
+   determina que la API existe y elimina [hidden]. */
+#pliegue-codigo .pliegue-compose-actions > button[data-camera-open]:not([hidden]),
+#pliegue-codigo .pliegue-compose-actions > button[data-voice-open]:not([hidden]){display:inline-flex!important}
+#pliegue-codigo .pliegue-compose-actions > button[data-camera-open][hidden],
+#pliegue-codigo .pliegue-compose-actions > button[data-voice-open][hidden]{display:none!important}
+#pliegue-codigo .pliegue-compose-actions > button:hover:not(:disabled){border-color:#8cc8aa!important;background:#f1faf5!important}
+#pliegue-codigo .pliegue-segments{display:inline-flex;flex:none;align-items:center;gap:2px;border:0;border-left:1px solid #e1eae5;border-radius:0;padding:0 0 0 9px;margin-left:2px}
+#pliegue-codigo .pliegue-segments button{background:#fff;border:1px solid #e1eae5!important;border-radius:11px!important;color:#305748;font-size:12px;font-weight:650;min-height:39px!important;padding:7px 9px!important}
+#pliegue-codigo .pliegue-segments button[aria-pressed="true"]{color:#005c41!important;background:#e4f5ed!important;border-color:#c3e9d6!important}
+#pliegue-codigo .pliegue-compose-actions [type="submit"]{min-width:0;flex:0 1 auto;margin:0 0 0 auto!important;min-height:40px;padding:8px 11px!important;border-radius:12px!important;background:#007451;border-color:#007451!important;white-space:nowrap;font-size:12px;box-shadow:none}
+#pliegue-codigo .pliegue-compose-actions [type="submit"] .pliegue-icon{width:17px;height:17px}
+#pliegue-live-selector {border-bottom:1px solid #e7efea!important;padding:12px 16px!important}
+#pliegue-live-selector .pls-top{gap:7px!important}
+#pliegue-live-selector button{border-radius:11px!important;min-height:35px!important;padding:6px 10px!important;box-shadow:none!important;font-size:11px!important}
+#pliegue-live-selector .pls-label{font-size:12px;min-width:115px}
+#pliegue-live-selector .pls-status{color:#668475;margin:8px 0 0!important}
+#pliegue-live-selector .pls-chips button{background:#f3f8f5;border-color:#dbece3}
+#pliegue-live-selector .pls-actions{gap:7px}
+#pliegue-codigo .pliegue-hash-options{position:absolute;left:18px;right:18px;bottom:calc(100% - 130px);z-index:2147483200;max-height:235px;overflow:auto;background:white;border:1px solid #d2e5d9;border-radius:13px;box-shadow:0 12px 35px #063d2524;padding:5px}
+#pliegue-codigo .pliegue-hash-options[hidden]{display:none!important}
+#pliegue-codigo .pliegue-hash-choice{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;text-align:left;border:0;border-radius:8px;background:white;color:#184634;cursor:pointer}
+#pliegue-codigo .pliegue-hash-choice small{font-size:10px;color:#6d877b}
+#pliegue-codigo .pliegue-hash-choice[aria-selected="true"],#pliegue-codigo .pliegue-hash-choice:hover{background:#e9f6ef}
+.pliegue-role-dock .pliegue-db-health{display:inline-flex;align-items:center;gap:6px;padding:2px 19px 12px;order:5;font-size:11px}
+.pliegue-role-dock .pr-consult .pliegue-db-health{flex:none}
+@media(max-width:530px){
+ #pliegue-codigo .pliegue-compose-actions{flex-wrap:wrap;gap:5px}
+ #pliegue-codigo .pliegue-segments{margin-left:auto}
+ #pliegue-codigo .pliegue-compose-actions [type="submit"]{flex:1 0 100%;justify-content:center;margin-left:0!important}
+ #pliegue-codigo .pliegue-syntax-hint{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){#pliegue-codigo .pliegue-hash-options{scroll-behavior:auto}}

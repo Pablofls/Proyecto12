@@ -22,6 +22,12 @@ resultado de la VM").
 | E2E: JSON/XML y XSD | 8 | Solo VM | VM 2026-10-21: **8 de 8 pasan** en la 2a corrida (FMT-04 habia fallado en cascada) |
 | Integracion por servicio | 30 nuevas + 4 previas de devoluciones | Solo VM | VM 2026-10-21: **8 de 8 servicios pasan**: auth 5/5, ventas 4/4, evidencias 4/4, logistica 3/3, inspecciones 5/5, reembolsos 5/5, analisis 4/4 y devoluciones 4/4 (tras PR #8 y PR #9) |
 
+> **Tercer parcial (Persona 4):** las pruebas de los servicios de calidad y causa raiz
+> (`clasificacion-motivos`, `proveedores`, `causa-raiz`, `reportes-analitica`, y lo nuevo de
+> `ventas-catalogos` y `analisis-auditoria`) se cuentan aparte, en la seccion
+> «Tercer parcial: servicios de calidad y causa raiz», porque sus cifras no estan en las
+> tablas del segundo parcial.
+
 Validado localmente sin bases: compilacion (`py_compile`), descubrimiento
 (`pytest --collect-only`) y las unitarias. La suite E2E descubre **100** pruebas
 y las pruebas de integracion por servicio descubren 34 mas (30 nuevas y las 4
@@ -237,6 +243,56 @@ Orden real frente al brief: la evidencia (paso 5) va antes de autorizar porque
 | INT-ANA-3 | analisis-auditoria | Clasificar motivo solo sugiere (RN-11) | POST /clasificar-motivo | `requiere_confirmacion=true`; `devoluciones` sin cambios | 1a corrida: no corrio (login 429, H-07). Reconfirmado en la VM (2026-10-21): pasa en la corrida completa con el script corregido (el bloque del servicio termina sin fallos). | paso | `docs/pruebas/resultado_2026-10-21.md` |
 | INT-ANA-4 | analisis-auditoria | Auditoria y eventos solo para analista o admin | GET /auditoria y /analisis/eventos como cliente | Analista 200 con total = `bitacora`; cliente 403 | 1a corrida: no corrio (login 429, H-07). Reconfirmado en la VM (2026-10-21): pasa en la corrida completa con el script corregido (el bloque del servicio termina sin fallos). | paso | `docs/pruebas/resultado_2026-10-21.md` |
 
+## Tercer parcial: servicios de calidad y causa raiz
+
+Pruebas de Persona 4. Mantienen la regla de honestidad del documento: **solo figura como
+`paso` lo que tiene salida real**. Las cifras de unitarias salen de `pytest --collect-only` y
+de una corrida local; las de integracion, de las corridas en la VM del 2026-11-22: la primera pasada sobre el commit
+`62b8777` y las repeticiones tras el PR #38 sobre `5690365` (migraciones hasta la 045 en ambas). **Esas salidas de la VM no estan versionadas**: se
+vieron en la terminal y la evidencia queda pendiente de guardarse en `docs/pruebas/`.
+
+### Unitarias (465, de las cuales 12 son previas)
+
+Corren en cualquier maquina, sin bases. Usan dobles para PostgreSQL, Redis y Mongo.
+
+| ID | Servicio | Objetivo | Entradas (`tests/`) | Resultado esperado | Resultado obtenido | Estado | Evidencia |
+|---|---|---|---|---|---|---|---|
+| UT-P4-01 | clasificacion_motivos | Reglas de submotivos, versiones y revision humana; XSD; endpoints con base simulada; todo exige JWT; `POST /sugerencias` para cualquier rol (RF-22, RN-09, RN-11, RN-13) | `test_reglas` 31, `test_contratos` 12, `test_endpoints` 14, `test_api` 10 | Los 67 pasan | 67 passed | paso | `pytest -q` local (sin archivo versionado) |
+| UT-P4-02 | proveedores | Semaforo con muestra minima, montos, transiciones de reclamacion, XSD, seguridad (RF-24, RF-26, RN-09, RN-12) | `test_reglas` 58, `test_contratos` 8, `test_api` 8 | Los 74 pasan | 74 passed | paso | `pytest -q` local (sin archivo versionado) |
+| UT-P4-03 | causa_raiz | Maquina de estados, cadena de 5 porques, conclusion con evidencia, CAPA, periodos maduros y veredicto de eficacia, XSD, seguridad (RF-24, RN-09, RN-11, RN-12) | `test_reglas` 87, `test_contratos` 25, `test_api` 20 | Los 132 pasan | 132 passed | paso | `pytest -q` local (sin archivo versionado) |
+| UT-P4-04 | reportes_analitica | Regresion, pronostico con intervalo, z robusto, madurez de meses; CSV, XLSX y PDF (estructura, sin formulas); endpoints, roles y limites con base simulada (RF-26, RF-28, RN-09, RN-15) | `test_estadistica` 35, `test_formatos` 31, `test_endpoints` 30, `test_api` 14, `test_contratos` 4, `test_graficas` 4 | Los 118 pasan | 118 passed | paso | `pytest -q` local (sin archivo versionado) |
+| UT-P4-05 | analisis_auditoria | La auditoria no importa el analisis y solo tiene rutas GET; el analisis se retiro (410 con sucesores); filtros y solo lectura (RF-30, RN-12, RNF-16) | `test_separacion` 31 (se borro `test_pareto`: ya no hay Pareto en 8008) | Los 31 pasan | 31 passed | paso | `pytest -q` local (sin archivo versionado) |
+| UT-P4-06 | ventas_catalogos | Series, tasas y trazabilidad: reglas puras y dimensiones permitidas (RF-05, RF-23, RF-24). Incluye las 8 previas de UT-08 | `test_trazabilidad` 22, `test_reglas` 8 | Los 30 pasan | 30 passed | paso | `pytest -q` local (sin archivo versionado) |
+
+### Integracion en la VM (50, de las cuales 8 son previas)
+
+Corrida del 2026-11-22. Cada suite se ejecuto por separado (el login esta limitado a 10 por
+minuto por IP, H-07). Estas son las primeras pruebas que ejecutan el SQL de estos servicios
+contra la base real.
+
+| ID | Servicio | Que comprueba | Casos | Resultado obtenido | Estado | Evidencia |
+|---|---|---|---|---|---|---|
+| INT-CLA | clasificacion-motivos | Catalogo inicial, cada cambio crea una version y conserva la anterior, sugerencia de texto sin palabras clave, la revision humana no modifica la devolucion, sin coincidencias solo se corrige o descarta | 6 | 6 de 6 | paso | Salida de la VM no versionada |
+| INT-PRO | proveedores | Indicadores con la cifra que da la base, reclamacion de lote o devolucion ajena, ciclo completo con cierre parcial, una devolucion no esta en dos reclamaciones abiertas | 5 | 5 de 5 | paso | Salida de la VM no versionada |
+| INT-CAU | causa-raiz | Los 9 pasos del flujo con cierre y reconfirmacion de contrasena, una investigacion abierta por objeto, evidencia ajena rechazada, permisos de CAPA, deteccion sin duplicar alertas | 4 | 1a corrida 3 de 4 (prueba mal aislada, H-13); tras el PR #38, **4 de 4** | paso | Salida de la VM no versionada |
+| INT-REP | reportes-analitica | Las cifras de cada reporte contra consultas independientes sobre las mismas tablas, los cuatro formatos, la bitacora de descargas sin datos, series maduras, limite de 20 descargas por minuto | 13 | 13 de 13 | paso | Salida de la VM no versionada |
+| INT-AUD | analisis-auditoria | La base rechaza `UPDATE` y `DELETE` sobre la bitacora, anonimizar a una persona al borrarla no se rompe, filtros nuevos, inyeccion en un filtro, alias obsoleto de eventos. Incluye las 4 previas INT-ANA | 10 | 1a corrida 9 de 10 (frase equivocada en la prueba, H-14); tras el PR #38, **10 de 10** | paso | Salida de la VM no versionada |
+| INT-TRA | ventas-catalogos | Trazabilidad por lote y por serie, tasas por dimension, alta de series idempotente, el cliente recibe 403. Incluye las 4 previas INT-VEN | 12 | 1a corrida 10 de 12 (lote de demo mal dimensionado, H-12); tras el PR #38 y `--rehacer-lote`, **12 de 12** | paso | Salida de la VM no versionada |
+
+**E2E del equipo (`tests/e2e`), 2026-11-22:** 100 de 100 pasan sobre el commit `5690365`, con
+`auth` reconstruido con el codigo de David y `analisis-auditoria` ya separado. La salida la
+guardo el script en `docs/pruebas/salida_2026-11-22.txt` **dentro de la VM, sin versionar**.
+
+### Lo que no esta probado
+
+- Las pruebas de integracion de `sincronizacion` e `integraciones-monitoreo`: esos servicios no
+  estaban levantados en la VM.
+- La prueba de paridad monolito/distribuido (`correr_e2e.sh paridad`).
+- Los endpoints de estos servicios desde fuera de la VM (a traves del firewall de GCP).
+- Los archivos Excel y PDF de `reportes-analitica` en Excel, Calc y un visor de PDF reales: se
+  verificaron con su estructura, `pdftotext` y Quick Look de macOS.
+- La evidencia por endpoint (colecciones de Postman y capturas) de estos servicios: pendiente.
+
 ## Hallazgos
 
 Observados al leer el codigo para escribir las pruebas; **no se corrigieron** (esta
@@ -258,3 +314,7 @@ ha reproducido contra los contenedores porque aqui no hay bases).
 | H-09 | brief | El brief decia 84 unitarias; tras fusionar la sesion 01 el conteo real es **119** (`pytest` por servicio y web) | Informativa | Tabla de unitarias | Actualizar el brief |
 | H-10 | logistica, inspecciones, reembolsos-costos | Por la API distribuida solo `devoluciones` (cliente y coordinador al autorizar) y `reembolsos-costos` (cliente, sin `url`) escriben notificaciones. Recoleccion programada, en transito, completada, recepcion, inspeccion, disposicion y cierre solo notifican si el paso se hace desde el web (`apps/web/app/notificaciones.py`). Quien opere solo por API no genera avisos a inspector, analista, encargado del centro ni al cliente en esos pasos, y los reembolsos por API no avisan al analista ni cierran con `caso_cerrado` | Media (RF-29 incompleto en la ruta API) | `services/logistica/app.py`, `services/inspecciones/app.py`, `services/reembolsos_costos/app.py` frente a `EVENTOS` | Insertar las mismas notificaciones desde cada microservicio (con `url`), o documentar que la campanita solo cubre el flujo por web. El E2E 6b verifica lo que hoy si existe |
 | H-11 | reembolsos-costos | Un reembolso por el monto maximo exacto se rechazaba con 409 `monto_excedido` (y `detalles.maximo` igual al monto enviado): `registrar_reembolso` comparaba un `Decimal` cuantizado contra `float(valor_devuelto)`, y `Decimal("227.17") > float(227.17)` es verdadero. Hallado por E2E-09 en la VM el 2026-10-21 | Media (rechaza una operacion valida, RN-04) | `services/reembolsos_costos/app.py:registrar_reembolso` | **Corregido** (compara Decimal con Decimal) con dos pruebas unitarias; **reconfirmado en la VM (2026-10-21)**: E2E-09 aprueba el reembolso de 227.17 con 201 y INT-REE-1 pasa |
+| H-12 | seed_demo, causa-raiz | El lote `L-2026-PROB-01` daba 0.85 veces el promedio global (96 unidades de 273 vendidas; 18.75 % contra 22 %) y no habria disparado la alerta de la demo: pesaba el 35 % de lo vendido, asi que ni devolviendolo todo llegaba al doble | Media (afecta la demo) | `scripts/seed_demo.py:crear_lote_problematico`; `test_integracion_trazabilidad` en la VM | **Corregido en el PR #38**: 4 ventas de 6 unidades con 16 devueltas (66.7 %, ~2.3 veces el promedio) y la opcion `--rehacer-lote` |
+| H-13 | causa-raiz | Dos casos de la prueba de integracion compartian lote y el segundo recibia 409 `investigacion_activa`, que es la regla del servicio | Baja (prueba) | `services/causa_raiz/tests/test_integracion.py` | **Corregido en el PR #38**: el caso de permisos de CAPA usa su propio lote |
+| H-14 | analisis-auditoria | La prueba del trigger de la bitacora buscaba "solo de agregar" y el mensaje real es "solo agregar"; el trigger funcionaba | Baja (prueba) | `services/analisis_auditoria/tests/test_integracion.py` | **Corregido en el PR #38** |
+| H-15 | scripts | `scripts/correr_e2e.sh servicios` no incluye `clasificacion-motivos`, `proveedores`, `causa-raiz` ni `reportes-analitica`, ni el segundo archivo de pruebas de `ventas-catalogos` | Baja | `scripts/correr_e2e.sh` (ciclo `for servicio in ...`) | **Corregido**: `correr_e2e.sh servicios` ya corre los cuatro servicios y el segundo archivo de `ventas-catalogos` |

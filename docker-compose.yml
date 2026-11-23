@@ -199,11 +199,6 @@ services:
     container_name: devoluciones_analisis_auditoria
     restart: unless-stopped
     env_file: ${APP_ENV_FILE:-.env}
-    environment:
-      # El analisis se separo de la auditoria (docs/MIGRACION_ANALISIS_8008.md). En "false"
-      # sus rutas responden 410 y el servicio queda solo con auditoria. No cambiarlo hasta
-      # migrar la web, la suite E2E y Postman.
-      ANALISIS_HABILITADO: "true"
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}

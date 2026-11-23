@@ -12,7 +12,11 @@ Tres cuidados que evitan conclusiones falsas:
  - Con poca muestra una tasa es ruido: los puntos con menos de 20 unidades
    vendidas no entran a la regresion.
 
-Trazabilidad: RF-23, RF-26, RN-09, RN-16.
+Para varios factores a la vez (`analizar_cruce`) se usa el intervalo de Wilson del 95 %:
+una combinacion solo se llama "distinguible" si el extremo bajo de su intervalo supera
+la tasa promedio, asi una celda con pocas ventas no parece culpable por azar.
+
+Trazabilidad: RF-23, RF-24, RF-26, RN-09, RN-16.
 """
 import math
 import statistics
@@ -219,6 +223,104 @@ def anomalias_serie(puntos):
               "anomalia": abs(z) >= UMBRAL_Z_ROBUSTO}
              for (x, y), f, z in zip(puntos, ajuste["ajustados"], zs)]
     return {"estado": "ok", "umbral_z": UMBRAL_Z_ROBUSTO, "datos": datos}
+
+
+# --------------------------------------------------------------------------- #
+# Varios factores: cruce de dos dimensiones
+# --------------------------------------------------------------------------- #
+Z_95 = 1.96
+LECTURAS = {
+    "combinacion": "La tasa de esta combinacion supera a la de cada factor por separado: el problema parece concentrarse en esa combinacion.",
+    "factor_a": "El primer factor ya tiene una tasa alta en conjunto y el segundo no: el exceso parece venir del primero.",
+    "factor_b": "El segundo factor ya tiene una tasa alta en conjunto y el primero no: el exceso parece venir del segundo.",
+    "ambos_factores": "Los dos factores tienen una tasa alta por separado: hay que revisar los dos antes de asignar el exceso a uno.",
+    "sin_atribucion": "La combinacion destaca, pero ningun factor por separado explica el exceso con esta muestra.",
+}
+
+
+def intervalo_wilson(exitos, n, z=Z_95):
+    """Intervalo de confianza (%) de una proporcion; cada unidad vendida se devuelve o no.
+
+    Es mas confiable que el normal simple con pocas unidades o tasas cercanas a 0 o 100.
+    """
+    if n <= 0:
+        return None
+    p = min(max(float(exitos), 0.0), float(n)) / n
+    denominador = 1 + z * z / n
+    centro = (p + z * z / (2 * n)) / denominador
+    mitad = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denominador
+    return round(max(0.0, centro - mitad) * 100, 2), round(min(1.0, centro + mitad) * 100, 2)
+
+
+def _bajo_wilson(devueltas, vendidas):
+    intervalo = intervalo_wilson(devueltas, vendidas)
+    return intervalo[0] if intervalo else None
+
+
+def analizar_cruce(filas, min_unidades=MIN_UNIDADES):
+    """Cruza dos factores: tasa de cada combinacion y de donde parece venir el exceso.
+
+    filas: dicts con a_id, a_etiqueta, b_id, b_etiqueta, unidades_vendidas, unidades_devueltas, devoluciones.
+    Una combinacion con menos de `min_unidades` vendidas no se juzga (su tasa es ruido). Para las que si:
+      - `distinguible`: el extremo bajo del intervalo de Wilson 95 % supera la tasa promedio global;
+      - `lectura`: si la combinacion supera a ambos factores por separado es una `combinacion`; si no,
+        se atribuye al factor cuya tasa conjunta ya es distinguible, a `ambos_factores` o a `sin_atribucion`.
+    No determina causas: orienta donde investigar (RN-09).
+    """
+    vendidas = sum(f["unidades_vendidas"] for f in filas)
+    devueltas = sum(f["unidades_devueltas"] for f in filas)
+    promedio = tasa(devueltas, vendidas)
+    if not promedio:
+        return {"estado": "sin_datos", "motivo": "No hay devoluciones que analizar en el periodo.",
+                "omitidas_por_muestra": len(filas), "celdas": []}
+    margen_a, margen_b = {}, {}
+    for f in filas:
+        for margen, clave in ((margen_a, f["a_id"]), (margen_b, f["b_id"])):
+            acumulado = margen.setdefault(clave, [0, 0])
+            acumulado[0] += f["unidades_vendidas"]
+            acumulado[1] += f["unidades_devueltas"]
+
+    def destaca(v, d):
+        bajo = _bajo_wilson(d, v) if v >= min_unidades else None
+        return bajo is not None and bajo > promedio
+
+    celdas, omitidas = [], 0
+    for f in filas:
+        v, d = f["unidades_vendidas"], f["unidades_devueltas"]
+        if v < min_unidades:
+            omitidas += 1
+            continue
+        bajo, alto = intervalo_wilson(d, v)
+        t = tasa(d, v)
+        va, da = margen_a[f["a_id"]]
+        vb, db = margen_b[f["b_id"]]
+        distinguible = bajo > promedio
+        lectura = None
+        if distinguible:
+            if bajo > max(tasa(da, va) or 0, tasa(db, vb) or 0):
+                lectura = "combinacion"
+            elif destaca(va, da) and destaca(vb, db):
+                lectura = "ambos_factores"
+            elif destaca(va, da):
+                lectura = "factor_a"
+            elif destaca(vb, db):
+                lectura = "factor_b"
+            else:
+                lectura = "sin_atribucion"
+        celdas.append({"a_id": f["a_id"], "a_etiqueta": f["a_etiqueta"], "b_id": f["b_id"], "b_etiqueta": f["b_etiqueta"],
+                       "unidades_vendidas": v, "unidades_devueltas": d, "devoluciones": f.get("devoluciones", 0),
+                       "tasa_pct": t, "veces_promedio": round(t / promedio, 2),
+                       "intervalo_95_pct": {"bajo": bajo, "alto": alto},
+                       "tasa_factor_a_pct": tasa(da, va), "tasa_factor_b_pct": tasa(db, vb),
+                       "distinguible": distinguible, "lectura": lectura,
+                       "lectura_texto": LECTURAS.get(lectura)})
+    if not celdas:
+        return {"estado": "sin_datos", "tasa_promedio_pct": promedio, "omitidas_por_muestra": omitidas,
+                "motivo": f"Ninguna combinacion llega a {min_unidades} unidades vendidas.", "celdas": []}
+    celdas.sort(key=lambda c: (-c["tasa_pct"], str(c["a_etiqueta"]), str(c["b_etiqueta"])))
+    return {"estado": "ok", "tasa_promedio_pct": promedio, "muestra_minima_unidades": min_unidades,
+            "omitidas_por_muestra": omitidas, "distinguibles": sum(1 for c in celdas if c["distinguible"]),
+            "celdas": celdas}
 
 
 # --------------------------------------------------------------------------- #

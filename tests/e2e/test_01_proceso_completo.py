@@ -68,12 +68,14 @@ def test_paso_02_ventas_localiza_linea_con_paginacion(ctx):
 def test_paso_03_clasificar_motivo_es_solo_sugerencia(ctx):
     """RN-11: sugiere, exige confirmacion y no modifica nada."""
     antes = c.sql("SELECT COUNT(*) AS n, COALESCE(MAX(id),0) AS m FROM devoluciones", uno=True)
-    resp = c.llamar("analisis", "POST", c.PREFIJO_API["analisis"] + "/clasificar-motivo",
+    resp = c.llamar("motivos", "POST", c.PREFIJO_API["motivos"] + "/sugerencias",
                     {"descripcion": flujo.DESCRIPCION}, token=ctx.h(c.CLIENTE))
     assert resp.status == 200
     assert resp.datos["requiere_confirmacion"] is True
-    assert resp.datos["sugerencias"], "debe sugerir al menos un motivo"
-    assert resp.datos["sugerencias"][0]["motivo"] == "Producto danado"
+    assert resp.datos["sugerencias"], "debe sugerir al menos un submotivo"
+    # El servicio de motivos (8010) sugiere submotivos versionados, no un motivo suelto.
+    assert "empaque_roto" in [s["codigo"] for s in resp.datos["sugerencias"]]
+    assert all({"codigo", "submotivo", "categoria", "version", "puntaje"} <= set(s) for s in resp.datos["sugerencias"])
     despues = c.sql("SELECT COUNT(*) AS n, COALESCE(MAX(id),0) AS m FROM devoluciones", uno=True)
     assert antes == despues, "la clasificacion no debe crear ni cambiar devoluciones"
 
@@ -334,35 +336,43 @@ def test_paso_09_reembolso_unico_con_lock(ctx):
     assert r.exists(llave) == 0
 
 
-def test_paso_10_analisis_sincroniza_pareto_y_cache(ctx):
+def test_paso_10_reportes_analitica_y_auditoria(ctx):
+    """Lo que antes hacia el analisis del 8008: ahora reportes-analitica (8018) y auditoria (8008).
+
+    8018 calcula directo en PostgreSQL: no hay sincronizar, ni cache, ni snapshots en MongoDB.
+    """
     requiere("dev_id")
-    pref = c.PREFIJO_API["analisis"]
     analista = ctx.h(c.ANALISTA)
-    resp = c.llamar("analisis", "POST", pref + "/sincronizar", token=analista)
-    assert resp.status == 200 and resp.datos["casos_sincronizados"] >= 1
-    assert c.mongo_db().resultados_analisis.find_one(
-        {"tipo_analisis": "snapshot_devolucion", "devolucion_id": E["dev_id"]})
+    base = c.PREFIJO_API["reportes"]
+    motivo = c.sql("SELECT m.nombre FROM devoluciones d JOIN motivos m ON m.id = d.motivo_id WHERE d.id = %s",
+                   (E["dev_id"],), uno=True)["nombre"]
 
-    primera = c.llamar("analisis", "GET", pref + "/pareto?dimension=motivo&medida=frecuencia",
-                       token=analista)
-    assert primera.status == 200 and primera.datos["cache"] == "miss"
-    assert primera.datos["categorias"]
-    segunda = c.llamar("analisis", "GET", pref + "/pareto?dimension=motivo&medida=frecuencia",
-                       token=analista)
-    assert segunda.status == 200 and segunda.datos["cache"] == "hit"
-    assert segunda.datos["categorias"] == primera.datos["categorias"]
-    r = c.redis_cli()
-    claves = list(r.scan_iter("devoluciones:cache:causas:*"))
-    assert claves and all(0 < r.ttl(k) <= 600 for k in claves)
+    # La devolucion del paso 4 ya cuenta en el Pareto, sin sincronizar nada.
+    pareto = c.llamar("reportes", "GET", base + "/reportes/pareto?dimension=motivo&medida=frecuencia&por_pagina=100",
+                      token=analista)
+    assert pareto.status == 200
+    categorias = {f["etiqueta"]: f for f in pareto.datos["datos"]}
+    assert motivo in categorias and categorias[motivo]["casos"] >= 1
+    assert abs(max(f["porcentaje_acumulado"] for f in pareto.datos["datos"]) - 100.0) < 0.1
+    total = c.sql("SELECT COUNT(*) AS n FROM devoluciones d JOIN motivos m ON m.id = d.motivo_id "
+                  "WHERE d.eliminado_en IS NULL", uno=True)["n"]
+    assert sum(f["casos"] for f in pareto.datos["datos"]) == total      # ninguna devolucion se pierde ni se duplica
 
-    alertas = c.llamar("analisis", "GET", pref + "/alertas-fraude", token=analista)
+    grafica = c.llamar("reportes", "GET", base + "/graficas/pareto?dimension=motivo", token=analista)
+    assert grafica.status == 200 and grafica.datos["opciones"]["series"]
+
+    alertas = c.llamar("reportes", "GET", base + "/analitica/alertas-fraude", token=analista)
     assert alertas.status == 200 and "aviso" in alertas.datos  # RN-09: indicadores, no veredicto
 
-    # RNF-23: la operacion del paso 4 se reconstruye por su correlation id.
-    eventos = c.llamar("analisis", "GET",
-                       f"{pref}/eventos?correlation_id={E['correlation_id']}",
+    # RNF-23: la operacion del paso 4 se reconstruye por su correlation id, ahora en auditoria.
+    eventos = c.llamar("auditoria", "GET",
+                       f"{c.PREFIJO_API['auditoria']}/eventos?correlation_id={E['correlation_id']}",
                        token=analista)
     assert eventos.status == 200 and eventos.datos["paginacion"]["total"] >= 1
+    assert all("datos" not in e for e in eventos.datos["datos"])        # RNF-16: sin cuerpos de peticiones
+    bitacora = c.llamar("auditoria", "GET",
+                        f"{c.PREFIJO_API['auditoria']}?correlation_id={E['correlation_id']}", token=analista)
+    assert bitacora.status == 200
 
 
 def test_paso_11_logout_revoca_el_token_en_todos_los_servicios(ctx):

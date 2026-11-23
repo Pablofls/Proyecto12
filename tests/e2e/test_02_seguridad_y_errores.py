@@ -27,7 +27,9 @@ PROTEGIDOS = [
     ("reembolsos", "GET", P["reembolsos"] + "/reembolsos"),
     ("ventas", "GET", P["ventas"]),
     ("evidencias", "GET", P["evidencias"] + "?devolucion_id=1"),
-    ("analisis", "GET", P["analisis"] + "/resumen"),
+    ("auditoria", "GET", P["auditoria"] + "/estado"),
+    ("motivos", "GET", P["motivos"] + "/clasificaciones"),
+    ("reportes", "GET", P["reportes"] + "/reportes"),
 ]
 IDS = [p[0] for p in PROTEGIDOS]
 
@@ -116,7 +118,9 @@ ROL_INCORRECTO = [
     ("reembolsos", "POST", P["reembolsos"] + "/reembolsos", c.CLIENTE),
     ("ventas", "POST", "/api/v1/catalogos/motivos", c.CLIENTE),
     ("evidencias", "POST", P["evidencias"], c.ANALISTA),
-    ("analisis", "GET", P["analisis"] + "/alertas-fraude", c.CLIENTE),
+    ("auditoria", "GET", P["auditoria"], c.CLIENTE),
+    ("motivos", "GET", P["motivos"] + "/clasificaciones", c.CLIENTE),
+    ("reportes", "GET", P["reportes"] + "/analitica/alertas-fraude", c.CLIENTE),
 ]
 
 
@@ -153,8 +157,9 @@ INVALIDOS = [
      c.ENCARGADO_REEMBOLSOS),
     ("ventas", "GET", P["ventas"] + "?q=" + "a" * 101, None, c.CLIENTE),
     ("evidencias", "GET", P["evidencias"], None, c.CLIENTE),
-    ("analisis", "GET", P["analisis"] + "/pareto?dimension=inexistente", None, c.ANALISTA),
-    ("analisis", "POST", P["analisis"] + "/clasificar-motivo", {"descripcion": "corta"}, c.CLIENTE),
+    ("reportes", "GET", P["reportes"] + "/reportes/pareto?dimension=inexistente", None, c.ANALISTA),
+    ("motivos", "POST", P["motivos"] + "/sugerencias", {"descripcion": "corta"}, c.CLIENTE),
+    ("auditoria", "GET", P["auditoria"] + "?desde=ayer", None, c.ANALISTA),
     ("auth", "POST", P["auth"] + "/login", {"email": "no-es-correo", "password": "x"}, None),
 ]
 

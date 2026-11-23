@@ -3,9 +3,8 @@
 Trazabilidad: RF-23, RF-24, RF-26, RF-27, RF-30, RN-09, RN-10,
               HU-27, UC-22, UC-23, UC-26
 """
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, render_template, request
 
-from app import api_client
 from app.db import consultar
 from app.security import (
     ADMINISTRADOR, ANALISTA, CLIENTE, ENCARGADO_REEMBOLSOS, TODOS_LOS_ROLES,
@@ -184,25 +183,13 @@ def causas():
     tiendas con comportamiento atipico, rutas relacionadas con dano, y el
     impacto economico por motivo usando vista_costo_devolucion. RN-09: el
     panel es apoyo para el analista, no asigna responsabilidad automaticamente.
+
+    Todo se calcula directo desde PostgreSQL. Antes tambien mostraba snapshots de MongoDB
+    del servicio analisis-auditoria; ese analisis se separo de la auditoria (ver
+    docs/MIGRACION_ANALISIS_8008.md) y sus sucesores son clasificacion-motivos (8010) y
+    reportes-analitica (8018).
     """
     valores = _leer_filtros(request.args)
-    analisis_distribuido = None
-    pareto_distribuido = None
-    error_analisis = None
-    if api_client.habilitados():
-        try:
-            analisis_distribuido = api_client.solicitar(
-                "analisis", "GET", "/api/v1/analisis/resumen"
-            )
-            if analisis_distribuido.get("casos_sincronizados", 0):
-                pareto_distribuido = api_client.solicitar(
-                    "analisis", "GET", "/api/v1/analisis/pareto",
-                    parametros={"dimension": "motivo", "medida": "frecuencia",
-                                "desde": valores.get("fecha_inicio"),
-                                "hasta": valores.get("fecha_fin")},
-                )
-        except api_client.ErrorServicio as exc:
-            error_analisis = exc.mensaje
     cond_dev, param_dev = _condiciones(valores, "devolucion")
     cond_venta, param_venta = _condiciones(valores, "venta")
     where_dev = " AND ".join(["d.eliminado_en IS NULL"] + cond_dev)
@@ -468,30 +455,7 @@ def causas():
         rutas_dano=rutas_dano, costo_por_causa=costo_por_causa,
         productos=productos, proveedores=proveedores, tiendas=tiendas,
         rutas=rutas, motivos=motivos,
-        analisis_distribuido=analisis_distribuido,
-        pareto_distribuido=pareto_distribuido,
-        error_analisis=error_analisis,
     )
-
-
-@bp.post("/panel/causas/sincronizar")
-@roles_required(ANALISTA, ADMINISTRADOR)
-def sincronizar_causas():
-    if not api_client.habilitados():
-        flash("La sincronizacion distribuida requiere USE_MICROSERVICES=true.", "aviso")
-        return redirect(url_for("panel.causas"))
-    try:
-        resultado = api_client.solicitar(
-            "analisis", "POST", "/api/v1/analisis/sincronizar", datos={}
-        )
-    except api_client.ErrorServicio as exc:
-        flash(exc.mensaje, "error")
-    else:
-        flash(
-            f"Analisis sincronizado: {resultado['casos_sincronizados']} casos; "
-            f"version de cache {resultado['version_cache']}.", "ok"
-        )
-    return redirect(url_for("panel.causas"))
 
 
 @bp.get("/panel/costos")

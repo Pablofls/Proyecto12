@@ -35,7 +35,7 @@ NUEVOS = [
     ("motivos", "GET", P["motivos"] + "/categorias"),
     ("causa_raiz", "GET", P["causa_raiz"] + "/investigaciones"),
     ("proveedores", "GET", P["proveedores"]),
-    ("reportes", "GET", P["reportes"]),
+    ("reportes", "GET", P["reportes"] + "/reportes"),
     ("sincronizacion", "GET", P["sincronizacion"] + "/tipos"),
     ("integraciones", "GET", P["monitoreo"] + "/alertas"),
 ]

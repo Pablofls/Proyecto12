@@ -131,6 +131,33 @@ def tasas_por(dimension, desde, hasta):
     return filas
 
 
+def tasas_cruzadas(dimension_a, dimension_b, desde, hasta):
+    """Unidades vendidas y devueltas por cada combinacion de dos factores (mismos conteos que tasas_por).
+
+    Solo las dimensiones con venta (proveedor, tienda, producto, lote): la tasa necesita un denominador.
+    """
+    clave_a, etiqueta_a = DIMENSIONES_TASA[dimension_a]
+    clave_b, etiqueta_b = DIMENSIONES_TASA[dimension_b]
+    c_dev, p_dev = _fechas("fecha_solicitud", desde, hasta)
+    c_ven, p_ven = _fechas("v.fecha_venta", desde, hasta)
+    filas = consultar(f"""
+        WITH dev AS (SELECT venta_detalle_id, SUM(cantidad_devuelta) AS u, COUNT(*) AS c
+                       FROM devoluciones WHERE eliminado_en IS NULL{c_dev} GROUP BY venta_detalle_id)
+        SELECT {clave_a} AS a_id, {etiqueta_a} AS a_etiqueta, {clave_b} AS b_id, {etiqueta_b} AS b_etiqueta,
+               SUM(vd.cantidad) AS unidades_vendidas, COALESCE(SUM(dev.u), 0) AS unidades_devueltas,
+               COALESCE(SUM(dev.c), 0) AS devoluciones
+          FROM venta_detalle vd JOIN ventas v ON v.id = vd.venta_id
+          JOIN tiendas t ON t.id = v.tienda_id JOIN lotes l ON l.id = vd.lote_id
+          JOIN productos p ON p.id = l.producto_id JOIN proveedores pr ON pr.id = l.proveedor_id
+          LEFT JOIN dev ON dev.venta_detalle_id = vd.id
+         WHERE v.eliminado_en IS NULL{c_ven}
+         GROUP BY {clave_a}, {etiqueta_a}, {clave_b}, {etiqueta_b}""", tuple(p_dev + p_ven))
+    for f in filas:
+        f["unidades_vendidas"], f["unidades_devueltas"] = int(f["unidades_vendidas"]), int(f["unidades_devueltas"])
+        f["devoluciones"] = int(f["devoluciones"])
+    return filas
+
+
 def pareto(dimension, medida, desde, hasta):
     """Pareto por SQL: una fila por devolucion y se agrupa por la dimension elegida."""
     exprs = {"motivo": "m.nombre", "producto": "p.nombre", "lote": "l.numero_lote || ' (' || p.nombre || ')'",

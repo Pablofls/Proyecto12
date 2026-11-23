@@ -37,12 +37,8 @@ base.createCollection("eventos");
 base.eventos.createIndex({ correlation_id: 1 }, { name: "idx_correlation" });
 base.eventos.createIndex({ fecha: -1 }, { name: "idx_fecha" });
 
-// Salida del analisis de causa raiz: Pareto, agrupaciones y ranking (RF-23 a
-// RF-26). Se consultan por tipo y por el calculo mas reciente.
-base.createCollection("resultados_analisis");
-base.resultados_analisis.createIndex(
-  { tipo_analisis: 1, fecha_calculo: -1 },
-  { name: "idx_tipo_fecha" }
-);
+// Nota: la coleccion `resultados_analisis` (snapshots y Pareto del analisis obsoleto del 8008) ya no se
+// crea. El analisis se retiro (docs/MIGRACION_ANALISIS_8008.md); lo sustituye reportes-analitica, que
+// calcula directo en PostgreSQL. Un volumen que ya la tenga la conserva, nadie la lee.
 
-print(`MongoDB inicializado: base '${nombreBase}' con 4 colecciones e indices.`);
+print(`MongoDB inicializado: base '${nombreBase}' con 3 colecciones e indices.`);

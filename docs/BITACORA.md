@@ -952,6 +952,48 @@ agregar".
 por IP (RNF-13) y cada suite inicia sesion con varios roles. Varias suites seguidas
 reciben 429; hay que dejar pasar un minuto entre ellas. No se toco el limite.
 
+## 2026-11-22 - Analisis de varios factores (Persona 4, correccion del profe)
+
+**Que faltaba.** Solo existian tasas por una dimension. Eso no distingue "el proveedor P es
+malo" de "P es malo solo en la tienda T": ambos casos suben la tasa de P.
+
+**Decision.** `GET /api/v1/analitica/factores?por=&con=` en `reportes-analitica` cruza dos
+dimensiones con venta (proveedor, tienda, producto, lote). Para cada combinacion calcula la
+tasa y su intervalo de Wilson del 95 %, y la lectura dice si el exceso parece venir de un
+factor, del otro, de ambos o de la combinacion.
+
+**Por que Wilson y no un z o una regresion.** Cada unidad vendida se devuelve o no, asi que
+la tasa es una proporcion. El intervalo de Wilson se comporta bien con pocas unidades y con
+tasas cercanas a 0 o 100, y se puede verificar a mano. Una regresion multiple o un modelo
+mas complejo seria menos explicable y el documento pide que el analisis apoye la decision,
+no que la tome (RN-09).
+
+**Criterios.** Una combinacion se juzga con 20 unidades vendidas o mas (igual que el resto
+del servicio); es `distinguible` si el extremo bajo del intervalo supera la tasa promedio
+global. Es `combinacion` si ese extremo supera la tasa de los dos factores por separado.
+
+**Lo que no hace.** No cruza ruta ni transportista (no hay "vendido por ruta"), no cruza mas
+de dos factores y no corrige por comparaciones multiples: con muchas combinaciones alguna
+saldra distinguible por azar (5 % de las que no lo son), por eso es una senal para revisar y
+no una conclusion.
+
+## 2026-11-22 - Etapa 4: se retira el analisis del 8008 (Persona 4)
+
+**Decision.** Con la web, la suite E2E y el corte verificados, se borra `analisis.py` (y su XSD y su
+prueba de Pareto). En su lugar queda `retirado.py`: un stub sin logica que responde 410 `servicio_movido`
+con los sucesores en cualquier metodo y ruta bajo `/api/v1/analisis`.
+
+**Por que un stub y no un 404.** Un cliente rezagado (un Postman viejo, el script de alguien) que recibe un 404
+no sabe que paso; con 410 y los sucesores en el cuerpo sabe a donde ir. El stub no importa la auditoria ni
+calcula nada, asi que mantenerlo no cuesta.
+
+**Por que no se borra la coleccion de MongoDB.** `resultados_analisis` en la VM ya no la lee nadie, pero borrar
+datos no se puede deshacer y no estorba. `init.js` ya no la crea en un volumen nuevo. Si se quiere liberar el
+espacio, se hace a mano y con la decision del equipo.
+
+**Costo.** El interruptor `ANALISIS_HABILITADO` desaparece: revertir el retiro exige `git revert`. El analisis
+sigue en el historial de git por si alguien lo necesita.
+
 ## 2026-11-22 — Suite de seguridad del tercer parcial y corrida final
 
 **Suite nueva `tests/e2e/test_04_seguridad_tercer_parcial.py`.** Contra los

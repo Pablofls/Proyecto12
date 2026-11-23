@@ -1,10 +1,10 @@
 """Auditoria: la bitacora y la traza de eventos, de solo lectura.
 
-Este servicio queda solo con auditoria (el analisis se separo: ver analisis.py y
-docs/MIGRACION_ANALISIS_8008.md). Reglas de este modulo:
+Este servicio queda solo con auditoria (el analisis se separo y su codigo se retiro: ver
+retirado.py y docs/MIGRACION_ANALISIS_8008.md). Reglas de este modulo:
 
- - NO importa analisis.py ni nada de analisis: cambiar el analisis no puede
-   tocar la auditoria. Hay una prueba que lo comprueba.
+ - NO importa nada de analisis ni de calculo: cambiar el analisis no puede tocar la
+   auditoria. Hay una prueba que lo comprueba.
  - Solo hay rutas GET: la auditoria se consulta, no se modifica (RN-12). Otra
    prueba lo comprueba. Quienes escriben en la bitacora son los demas servicios,
    directo en PostgreSQL con shared.infra.registrar_bitacora.

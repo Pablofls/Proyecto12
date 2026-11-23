@@ -198,3 +198,60 @@ def test_anomalias_de_meses_devuelve_el_mes_no_el_indice(api):
 def test_anomalias_rechaza_parametros_invalidos(api):
     assert api.pedir("/api/v1/analitica/anomalias?tipo=raros").status_code == 400
     assert api.pedir("/api/v1/analitica/anomalias?por=ruta").status_code == 400
+
+
+# --------------------------------------------------------------------------- #
+# Varios factores
+# --------------------------------------------------------------------------- #
+def _simular_cruce(monkeypatch, recibido=None):
+    filas = [{"a_id": a, "a_etiqueta": f"P{a}", "b_id": b, "b_etiqueta": f"T{b}", "unidades_vendidas": 100,
+              "unidades_devueltas": 40 if (a, b) == (1, 1) else 5, "devoluciones": 3} for a in (1, 2, 3) for b in (1, 2, 3)]
+
+    def falso(a, b, desde, hasta):
+        if recibido is not None:
+            recibido.append((a, b, desde, hasta))
+        return filas
+    monkeypatch.setattr(datos, "tasas_cruzadas", falso)
+
+
+def test_factores_marca_la_combinacion_y_explica_la_lectura(api, monkeypatch):
+    _simular_cruce(monkeypatch)
+    r = api.pedir("/api/v1/analitica/factores?por=proveedor&con=tienda")
+    j = r.json
+    assert r.status_code == 200 and (j["por"], j["con"], j["estado"]) == ("proveedor", "tienda", "ok")
+    primera = j["celdas"][0]
+    assert (primera["a_etiqueta"], primera["b_etiqueta"], primera["lectura"]) == ("P1", "T1", "combinacion")
+    assert "RN-09" in j["nota"] and "Wilson" in j["metodo"] and j["total_celdas"] == 9
+
+
+def test_factores_pasa_el_periodo_y_las_dimensiones_a_la_consulta(api, monkeypatch):
+    recibido = []
+    _simular_cruce(monkeypatch, recibido)
+    api.pedir("/api/v1/analitica/factores?por=lote&con=producto&desde=2026-01-01&hasta=2026-06-30")
+    assert recibido == [("lote", "producto", date(2026, 1, 1), date(2026, 6, 30))]
+
+
+def test_factores_limite_y_solo_distinguibles(api, monkeypatch):
+    _simular_cruce(monkeypatch)
+    assert len(api.pedir("/api/v1/analitica/factores?limite=3").json["celdas"]) == 3
+    solo = api.pedir("/api/v1/analitica/factores?solo_distinguibles=true").json
+    assert solo["total_celdas"] == 1 and solo["celdas"][0]["distinguible"] is True
+
+
+def test_factores_responde_xml(api, monkeypatch):
+    _simular_cruce(monkeypatch)
+    r = api.pedir("/api/v1/analitica/factores", headers={"Accept": "application/xml"})
+    assert r.status_code == 200 and r.mimetype == "application/xml" and b"<factores>" in r.data
+
+
+def test_factores_rechaza_parametros_invalidos(api, monkeypatch):
+    _simular_cruce(monkeypatch)
+    for consulta in ("por=ruta", "con=transportista", "por=tienda&con=tienda", "limite=0", "limite=101",
+                     "solo_distinguibles=quizas", "desde=ayer", "desde=2026-06-01&hasta=2026-01-01", "raro=1"):
+        assert api.pedir("/api/v1/analitica/factores?" + consulta).status_code == 400, consulta
+
+
+def test_factores_solo_lo_ven_los_roles_de_lectura(api, monkeypatch):
+    _simular_cruce(monkeypatch)
+    for rol, esperado in (("Supervisor", 200), ("Encargado de Reembolsos", 200), ("Cliente", 403), ("Inspector", 403)):
+        assert api.pedir("/api/v1/analitica/factores", rol=rol).status_code == esperado, rol
