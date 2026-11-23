@@ -1,0 +1,848 @@
+# Corrida de pruebas
+Fecha (UTC): 2026-11-23 04:01:19
+Rama: main
+Commit: f01bb86260b046c2021210c9b137e4884d79d9ed
+Commit (mensaje): Merge pull request #85 from Pablofls/pablo/resultados-carga-proxy
+Arbol de trabajo: limpio
+Host: maquina01 (Linux 6.12.0-233.el10.x86_64)
+Docker: 29.8.0
+Docker Compose: 5.5.1
+PostgreSQL: postgres (PostgreSQL) 16.15
+Redis: v=7.4.11
+MongoDB: db version v7.0.45
+Migraciones aplicadas: 045_bitacora_solo_agregar.sql
+Modo: proxy
+
+=== docker compose run --rm -v /home/pablogcp26/Proyecto12:/repo -w /repo -e PYTHONPATH=/repo -e INTEGRACION=1 -e E2E_VIA_PROXY=1 -e PROXY_URL=http://proxy:8080 devoluciones python -m pytest -v -s -p no:cacheprovider tests/e2e ===
+ Container devoluciones_postgres Running 
+ Container devoluciones_redis Running 
+ Container devoluciones_mongo Running 
+ Container devoluciones_redis Waiting 
+ Container devoluciones_mongo Waiting 
+ Container devoluciones_postgres Waiting 
+ Container devoluciones_postgres Healthy 
+ Container devoluciones_redis Healthy 
+ Container devoluciones_mongo Healthy 
+ Container proyecto12-devoluciones-run-26de439bbfc3 Creating 
+ Container proyecto12-devoluciones-run-26de439bbfc3 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.11.18, pytest-8.3.3, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /repo
+collecting ... collected 391 items
+
+tests/e2e/test_01_proceso_completo.py::test_paso_01_auth_login_sesion_en_redis [E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 11, "nombre": "Miguel Ramos Soto", "email": "miguel.cliente@demo.mx", "rol": "Cliente", "tienda_id": null}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 16, "nombre": "Josue Berdeal", "email": "josue.analista@demo.mx", "rol": "Analista de Devoluciones", "tienda_id": null}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 15, "nombre": "David Munoz", "email": "david.logistica@demo.mx", "rol": "Coordinador de Logistica", "tienda_id": null}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 14, "nombre": "Roberto Sandoval", "email": "roberto.centro@demo.mx", "rol": "Encargado del Centro de Devoluciones", "tienda_id": null}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 13, "nombre": "Valentina Perez", "email": "valentina.inspector@demo.mx", "rol": "Inspector", "tienda_id": null}}
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 17, "nombre": "Carla Trevino", "email": "carla.reembolsos@demo.mx", "rol": "Encargado de Reembolsos", "tienda_id": null}}
+[E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 18, "nombre": "Pablo Flores", "email": "pablo.admin@demo.mx", "rol": "Administrador", "tienda_id": null}}
+[E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 10, "nombre": "Ana Lopez Garcia", "email": "ana.cliente@demo.mx", "rol": "Cliente", "tienda_id": null}}
+[E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 11, "nombre": "Miguel Ramos Soto", "email": "miguel.cliente@demo.mx", "rol": "Cliente", "tienda_id": null}}
+[E2E] GET /api/v1/auth/sesion -> 200 {"usuario": {"id": 11, "rol": "Cliente", "nombre": "Miguel Ramos Soto", "tienda_id": null}, "sesion_id": "77f542be06cb491baeb27380cf13001e", "sesion_expira_en_seg": 28800, "token_expira": "2026-11-23T04:16:48+00:00"}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_02_ventas_localiza_linea_con_paginacion [E2E] GET /api/v1/ventas?q=VTA-20261122-R1&por_pagina=5 -> 200 {"datos": [{"id": 51, "folio_venta": "VTA-20261122-R1", "cliente_id": 11, "fecha_venta": "2026-11-22", "cliente": "Miguel Ramos Soto", "tienda": "Tienda Valle Oriente", "lineas": 3, "total": 495.0}], "paginacion": {"pagina": 1, "por_pagina": 5, "total": 1, "paginas": 1}}
+[E2E] GET /api/v1/ventas/51 -> 200 {"id": 51, "folio_venta": "VTA-20261122-R1", "fecha_venta": "2026-11-22", "cliente_id": 11, "cliente": "Miguel Ramos Soto", "tienda": "Tienda Valle Oriente", "lineas": [{"id": 121, "lote_id": 2, "cantidad": 3, "precio_unitario": 55.0, "numero_lote": "L-2026-052", "fecha_caducidad": "2026-09-28", "pr...(recortado)
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_03_clasificar_motivo_es_solo_sugerencia [E2E] POST /api/v1/motivos/sugerencias -> 200 {"sugerencias": [{"submotivo_id": 5, "codigo": "empaque_roto", "submotivo": "Empaque roto o derramado", "categoria": "Empaque", "motivo_id": 1, "version": 1, "puntaje": 1}], "requiere_confirmacion": true, "explicacion": "La sugerencia orienta; una persona confirma el motivo."}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_04_cliente_registra_solicitud [E2E] POST /api/v1/devoluciones -> 201 {"id": 265, "folio_devolucion": "DEV-2026-0265", "estado": "solicitada", "fecha_solicitud": "2026-11-23T04:01:49.043441+00:00", "venta_detalle_id": 121, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_05_evidencias_comentario_xml_y_archivo [E2E] POST /api/v1/evidencias -> 201 <?xml version='1.0' encoding='utf-8'?>
+<evidencia><id>52</id><devolucion_id>265</devolucion_id><tipo>comentario</tipo><metadatos_id>6b03baad517e63a818c850d6</metadatos_id></evidencia>
+[E2E] POST /api/v1/evidencias -> 201 {"id": 53, "devolucion_id": 265, "tipo": "fotografia", "metadatos_id": "6b03baad73ccc89576d6a167"}
+[E2E] GET /api/v1/evidencias/53/enlace -> 200 {"url_relativa": "/api/v1/evidencias/53/archivo?exp=1795407409&firma=8b3e8ac91f4c9d2f8ac0afa1bdee39beb2130a634371f6f384cf40d8fe3bb4a3", "vigencia_segundos": 900}
+[E2E] GET /api/v1/evidencias/53/archivo?exp=1795407409&firma=8b3e8ac91f4c9d2f8ac0afa1bdee39beb2130a634371f6f384cf40d8fe3bb4a3 -> 200 <69 bytes>
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_06_analista_autoriza [E2E] PATCH /api/v1/devoluciones/265/resolucion -> 200 {"id": 265, "folio_devolucion": "DEV-2026-0265", "estado": "autorizada", "decision": "autorizar", "analista": "Josue Berdeal", "notificacion_cliente": "Tu devolucion DEV-2026-0265 fue autorizada. Pronto programaremos la recoleccion."}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_06b_notificaciones_por_rol_y_campanita [E2E][web] POST /login -> 302 <html>
+[E2E][web] POST /login -> 302 <html>
+[E2E][web] POST /login -> 302 <html>
+[E2E][web] GET /notificaciones/resumen -> 200 {"no_leidas": 3, "ultimas": [{"fecha": "23/11/2026 04:01", "id": 170, "leer": "/notificaciones/170/leer", "leido": false, "mensaje": "Tu devolucion DEV-2026-0265 fue autorizada. Pronto programaremos la recoleccion."}, {"fecha": "22/10/2026 00:42", "id": 34, "leer": "/notificaciones/34/leer", "leido"...(recortado)
+[E2E][web] POST /notificaciones/170/leer -> 404 <html>
+[E2E][web] POST /notificaciones/170/leer -> 302 <html>
+[E2E][web] GET /notificaciones/resumen -> 200 {"no_leidas": 2, "ultimas": [{"fecha": "23/11/2026 04:01", "id": 170, "leer": "/notificaciones/170/leer", "leido": true, "mensaje": "Tu devolucion DEV-2026-0265 fue autorizada. Pronto programaremos la recoleccion."}, {"fecha": "22/10/2026 00:42", "id": 34, "leer": "/notificaciones/34/leer", "leido":...(recortado)
+[E2E][web] GET /notificaciones/resumen -> 200 {"no_leidas": 2, "ultimas": [{"fecha": "23/11/2026 04:01", "id": 171, "leer": "/notificaciones/171/leer", "leido": false, "mensaje": "Autorizada DEV-2026-0265: programa la recoleccion"}, {"fecha": "23/11/2026 02:35", "id": 119, "leer": "/notificaciones/119/leer", "leido": false, "mensaje": "Autoriza...(recortado)
+[E2E][web] POST /notificaciones/171/leer -> 302 <html>
+[E2E][web] POST /logout -> 302 <html>
+[E2E][web] POST /logout -> 302 <html>
+[E2E][web] POST /logout -> 302 <html>
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_07_logistica_hasta_recepcion_y_costo [E2E] POST /api/v1/logistica/recolecciones -> 201 {"id": 97, "devolucion_id": 265, "fecha_programada": "2026-11-24", "lugar": "Tienda de prueba E2E", "estado": "programada"}
+[E2E] PATCH /api/v1/logistica/recolecciones/97/asignacion -> 200 {"id": 97, "estado": "asignada", "ruta_id": 1, "transportista_id": 1}
+[E2E] PATCH /api/v1/logistica/recolecciones/97/estado -> 200 {"id": 97, "estado": "en_transito"}
+[E2E] PATCH /api/v1/logistica/recolecciones/97/estado -> 200 {"id": 97, "estado": "completada"}
+[E2E] PATCH /api/v1/logistica/recolecciones/97/estado -> 409 {"error": {"codigo": 409, "tipo": "transicion_invalida", "mensaje": "No se puede pasar de completada a en_transito.", "detalles": null, "correlation_id": "3e16f4efe63ef69b5e263f47ccbecc3b"}}
+[E2E] POST /api/v1/logistica/recepciones -> 201 {"id": 64, "devolucion_id": 265, "fecha_recepcion": "2026-11-23T04:01:50.503235+00:00", "coincide_expediente": true}
+[E2E] POST /api/v1/reembolsos-costos/costos -> 201 {"id": 101, "devolucion_id": 265, "etapa": "transporte", "monto": 120.5, "fecha": "2026-11-23"}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_08_inspeccion_disposicion_y_etiqueta [E2E] POST /api/v1/inspecciones -> 201 {"id": 54, "devolucion_id": 265, "resultado_general": "apto", "mongo_doc_id": "6b03baae10c4f3278aead935", "apto_para_inventario": true, "estado_dictamen": "concluido", "recomendacion": "reintegrar", "fecha_inspeccion": "2026-11-23T04:01:50.590835+00:00", "detalle": {"devolucion_id": 265, "inspector_...(recortado)
+[E2E] POST /api/v1/auth/autorizar-operacion -> 201 {"token_operacion": "***", "expires_in": 300, "operacion": "aprobar_disposicion", "recurso_id": "265", "header": "X-Autorizacion-Operacion"}
+[E2E] POST /api/v1/disposicion-inventario/disposiciones -> 201 {"id": 40, "devolucion_id": 265, "destino": "inventario", "justificacion": "Producto apto segun el dictamen", "estado": "autorizada", "fecha_decision": "2026-11-23T04:01:50.771862+00:00"}
+[E2E] POST /api/v1/disposicion-inventario/inventario/40/cuarentena -> 201 {"id": 15, "disposicion_id": 40, "producto_id": 1, "etiqueta_codigo": "REC-2026-0265", "fecha_ingreso": "2026-11-23T04:01:50.806081+00:00", "estado": "cuarentena", "ubicacion": "CUARENTENA-E2E", "motivo_bloqueo": "Pendiente de reincorporacion autorizada", "reincorporado_por": null, "fecha_reincorpor...(recortado)
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_09_reembolso_unico_con_lock [E2E] POST /api/v1/auth/autorizar-operacion -> 201 {"token_operacion": "***", "expires_in": 300, "operacion": "aprobar_reembolso", "recurso_id": "265", "header": "X-Autorizacion-Operacion"}
+[E2E] POST /api/v1/reembolsos-costos/reembolsos -> 201 {"id": 24, "devolucion_id": 265, "monto": 55.0, "metodo": "transferencia", "estado": "aprobado", "fecha_resolucion": "2026-11-23T04:01:50.957763+00:00"}
+[E2E] POST /api/v1/auth/autorizar-operacion -> 201 {"token_operacion": "***", "expires_in": 300, "operacion": "aprobar_reembolso", "recurso_id": "265", "header": "X-Autorizacion-Operacion"}
+[E2E] POST /api/v1/reembolsos-costos/reembolsos -> 409 {"error": {"codigo": 409, "tipo": "reembolso_duplicado", "mensaje": "La devolucion ya tiene un reembolso valido.", "detalles": null, "correlation_id": "64d8da0c41a86baade991917e348d511"}}
+[E2E] POST /api/v1/auth/autorizar-operacion -> 201 {"token_operacion": "***", "expires_in": 300, "operacion": "aprobar_reembolso", "recurso_id": "265", "header": "X-Autorizacion-Operacion"}
+[E2E] POST /api/v1/reembolsos-costos/reembolsos -> 409 {"error": {"codigo": 409, "tipo": "reembolso_en_proceso", "mensaje": "Otro proceso esta resolviendo este reembolso.", "detalles": null, "correlation_id": "a2253259c7c826687fd0d2a6d40d5cbe"}}
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_10_reportes_analitica_y_auditoria [E2E] GET /api/v1/reportes/pareto?dimension=motivo&medida=frecuencia&por_pagina=100 -> 200 {"reporte": "pareto", "titulo": "Pareto de devoluciones", "generado_en": "2026-11-23T04:01:51+00:00", "filtros": {"dimension": "motivo", "medida": "frecuencia"}, "columnas": [{"clave": "etiqueta", "titulo": "Categoria", "tipo": "texto"}, {"clave": "total", "titulo": "Total", "tipo": "decimal"}, {"cl...(recortado)
+[E2E] GET /api/v1/graficas/pareto?dimension=motivo -> 200 {"opciones": {"chart": {"zoomType": "xy"}, "title": {"text": "Pareto por motivo"}, "credits": {"enabled": false}, "xAxis": {"categories": ["Cadena de frio rota", "Caducidad proxima", "Etiqueta incorrecta", "Producto danado", "Caducidad vencida", "Calidad inferior", "Error en el pedido"], "crosshair"...(recortado)
+[E2E] GET /api/v1/analitica/alertas-fraude -> 200 {"datos": [{"cliente_id": 10, "cliente": "Ana Lopez Garcia", "devoluciones_90_dias": 20, "rechazadas": 0, "monto_reembolsado": 586.47, "razones": ["frecuencia alta en 90 dias"], "requiere_revision_humana": true}, {"cliente_id": 11, "cliente": "Miguel Ramos Soto", "devoluciones_90_dias": 15, "rechaza...(recortado)
+[E2E] GET /api/v1/auditoria/eventos?correlation_id=e2e-687827ce680d -> 200 {"datos": [{"id": "6b03baad98608c4b9cc02297", "servicio": "devoluciones", "tipo": "devolucion_registrada", "usuario_id": 11, "correlation_id": "e2e-687827ce680d", "fecha": "2026-11-23T04:01:49.059000+00:00"}], "paginacion": {"pagina": 1, "por_pagina": 20, "total": 1, "paginas": 1}}
+[E2E] GET /api/v1/auditoria?correlation_id=e2e-687827ce680d -> 200 {"datos": [{"id": 2707, "accion": "alta_devolucion", "entidad": "devoluciones", "entidad_id": 265, "detalle": "Se registro la devolucion DEV-2026-0265 sobre la venta VTA-20261122-R1 (API)", "correlation_id": "e2e-687827ce680d", "fecha": "2026-11-23T04:01:49.043441+00:00", "usuario": "Miguel Ramos So...(recortado)
+PASSED
+tests/e2e/test_01_proceso_completo.py::test_paso_11_logout_revoca_el_token_en_todos_los_servicios [E2E] GET /api/v1/auth/sesion -> 200 {"usuario": {"id": 11, "rol": "Cliente", "nombre": "Miguel Ramos Soto", "tienda_id": null}, "sesion_id": "77f542be06cb491baeb27380cf13001e", "sesion_expira_en_seg": 28798, "token_expira": "2026-11-23T04:16:48+00:00"}
+[E2E] GET /api/v1/devoluciones -> 200 {"datos": [{"id": 265, "folio_devolucion": "DEV-2026-0265", "estado": "cerrada", "fecha_solicitud": "2026-11-23T04:01:49.043441+00:00", "cantidad_devuelta": 1, "motivo": "Producto danado", "producto": "Leche entera 1 L", "clasificacion_temperatura": "refrigerado", "numero_lote": "L-2026-052", "clien...(recortado)
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "15c83aaea18d0c22c9a8c95ea78f1ad3"}}
+[E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "a675fca42cdbebcd9995833f6357553d"}}
+[E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "7572229bedb6e7d41cff3dd43579341a"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[auth] [E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "fd1348f0d37ed6c3a95d494288c808d7"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "20904a7c694e628f0e0edc7193ecd533"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[logistica] [E2E] GET /api/v1/logistica/recolecciones -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "d42294a547ae749c79bbcd230c02480e"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[inspecciones] [E2E] GET /api/v1/inspecciones/1 -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "6e143ba2d21e90037b59968550abb33b"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[reembolsos] [E2E] GET /api/v1/reembolsos-costos/reembolsos -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "4b2cefdc3d1ea3e46c02c9803f9d4dbf"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "5b2cbcfce45fbc76cf05557253aad69e"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[evidencias] [E2E] GET /api/v1/evidencias?devolucion_id=1 -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "5b46e99baeb65c921bf02680147de125"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[auditoria] [E2E] GET /api/v1/auditoria/estado -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "a9b446a2ce7459d18783f75e3be7134f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[motivos] [E2E] GET /api/v1/motivos/clasificaciones -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "4d71c8d355efbc4815da6e424b0e8dcf"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_sin_token_responde_401[reportes] [E2E] GET /api/v1/reportes -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "bd678fef392f07beba8b67f5cfe16f4c"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[auth] [E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "da00e47362c862bd56a75619b123292b"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "8614261ddbf0022f73544ae08647a46d"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[logistica] [E2E] GET /api/v1/logistica/recolecciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "74812afddfedab8ab06b5b7c0e7bd4f9"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[inspecciones] [E2E] GET /api/v1/inspecciones/1 -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "cea70fb61a1302920a65ba2658e1b1ce"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[reembolsos] [E2E] GET /api/v1/reembolsos-costos/reembolsos -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "5203dff20c210a1c93abc84e559418b0"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "fd5821d9b5301ca782f29f5990b4b768"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[evidencias] [E2E] GET /api/v1/evidencias?devolucion_id=1 -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "b45f0b9d76e16bb137e71faa86bf658e"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[auditoria] [E2E] GET /api/v1/auditoria/estado -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "032bd6f239e205f97444d069b5a75b0f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[motivos] [E2E] GET /api/v1/motivos/clasificaciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "6948904edad4976954feb3fb903f01a8"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_mal_formado_responde_401[reportes] [E2E] GET /api/v1/reportes -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "4b20cd57d1411bcc094d25e737b090f3"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[auth] [E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "c023bf0d6bb3a9661e52cd6de86726f0"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "355d360fa7ca3b49886653da1f2f8021"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[logistica] [E2E] GET /api/v1/logistica/recolecciones -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "bb2a979d74f8ae30f7d287b9604be459"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[inspecciones] [E2E] GET /api/v1/inspecciones/1 -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "d0d5e36dc564bdc8e0ea96d47b807ff4"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[reembolsos] [E2E] GET /api/v1/reembolsos-costos/reembolsos -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "ff440d829bb9f049dcd578b2d0a4890b"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "6da797709dc953c4b14cbd3fc6d12874"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[evidencias] [E2E] GET /api/v1/evidencias?devolucion_id=1 -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "7382cb13889e44033c5c9419fe31b9b5"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[auditoria] [E2E] GET /api/v1/auditoria/estado -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "868af39ea41a3c2cbd1efe4e993bd7cf"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[motivos] [E2E] GET /api/v1/motivos/clasificaciones -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "ec38051d3569b9784a8f4a410bafb0e8"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_expirado_responde_401[reportes] [E2E] GET /api/v1/reportes -> 401 {"error": {"codigo": 401, "tipo": "token_expirado", "mensaje": "El token expiro. Renuevalo o inicia sesion de nuevo.", "detalles": null, "correlation_id": "dc2c56a89d5523bdd7c395347a5fe11e"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[auth] [E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "fc8e8509731c703217ee90ed7c94ab40"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "9e1a6e5b22e59dd0024fcfd667e0571f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[logistica] [E2E] GET /api/v1/logistica/recolecciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "2ee36fdbd04937a459e347fa50aa2f1f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[inspecciones] [E2E] GET /api/v1/inspecciones/1 -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "92cb3d31a9449291e846982ec89ac7d1"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[reembolsos] [E2E] GET /api/v1/reembolsos-costos/reembolsos -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "314e55a12ba5d2ac86ed1a4aec400734"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "3708f196b693e13a7c8f2e7a2d7664b7"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[evidencias] [E2E] GET /api/v1/evidencias?devolucion_id=1 -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "0c5619ebacb668d424b6b572ff7506f7"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[auditoria] [E2E] GET /api/v1/auditoria/estado -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "c6119aea5a773444f9674d8e8891141c"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[motivos] [E2E] GET /api/v1/motivos/clasificaciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "12e1b4c029d46c457979afff405299ad"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_firmado_con_otra_llave_responde_401[reportes] [E2E] GET /api/v1/reportes -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "El token no es valido.", "detalles": null, "correlation_id": "67b50ae0d0fb364ca84aa8bc23db177a"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[auth] [E2E] GET /api/v1/auth/sesion -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "805ecc38753ddbd11921a55ac4ee1346"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "e03675132d07e401570f7a1dc1e11d87"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[logistica] [E2E] GET /api/v1/logistica/recolecciones -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "e2af8df80221983721add0ddcad6c844"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[inspecciones] [E2E] GET /api/v1/inspecciones/1 -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "ce04d6ca4684b8495ab806fe7f4373d2"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[reembolsos] [E2E] GET /api/v1/reembolsos-costos/reembolsos -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "4dabce6c178119215d99a0575373e524"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "c1b0894dfe0108595c2be9b18736d2cb"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[evidencias] [E2E] GET /api/v1/evidencias?devolucion_id=1 -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "392f591bbe582f5f9c9ff1eb3825bf7b"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[auditoria] [E2E] GET /api/v1/auditoria/estado -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "170f7311b8267e660cb919760dce6a7e"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[motivos] [E2E] GET /api/v1/motivos/clasificaciones -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "df967e23be1e8b5498084a87cb2b139f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_token_revocado_responde_401_en_cada_servicio[reportes] [E2E] GET /api/v1/reportes -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "0a2a6fecb8e4106eb0cd743964bc6848"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_refresh_token_no_sirve_como_access [E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 11, "nombre": "Miguel Ramos Soto", "email": "miguel.cliente@demo.mx", "rol": "Cliente", "tienda_id": null}}
+[E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "Se esperaba un token de tipo 'access'.", "detalles": null, "correlation_id": "558de796a186ca45b788fb0f4afbddf6"}}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_login_con_credenciales_malas_no_revela_si_existe_el_correo [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Correo o contrasena incorrectos.", "detalles": null, "correlation_id": "f5e675845dac8f7de8bbdc32977e0e9d"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[auth] [E2E] DELETE /api/v1/auth/usuarios/1/sesiones -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Administrador"]}, "correlation_id": "42b06015643ac9a81092545ddada3097"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[devoluciones] [E2E] PATCH /api/v1/devoluciones/1/resolucion -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Analista de Devoluciones"]}, "correlation_id": "8915a1f5a513282bcaca0179da1b64df"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[logistica] [E2E] POST /api/v1/logistica/recolecciones -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Coordinador de Logistica"]}, "correlation_id": "1074db80864f4b37d48a06f5c1d78783"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[inspecciones] [E2E] POST /api/v1/inspecciones -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Inspector"]}, "correlation_id": "11e47a7d49f2a8213372b948296b6ff5"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[reembolsos] [E2E] POST /api/v1/reembolsos-costos/reembolsos -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Encargado de Reembolsos"]}, "correlation_id": "69da9f911b94a00f70a976223e506431"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[ventas] [E2E] POST /api/v1/catalogos/motivos -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Administrador"]}, "correlation_id": "3751bfc12cff6daf544fc29a07277a29"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[evidencias] [E2E] POST /api/v1/evidencias -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Analista de Devoluciones", "roles_permitidos": ["Cliente", "Inspector"]}, "correlation_id": "64303d2eac127bf3fd24252a5c9b8508"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[auditoria] [E2E] GET /api/v1/auditoria -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Administrador", "Analista de Devoluciones"]}, "correlation_id": "b47530d9b03fa5c257adb762453a2251"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[motivos] [E2E] GET /api/v1/motivos/clasificaciones -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Analista de Devoluciones", "Supervisor", "Administrador"]}, "correlation_id": "ade5d8dfa99057126ae02c998a3c177e"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rol_incorrecto_responde_403[reportes] [E2E] GET /api/v1/analitica/alertas-fraude -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Administrador", "Analista de Devoluciones"]}, "correlation_id": "6cb5e0a5d56ba40a35636363ae2d89b6"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_cliente_no_ve_la_devolucion_de_otro_y_queda_en_bitacora [E2E] POST /api/v1/devoluciones -> 201 {"id": 266, "folio_devolucion": "DEV-2026-0266", "estado": "solicitada", "fecha_solicitud": "2026-11-23T04:01:58.876110+00:00", "venta_detalle_id": 121, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] GET /api/v1/devoluciones/266 -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "La devolucion no pertenece a tu cuenta.", "detalles": null, "correlation_id": "d1f6063709d012b5024563200472f24b"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[devoluciones-0] [E2E] GET /api/v1/devoluciones?por_pagina=0 -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Parametro de paginacion invalido.", "detalles": [{"campo": "por_pagina", "problema": "debe ser un entero entre 1 y 100"}], "correlation_id": "b97b80625dc3624446a3f243bfd96a1f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[devoluciones-1] [E2E] POST /api/v1/devoluciones -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Datos de la devolucion incompletos.", "detalles": [{"campo": "venta_detalle_id", "problema": "es obligatorio"}, {"campo": "descripcion_problema", "problema": "minimo 10 caracteres"}], "correlation_id": "f3d5c9fd12ec5b8e297180a8606b0b5d"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[disposicion-2] [E2E] POST /api/v1/disposicion-inventario/disposiciones -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "La justificacion debe tener al menos 10 caracteres.", "detalles": null, "correlation_id": "38be67cc30cd12eff86a0dac3c59e66f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[reembolsos-3] [E2E] POST /api/v1/reembolsos-costos/reembolsos -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "monto debe ser un monto decimal finito no negativo.", "detalles": null, "correlation_id": "eef986b87851fb89a52f82b573d930b7"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[ventas-4] [E2E] GET /api/v1/ventas?q=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "La busqueda no puede superar 100 caracteres.", "detalles": null, "correlation_id": "93d22e0b4b95bf2ec396c9e4a4e07357"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[evidencias-5] [E2E] GET /api/v1/evidencias -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "devolucion_id debe ser entero positivo.", "detalles": null, "correlation_id": "859cc8b8b0063d481645608965e724fb"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[reportes-6] [E2E] GET /api/v1/reportes/pareto?dimension=inexistente -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "dimension debe ser uno de: motivo, producto, lote, proveedor, tienda, ruta, transportista, estado.", "detalles": null, "correlation_id": "dcb0fb28927a0275dc7736c5c5af1ad2"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[motivos-7] [E2E] POST /api/v1/motivos/sugerencias -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "descripcion debe contener entre 10 y 2000 caracteres.", "detalles": null, "correlation_id": "e4f787a8958483b0dbb9f482bf8637db"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[auditoria-8] [E2E] GET /api/v1/auditoria?desde=ayer -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "desde debe tener formato AAAA-MM-DD.", "detalles": null, "correlation_id": "d6edbe92d18190dc268303ad6daeedb0"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_parametro_invalido_responde_400[auth-9] [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Datos de acceso incompletos.", "detalles": [{"campo": "email", "problema": "formato invalido"}], "correlation_id": "de2d2d3fe9f25b58f753e822577e5b4d"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_logistica_fecha_pasada_responde_400 [E2E] POST /api/v1/devoluciones -> 201 {"id": 267, "folio_devolucion": "DEV-2026-0267", "estado": "solicitada", "fecha_solicitud": "2026-11-23T04:02:06.032399+00:00", "venta_detalle_id": 121, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] PATCH /api/v1/devoluciones/267/resolucion -> 200 {"id": 267, "folio_devolucion": "DEV-2026-0267", "estado": "autorizada", "decision": "autorizar", "analista": "Josue Berdeal", "notificacion_cliente": "Tu devolucion DEV-2026-0267 fue autorizada. Pronto programaremos la recoleccion."}
+[E2E] POST /api/v1/logistica/recolecciones -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "fecha_programada no puede estar en el pasado.", "detalles": null, "correlation_id": "4c5af9b750f135b73222fd556569f96f"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_json_malformado_responde_400 [E2E] POST /api/v1/devoluciones -> 400 {"error": {"codigo": 400, "tipo": "json_invalido", "mensaje": "El cuerpo no es un objeto JSON valido.", "detalles": null, "correlation_id": "0b73c4034ba1e5d58df7d91a47e4b275"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_content_type_no_soportado_responde_415 [E2E] POST /api/v1/devoluciones -> 415 {"error": {"codigo": 415, "tipo": "formato_no_soportado", "mensaje": "Usa Content-Type application/json o application/xml.", "detalles": null, "correlation_id": "6ffa7b24c6cc70f58ac0a7d01e232a26"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[devoluciones-0] [E2E] GET /api/v1/devoluciones/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "No existe la devolucion 99999999.", "detalles": null, "correlation_id": "ff4ca02753935147a8214b49443ac117"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[inspecciones-1] [E2E] GET /api/v1/inspecciones/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "No existe inspeccion para la devolucion 99999999.", "detalles": null, "correlation_id": "bf672e48df5221c686b025ff35bdfe92"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[ventas-2] [E2E] GET /api/v1/ventas/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "Venta inexistente.", "detalles": null, "correlation_id": "d01b52de759b60fdb79776655adb7db1"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[evidencias-3] [E2E] GET /api/v1/evidencias/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "Evidencia inexistente.", "detalles": null, "correlation_id": "2c33236987cec8fc03564f5e9777fa74"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[reembolsos-4] [E2E] GET /api/v1/reembolsos-costos/costos/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "No existe la devolucion 99999999.", "detalles": null, "correlation_id": "d42e80241781a5b7a3233a4974f31846"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_recurso_inexistente_responde_404[ventas-5] [E2E] GET /api/v1/catalogos/motivos/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "Registro inexistente.", "detalles": null, "correlation_id": "5685a44237d7f68609383bff284a6337"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_logistica_recoleccion_inexistente_responde_404 [E2E] PATCH /api/v1/logistica/recolecciones/99999999/asignacion -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "No existe la recoleccion 99999999.", "detalles": null, "correlation_id": "6f7f99dc44c4a9f298213c00dba48eaf"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_error_incluye_el_correlation_id_de_la_peticion [E2E] GET /api/v1/devoluciones/99999999 -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "No existe la devolucion 99999999.", "detalles": null, "correlation_id": "e2e-err-511c9dd1"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_cantidad_excedida_responde_409 [E2E] POST /api/v1/devoluciones -> 409 {"error": {"codigo": 409, "tipo": "cantidad_excedida", "mensaje": "Solo se pueden devolver 2 articulo(s) de esta linea.", "detalles": {"disponible": 2, "solicitada": 3}, "correlation_id": "4d6cff20935e8c7e19d6b8835e894560"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_reembolso_sin_autorizar_responde_409 [E2E] POST /api/v1/devoluciones -> 201 {"id": 268, "folio_devolucion": "DEV-2026-0268", "estado": "solicitada", "fecha_solicitud": "2026-11-23T04:02:06.362540+00:00", "venta_detalle_id": 121, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] POST /api/v1/auth/autorizar-operacion -> 201 {"token_operacion": "***", "expires_in": 300, "operacion": "aprobar_reembolso", "recurso_id": "268", "header": "X-Autorizacion-Operacion"}
+[E2E] POST /api/v1/reembolsos-costos/reembolsos -> 409 {"error": {"codigo": 409, "tipo": "estado_no_permite", "mensaje": "La devolucion debe estar autorizada.", "detalles": null, "correlation_id": "f6bdd284056e274cd7c9e25e96c18d9b"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_rechazo_exige_justificacion [E2E] POST /api/v1/devoluciones -> 201 {"id": 269, "folio_devolucion": "DEV-2026-0269", "estado": "solicitada", "fecha_solicitud": "2026-11-23T04:02:06.550805+00:00", "venta_detalle_id": 121, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] PATCH /api/v1/devoluciones/269/resolucion -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Resolucion incompleta.", "detalles": [{"campo": "justificacion", "problema": "es obligatoria para rechazar"}], "correlation_id": "bd087ea8a5443bb53f2eab942c49e9b3"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_logistica_solo_programa_devoluciones_autorizadas_409 [E2E] POST /api/v1/devoluciones -> 201 {"id": 270, "folio_devolucion": "DEV-2026-0270", "estado": "solicitada", "fecha_solicitud": "2026-11-23T04:02:06.604643+00:00", "venta_detalle_id": 121, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] POST /api/v1/logistica/recolecciones -> 409 {"error": {"codigo": 409, "tipo": "estado_no_permite", "mensaje": "Solo se programan devoluciones autorizadas.", "detalles": {"estado_actual": "solicitada"}, "correlation_id": "7682fe8a770b69dda3ede5fa59da98e3"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_cadena_de_frio_rota_impide_inventario_409 [E2E] POST /api/v1/devoluciones -> 201 {"id": 271, "folio_devolucion": "DEV-2026-0271", "estado": "solicitada", "fecha_solicitud": "2026-11-23T04:02:06.669830+00:00", "venta_detalle_id": 121, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] PATCH /api/v1/devoluciones/271/resolucion -> 200 {"id": 271, "folio_devolucion": "DEV-2026-0271", "estado": "autorizada", "decision": "autorizar", "analista": "Josue Berdeal", "notificacion_cliente": "Tu devolucion DEV-2026-0271 fue autorizada. Pronto programaremos la recoleccion."}
+[E2E] POST /api/v1/logistica/recolecciones -> 201 {"id": 98, "devolucion_id": 271, "fecha_programada": "2026-11-24", "lugar": "Tienda de prueba E2E", "estado": "programada"}
+[E2E] PATCH /api/v1/logistica/recolecciones/98/asignacion -> 200 {"id": 98, "estado": "asignada", "ruta_id": 1, "transportista_id": 1}
+[E2E] PATCH /api/v1/logistica/recolecciones/98/estado -> 200 {"id": 98, "estado": "en_transito"}
+[E2E] PATCH /api/v1/logistica/recolecciones/98/estado -> 200 {"id": 98, "estado": "completada"}
+[E2E] POST /api/v1/logistica/recepciones -> 201 {"id": 65, "devolucion_id": 271, "fecha_recepcion": "2026-11-23T04:02:06.810596+00:00", "coincide_expediente": true}
+[E2E] POST /api/v1/inspecciones -> 201 {"id": 55, "devolucion_id": 271, "resultado_general": "cadena de frio rota; tiempo fuera de temperatura e", "mongo_doc_id": "6b03babe10c4f3278aead936", "apto_para_inventario": false, "estado_dictamen": "concluido", "recomendacion": "investigar", "fecha_inspeccion": "2026-11-23T04:02:06.828698+00:00"...(recortado)
+[E2E] POST /api/v1/inspecciones -> 409 {"error": {"codigo": 409, "tipo": "inspeccion_duplicada", "mensaje": "La devolucion ya tiene inspeccion.", "detalles": null, "correlation_id": "d6e6f9dc5ab2e0c3d35110773a89b936"}}
+[E2E] POST /api/v1/auth/autorizar-operacion -> 201 {"token_operacion": "***", "expires_in": 300, "operacion": "aprobar_disposicion", "recurso_id": "271", "header": "X-Autorizacion-Operacion"}
+[E2E] POST /api/v1/disposicion-inventario/disposiciones -> 409 {"error": {"codigo": 409, "tipo": "decision_no_permitida", "mensaje": "El dictamen tecnico impide reintegrar el producto.", "detalles": null, "correlation_id": "b7706f1228e78abf7928b45d8861e9bc"}}
+[E2E] POST /api/v1/auth/autorizar-operacion -> 201 {"token_operacion": "***", "expires_in": 300, "operacion": "aprobar_disposicion", "recurso_id": "271", "header": "X-Autorizacion-Operacion"}
+[E2E] POST /api/v1/disposicion-inventario/disposiciones -> 201 {"id": 41, "devolucion_id": 271, "destino": "desecho", "justificacion": "Cadena de frio rota, se desecha", "estado": "autorizada", "fecha_decision": "2026-11-23T04:02:07.109476+00:00"}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_refrigerado_sin_temperatura_responde_400 [E2E] POST /api/v1/devoluciones -> 201 {"id": 272, "folio_devolucion": "DEV-2026-0272", "estado": "solicitada", "fecha_solicitud": "2026-11-23T04:02:07.157294+00:00", "venta_detalle_id": 121, "motivo_id": 1, "descripcion_problema": "Prueba E2E: el empaque llego roto y danado.", "cantidad_devuelta": 1}
+[E2E] PATCH /api/v1/devoluciones/272/resolucion -> 200 {"id": 272, "folio_devolucion": "DEV-2026-0272", "estado": "autorizada", "decision": "autorizar", "analista": "Josue Berdeal", "notificacion_cliente": "Tu devolucion DEV-2026-0272 fue autorizada. Pronto programaremos la recoleccion."}
+[E2E] POST /api/v1/logistica/recolecciones -> 201 {"id": 99, "devolucion_id": 272, "fecha_programada": "2026-11-24", "lugar": "Tienda de prueba E2E", "estado": "programada"}
+[E2E] PATCH /api/v1/logistica/recolecciones/99/asignacion -> 200 {"id": 99, "estado": "asignada", "ruta_id": 1, "transportista_id": 1}
+[E2E] PATCH /api/v1/logistica/recolecciones/99/estado -> 200 {"id": 99, "estado": "en_transito"}
+[E2E] PATCH /api/v1/logistica/recolecciones/99/estado -> 200 {"id": 99, "estado": "completada"}
+[E2E] POST /api/v1/logistica/recepciones -> 201 {"id": 66, "devolucion_id": 272, "fecha_recepcion": "2026-11-23T04:02:07.297959+00:00", "coincide_expediente": true}
+[E2E] POST /api/v1/inspecciones -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Temperatura y minutos son obligatorios para producto refrigerado.", "detalles": null, "correlation_id": "9352b4a6da403883c6920e96ef2328c8"}}
+PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_bitacora_no_guarda_tokens PASSED
+tests/e2e/test_02_seguridad_y_errores.py::test_busqueda_con_inyeccion_sql_no_rompe_nada [E2E] GET /api/v1/ventas?q=%27%3B%20DROP%20TABLE%20ventas%3B-- -> 200 {"datos": [], "paginacion": {"pagina": 1, "por_pagina": 20, "total": 0, "paginas": 0}}
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_login_en_xml_y_respuesta_valida_contra_tokens_xsd [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><token_type>Bearer</token_type><access_token>***</access_token><expires_in>900</expires_in><refresh_token>***</refresh_token><refresh_expires_in>28800</refresh_expires_in><usuario><id>11</id><nombre>Miguel Ramos Soto</nombre><email>miguel.cliente@dem...(recortado)
+[E2E] GET /api/v1/auth/sesion -> 200 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><usuario><id>11</id><rol>Cliente</rol><nombre>Miguel Ramos Soto</nombre><tienda_id /></usuario><sesion_id>f6fde5f594db449c909d4aeb4eba1b14</sesion_id><sesion_expira_en_seg>28800</sesion_expira_en_seg><token_expira>2026-11-23T04:17:14+00:00</token_exp...(recortado)
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_mismo_listado_en_json_y_xml_trae_el_mismo_total [E2E] GET /api/v1/ventas?por_pagina=5 -> 200 {"datos": [{"id": 82, "folio_venta": "VTA-SIM-20261123-A58BB002", "cliente_id": 10, "fecha_venta": "2026-11-23", "cliente": "Ana Lopez Garcia", "tienda": "Tienda Centro", "lineas": 1, "total": 149.9}, {"id": 51, "folio_venta": "VTA-20261122-R1", "cliente_id": 11, "fecha_venta": "2026-11-22", "client...(recortado)
+[E2E] GET /api/v1/ventas?por_pagina=5 -> 200 <?xml version='1.0' encoding='utf-8'?>
+<ventas><datos><item><id>82</id><folio_venta>VTA-SIM-20261123-A58BB002</folio_venta><cliente_id>10</cliente_id><fecha_venta>2026-11-23</fecha_venta><cliente>Ana Lopez Garcia</cliente><tienda>Tienda Centro</tienda><lineas>1</lineas><total>149.9</total></item><it...(recortado)
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_error_en_xml_sigue_el_formato_comun [E2E] GET /api/v1/devoluciones/99999999 -> 404 <?xml version='1.0' encoding='utf-8'?>
+<error><codigo>404</codigo><tipo>no_encontrado</tipo><mensaje>No existe la devolucion 99999999.</mensaje><detalles /><correlation_id>de6e5f1f4417462261817d20e61dd232</correlation_id></error>
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_devolucion_creada_con_cuerpo_xml [E2E] POST /api/v1/devoluciones -> 201 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>273</id><folio_devolucion>DEV-2026-0273</folio_devolucion><estado>solicitada</estado><fecha_solicitud>2026-11-23T04:02:14.728999+00:00</fecha_solicitud><venta_detalle_id>121</venta_detalle_id><motivo_id>1</motivo_id><descripcion_problema>Prueba E...(recortado)
+[E2E] PATCH /api/v1/devoluciones/273/resolucion -> 200 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>273</id><folio_devolucion>DEV-2026-0273</folio_devolucion><estado>autorizada</estado><decision>autorizar</decision><analista>Josue Berdeal</analista><notificacion_cliente>Tu devolucion DEV-2026-0273 fue autorizada. Pronto programaremos la recolec...(recortado)
+[E2E] POST /api/v1/logistica/recolecciones -> 201 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>100</id><devolucion_id>273</devolucion_id><fecha_programada>2026-11-24</fecha_programada><lugar>Tienda de prueba XML</lugar><estado>programada</estado></respuesta>
+[E2E] PATCH /api/v1/logistica/recolecciones/100/asignacion -> 200 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>100</id><estado>asignada</estado><ruta_id>1</ruta_id><transportista_id>1</transportista_id></respuesta>
+[E2E] PATCH /api/v1/logistica/recolecciones/100/estado -> 200 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>100</id><estado>en_transito</estado></respuesta>
+[E2E] POST /api/v1/reembolsos-costos/costos -> 201 <?xml version='1.0' encoding='utf-8'?>
+<respuesta><id>103</id><devolucion_id>273</devolucion_id><etapa>transporte</etapa><monto>99.9</monto><fecha>2026-11-23</fecha></respuesta>
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_xml_que_no_cumple_el_xsd_responde_400 [E2E] POST /api/v1/devoluciones -> 400 {"error": {"codigo": 400, "tipo": "xml_no_cumple_xsd", "mensaje": "El XML no cumple el contrato del endpoint.", "detalles": [{"linea": 1, "problema": "Element 'devolucion': Missing child element(s). Expected is one of ( motivo_id, cantidad_devuelta )."}], "correlation_id": "6b740102eb08e6ec08d4f4c70...(recortado)
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_xml_mal_formado_responde_400 [E2E] POST /api/v1/devoluciones -> 400 {"error": {"codigo": 400, "tipo": "xml_invalido", "mensaje": "El cuerpo no es un documento XML bien formado.", "detalles": ["no element found: line 1, column 15"], "correlation_id": "6745d0e3f00efde152c4445ef787274f"}}
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_xml_no_resuelve_entidades_externas [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 400 {"error": {"codigo": 400, "tipo": "xml_invalido", "mensaje": "El cuerpo no es un documento XML bien formado.", "detalles": ["undefined entity &x;: line 1, column 93"], "correlation_id": "6ea96f9e608189a3e4b6ea2c8a057999"}}
+PASSED
+tests/e2e/test_03_json_y_xml.py::test_pruebas_no_dejan_credenciales_en_el_repositorio PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_sin_token_responde_401[motivos] [E2E] GET /api/v1/motivos/categorias -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "231c1e3a27023ed6416c139074780aff"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_sin_token_responde_401[causa_raiz] [E2E] GET /api/v1/causa-raiz/investigaciones -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "387625146d5d9bcf947a6ef868382199"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_sin_token_responde_401[proveedores] [E2E] GET /api/v1/proveedores -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "d3b2aae6dc7a858c8d47bd8f2d984a6c"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_sin_token_responde_401[reportes] [E2E] GET /api/v1/reportes -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "07590401b535982cd05c0e237b7727cb"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_sin_token_responde_401[sincronizacion] [E2E] GET /api/v1/sincronizacion/tipos -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "d013a44bd1976d8c5f1c28437700c24a"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_sin_token_responde_401[integraciones] [E2E] GET /api/v1/monitoreo/alertas -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "70ffdb1ee7ba2dfc7690a22b0c03fa31"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_rechaza_token_revocado[motivos] [E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 18, "nombre": "Pablo Flores", "email": "pablo.admin@demo.mx", "rol": "Administrador", "tienda_id": null}}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] GET /api/v1/motivos/categorias -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "0122a25c13a1e6872501db7f562ffdb9"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_rechaza_token_revocado[causa_raiz] [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 18, "nombre": "Pablo Flores", "email": "pablo.admin@demo.mx", "rol": "Administrador", "tienda_id": null}}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] GET /api/v1/causa-raiz/investigaciones -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "36135303a7813265cdf56ced1bf00f7e"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_rechaza_token_revocado[proveedores] [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 18, "nombre": "Pablo Flores", "email": "pablo.admin@demo.mx", "rol": "Administrador", "tienda_id": null}}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] GET /api/v1/proveedores -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "1b159b40f04aa6aa9a85d6fca2b6e9e2"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_rechaza_token_revocado[reportes] [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 18, "nombre": "Pablo Flores", "email": "pablo.admin@demo.mx", "rol": "Administrador", "tienda_id": null}}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] GET /api/v1/reportes -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "d8e11bf11b8b658db1214395ff30ce94"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_rechaza_token_revocado[sincronizacion] [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 18, "nombre": "Pablo Flores", "email": "pablo.admin@demo.mx", "rol": "Administrador", "tienda_id": null}}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] GET /api/v1/sincronizacion/tipos -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "5a0c74c5936621e1bc2d537c54f3f2d2"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_servicio_nuevo_rechaza_token_revocado[integraciones] [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 18, "nombre": "Pablo Flores", "email": "pablo.admin@demo.mx", "rol": "Administrador", "tienda_id": null}}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] GET /api/v1/monitoreo/alertas -> 401 {"error": {"codigo": 401, "tipo": "token_revocado", "mensaje": "El token fue revocado. Inicia sesion de nuevo.", "detalles": null, "correlation_id": "a4e5176a3eb5cc022a9b1accce4f0685"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_recolector_no_consulta_devoluciones [E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 38, "nombre": "Luis Garza", "email": "luis.recolector@demo.mx", "rol": "Recolector", "tienda_id": 1}}
+[E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 39, "nombre": "Marta Cantu", "email": "marta.almacen@demo.mx", "rol": "Operador de Almacen", "tienda_id": 1}}
+[E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 200 {"token_type": "Bearer", "access_token": "***", "expires_in": 900, "refresh_token": "***", "refresh_expires_in": 28800, "usuario": {"id": 40, "nombre": "Jorge Salinas", "email": "jorge.supervisor@demo.mx", "rol": "Supervisor", "tienda_id": null}}
+[E2E] GET /api/v1/devoluciones -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Recolector", "roles_permitidos": ["Cliente", "Inspector", "Encargado del Centro de Devoluciones", "Coordinador de Logistica", "Analista de Devoluciones", "Encargado de Ree...(recortado)
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_recolector_no_ve_el_monitoreo [E2E] GET /api/v1/monitoreo/alertas -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Recolector", "roles_permitidos": ["Administrador", "Supervisor"]}, "correlation_id": "2251f021350d8d14e5d502ecf66afa1a"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_operador_de_almacen_no_resuelve_devoluciones [E2E] PATCH /api/v1/devoluciones/1/resolucion -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Operador de Almacen", "roles_permitidos": ["Analista de Devoluciones"]}, "correlation_id": "b0f467830980d81e8b5a0b6bb943b318"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_supervisor_no_importa_ventas_del_pos [E2E] POST /api/v1/integraciones/ventas -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Supervisor", "roles_permitidos": ["Administrador"]}, "correlation_id": "1369deb3db99b17042109c0db3cccef6"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_cliente_no_sincroniza_ni_ve_el_monitoreo [E2E] POST /api/v1/sincronizacion/operaciones -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Recolector", "Coordinador de Logistica", "Operador de Almacen", "Encargado del Centro de Devoluciones"]}, "correlation_id": "008e5bb9080c1b...(recortado)
+[E2E] GET /api/v1/monitoreo/estado -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no tiene permiso para esta operacion.", "detalles": {"rol": "Cliente", "roles_permitidos": ["Administrador", "Supervisor"]}, "correlation_id": "f2df2ddf3104d26fc58b62557bfc381d"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_operador_no_ve_devoluciones_de_otra_sucursal [E2E] GET /api/v1/devoluciones/274 -> 403 {"error": {"codigo": 403, "tipo": "fuera_de_sucursal", "mensaje": "El registro pertenece a otra sucursal.", "detalles": {"tienda_usuario": 1, "tienda_registro": 3}, "correlation_id": "6836d50a863287d06e88bfcbdf49d562"}}
+[E2E] GET /api/v1/devoluciones?por_pagina=100 -> 200 {"datos": [{"id": 186, "folio_devolucion": "DEV-2026-0186", "estado": "resuelta", "fecha_solicitud": "2026-11-23T02:35:30.578222+00:00", "cantidad_devuelta": 1, "motivo": "Producto danado", "producto": "Leche entera 1 L", "clasificacion_temperatura": "refrigerado", "numero_lote": "L-2026-045", "clie...(recortado)
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_contrasena_incorrecta_no_da_permiso [E2E] POST /api/v1/auth/autorizar-operacion -> 401 {"error": {"codigo": 401, "tipo": "credenciales_invalidas", "mensaje": "Contrasena incorrecta.", "detalles": null, "correlation_id": "4233f1ce9dc04950bd401a6ae0426315"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_rol_sin_esa_operacion_no_recibe_permiso [E2E] POST /api/v1/auth/autorizar-operacion -> 403 {"error": {"codigo": 403, "tipo": "sin_permiso", "mensaje": "Tu rol no puede autorizar esta operacion.", "detalles": {"rol": "Recolector", "operacion": "cerrar_investigacion", "roles_permitidos": ["Supervisor"]}, "correlation_id": "1db5d4d392837aee56efeaf132374827"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_permiso_de_operacion_no_sirve_como_token_de_acceso [E2E] POST /api/v1/auth/autorizar-operacion -> 201 {"token_operacion": "***", "expires_in": 300, "operacion": "cerrar_investigacion", "recurso_id": "999999", "header": "X-Autorizacion-Operacion"}
+[E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "token_invalido", "mensaje": "Se esperaba un token de tipo 'access'.", "detalles": null, "correlation_id": "d16b473a0d5c8c11677b5bd5b2a9c089"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_cierre_exige_permiso_para_ese_registro_y_es_de_un_solo_uso [E2E] POST /api/v1/causa-raiz/investigaciones/16/cierre -> 403 {"error": {"codigo": 403, "tipo": "autorizacion_operacion_requerida", "mensaje": "Esta operacion requiere confirmar tu contrasena en POST /api/v1/auth/autorizar-operacion.", "detalles": {"operacion": "cerrar_investigacion", "recurso_id": "16", "header": "X-Autorizacion-Operacion"}, "correlation_id":...(recortado)
+[E2E] POST /api/v1/auth/autorizar-operacion -> 201 {"token_operacion": "***", "expires_in": 300, "operacion": "cerrar_investigacion", "recurso_id": "100016", "header": "X-Autorizacion-Operacion"}
+[E2E] POST /api/v1/causa-raiz/investigaciones/16/cierre -> 403 {"error": {"codigo": 403, "tipo": "autorizacion_operacion_invalida", "mensaje": "La autorizacion corresponde a otra operacion, registro o sesion.", "detalles": null, "correlation_id": "ce6fe46c7ea483d775dca67077800b2f"}}
+[E2E] POST /api/v1/auth/autorizar-operacion -> 201 {"token_operacion": "***", "expires_in": 300, "operacion": "cerrar_investigacion", "recurso_id": "16", "header": "X-Autorizacion-Operacion"}
+[E2E] POST /api/v1/causa-raiz/investigaciones/16/cierre -> 200 {"id": 16, "estado": "cerrada", "veredicto_final": "sin_acciones"}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_xml_con_entidad_externa_no_lee_archivos [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 400 {"error": {"codigo": 400, "tipo": "xml_invalido", "mensaje": "El cuerpo no es un documento XML bien formado.", "detalles": ["undefined entity &x;: line 1, column 93"], "correlation_id": "1a4b18cae9348bef6e1a9ab72d6929cb"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_inyeccion_sql_en_el_login_no_entra [E2E] POST /api/v1/auth/login -> 429 <html>
+<head><title>429 Too Many Requests</title></head>
+<body>
+<center><h1>429 Too Many Requests</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+[E2E] POST /api/v1/auth/login -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "Datos de acceso incompletos.", "detalles": [{"campo": "email", "problema": "formato invalido"}], "correlation_id": "96f5d9fe6dde417d0c80c9a90aec22e7"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_inyeccion_en_la_sincronizacion_se_rechaza [E2E] POST /api/v1/sincronizacion/operaciones -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "dispositivo_id: 1 a 64 letras, numeros, _ . : o -.", "detalles": null, "correlation_id": "c68100464bff674dffd19997bb3bf9f7"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_traza_con_caracteres_peligrosos_se_rechaza [E2E] GET /api/v1/monitoreo/traza/a'%20OR%201=1 -> 400 {"error": {"codigo": 400, "tipo": "validacion", "mensaje": "correlation_id invalido.", "detalles": null, "correlation_id": "9a4479ddadd2e557148a42cd1df809a6"}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_health_publico_sin_datos_sensibles[sincronizacion] [E2E] GET /health -> 200 {"servicio": "sincronizacion", "version": "v1", "estado": "ok", "dependencias": {"postgresql": {"ok": true, "error": null}, "redis": {"ok": true, "error": null}, "mongodb": {"ok": true, "error": null}}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_health_publico_sin_datos_sensibles[integraciones] [E2E] GET /health -> 200 {"servicio": "integraciones-monitoreo", "version": "v1", "estado": "ok", "dependencias": {"postgresql": {"ok": true, "error": null}, "redis": {"ok": true, "error": null}, "mongodb": {"ok": true, "error": null}}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_health_publico_sin_datos_sensibles[auth] [E2E] GET /health -> 200 {"servicio": "auth", "version": "v1", "estado": "ok", "dependencias": {"postgresql": {"ok": true, "error": null}, "redis": {"ok": true, "error": null}}}
+PASSED
+tests/e2e/test_04_seguridad_tercer_parcial.py::test_health_publico_sin_datos_sensibles[devoluciones] [E2E] GET /health -> 200 {"servicio": "devoluciones", "version": "v1", "estado": "ok", "dependencias": {"postgresql": {"ok": true, "error": null}, "redis": {"ok": true, "error": null}, "mongodb": {"ok": true, "error": null}}}
+PASSED[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+
+tests/e2e/test_04b_paridad_proxy.py::test_el_openapi_declara_endpoints PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auth-POST-/api/v1/auth/logout] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auth-GET-/api/v1/auth/sesion] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auth-DELETE-/api/v1/auth/usuarios/1/sesiones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auth-POST-/api/v1/auth/autorizar-operacion] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auth-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[devoluciones-GET-/api/v1/devoluciones/elegibilidad] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[devoluciones-POST-/api/v1/devoluciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[devoluciones-GET-/api/v1/devoluciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[devoluciones-GET-/api/v1/devoluciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[devoluciones-PUT-/api/v1/devoluciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[devoluciones-DELETE-/api/v1/devoluciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[devoluciones-PATCH-/api/v1/devoluciones/1/resolucion] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[devoluciones-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[logistica-POST-/api/v1/logistica/recolecciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[logistica-GET-/api/v1/logistica/recolecciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[logistica-PATCH-/api/v1/logistica/recolecciones/1/asignacion] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[logistica-PATCH-/api/v1/logistica/recolecciones/1/estado] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[logistica-POST-/api/v1/logistica/recepciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[logistica-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[inspecciones-GET-/api/v1/inspecciones/pendientes] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[inspecciones-POST-/api/v1/inspecciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[inspecciones-GET-/api/v1/inspecciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[inspecciones-PATCH-/api/v1/inspecciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[inspecciones-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[disposicion-GET-/api/v1/disposicion-inventario/pendientes] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[disposicion-POST-/api/v1/disposicion-inventario/disposiciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[disposicion-POST-/api/v1/disposicion-inventario/inventario/1/cuarentena] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[disposicion-POST-/api/v1/disposicion-inventario/inventario/1/reincorporar] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[disposicion-GET-/api/v1/disposicion-inventario/inventario] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[disposicion-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reembolsos-POST-/api/v1/reembolsos-costos/reembolsos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reembolsos-GET-/api/v1/reembolsos-costos/reembolsos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reembolsos-POST-/api/v1/reembolsos-costos/costos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reembolsos-GET-/api/v1/reembolsos-costos/costos/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reembolsos-POST-/api/v1/reembolsos-costos/recuperaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reembolsos-GET-/api/v1/reembolsos-costos/comparacion-destinos/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reembolsos-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/ventas] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/ventas/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/catalogos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/catalogos/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-POST-/api/v1/catalogos/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/catalogos/1/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-PUT-/api/v1/catalogos/1/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-DELETE-/api/v1/catalogos/1/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-PATCH-/api/v1/catalogos/1/1/estado] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/trazabilidad/lotes] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/trazabilidad/lotes/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-POST-/api/v1/trazabilidad/lotes/1/series] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/trazabilidad/series/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-PATCH-/api/v1/trazabilidad/series/1/venta] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/trazabilidad/tasas] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[evidencias-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[evidencias-GET-/api/v1/evidencias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[evidencias-POST-/api/v1/evidencias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[evidencias-GET-/api/v1/evidencias/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[evidencias-DELETE-/api/v1/evidencias/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[evidencias-GET-/api/v1/evidencias/1/enlace] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[evidencias-GET-/api/v1/evidencias/1/archivo] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auditoria-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auditoria-GET-/api/v1/analisis/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auditoria-POST-/api/v1/analisis/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auditoria-PUT-/api/v1/analisis/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auditoria-PATCH-/api/v1/analisis/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auditoria-DELETE-/api/v1/analisis/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auditoria-GET-/api/v1/auditoria] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auditoria-GET-/api/v1/auditoria/eventos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[auditoria-GET-/api/v1/auditoria/estado] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-GET-/api/v1/motivos/categorias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-GET-/api/v1/motivos/submotivos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-POST-/api/v1/motivos/submotivos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-GET-/api/v1/motivos/submotivos/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-PUT-/api/v1/motivos/submotivos/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-PATCH-/api/v1/motivos/submotivos/1/estado] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-POST-/api/v1/motivos/sugerencias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-GET-/api/v1/motivos/clasificaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-POST-/api/v1/motivos/clasificaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[motivos-POST-/api/v1/motivos/clasificaciones/1/revision] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/alertas/detectar] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-GET-/api/v1/causa-raiz/alertas] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/alertas/1/descartar] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/alertas/1/investigar] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-GET-/api/v1/causa-raiz/investigaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/investigaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-GET-/api/v1/causa-raiz/investigaciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/investigaciones/1/hipotesis] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/investigaciones/1/evidencias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/investigaciones/1/verificacion] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/investigaciones/1/hipotesis/1/verificacion] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/investigaciones/1/conclusion] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/investigaciones/1/reabrir] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/investigaciones/1/acciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/investigaciones/1/cierre] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-GET-/api/v1/causa-raiz/acciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-GET-/api/v1/causa-raiz/acciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/acciones/1/estado] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[causa_raiz-POST-/api/v1/causa-raiz/acciones/1/mediciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[proveedores-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores/1/productos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores/1/indicadores] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores/reclamaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[proveedores-POST-/api/v1/proveedores/reclamaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores/reclamaciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[proveedores-POST-/api/v1/proveedores/reclamaciones/1/seguimiento] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reportes-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/reportes] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/reportes/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/graficas/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/analitica/tendencias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/analitica/pronosticos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/analitica/anomalias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/analitica/factores] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/analitica/alertas-fraude] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[sincronizacion-POST-/api/v1/sincronizacion/operaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[sincronizacion-GET-/api/v1/sincronizacion/operaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[sincronizacion-GET-/api/v1/sincronizacion/operaciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[sincronizacion-GET-/api/v1/sincronizacion/tipos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[sincronizacion-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-POST-/api/v1/integraciones/ventas] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-POST-/api/v1/integraciones/conciliaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/integraciones/conciliaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/integraciones/conciliaciones/1/1/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/integraciones/exportaciones/devoluciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-POST-/api/v1/integraciones/transportistas/eventos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/monitoreo/estado] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/monitoreo/disponibilidad] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/monitoreo/alertas] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/monitoreo/traza/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_sin_token_responde_igual_por_el_proxy[integraciones-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[auth-GET-/api/v1/auth/sesion] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[auth-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[devoluciones-GET-/api/v1/devoluciones/elegibilidad] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[devoluciones-GET-/api/v1/devoluciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[devoluciones-GET-/api/v1/devoluciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[devoluciones-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[logistica-GET-/api/v1/logistica/recolecciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[logistica-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[inspecciones-GET-/api/v1/inspecciones/pendientes] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[inspecciones-GET-/api/v1/inspecciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[inspecciones-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[disposicion-GET-/api/v1/disposicion-inventario/pendientes] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[disposicion-GET-/api/v1/disposicion-inventario/inventario] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[disposicion-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reembolsos-GET-/api/v1/reembolsos-costos/reembolsos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reembolsos-GET-/api/v1/reembolsos-costos/costos/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reembolsos-GET-/api/v1/reembolsos-costos/comparacion-destinos/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reembolsos-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[ventas-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/ventas] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/ventas/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/catalogos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/catalogos/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/catalogos/1/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/trazabilidad/lotes] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/trazabilidad/lotes/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/trazabilidad/series/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[ventas-GET-/api/v1/trazabilidad/tasas] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[evidencias-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[evidencias-GET-/api/v1/evidencias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[evidencias-GET-/api/v1/evidencias/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[evidencias-GET-/api/v1/evidencias/1/enlace] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[evidencias-GET-/api/v1/evidencias/1/archivo] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[auditoria-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[auditoria-GET-/api/v1/analisis/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[auditoria-GET-/api/v1/auditoria] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[auditoria-GET-/api/v1/auditoria/eventos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[auditoria-GET-/api/v1/auditoria/estado] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[motivos-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[motivos-GET-/api/v1/motivos/categorias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[motivos-GET-/api/v1/motivos/submotivos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[motivos-GET-/api/v1/motivos/submotivos/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[motivos-GET-/api/v1/motivos/clasificaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[causa_raiz-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[causa_raiz-GET-/api/v1/causa-raiz/alertas] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[causa_raiz-GET-/api/v1/causa-raiz/investigaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[causa_raiz-GET-/api/v1/causa-raiz/investigaciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[causa_raiz-GET-/api/v1/causa-raiz/acciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[causa_raiz-GET-/api/v1/causa-raiz/acciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[proveedores-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores/1/productos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores/1/indicadores] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores/reclamaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[proveedores-GET-/api/v1/proveedores/reclamaciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reportes-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/reportes] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/reportes/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/graficas/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/analitica/tendencias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/analitica/pronosticos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/analitica/anomalias] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/analitica/factores] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[reportes-GET-/api/v1/analitica/alertas-fraude] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[sincronizacion-GET-/api/v1/sincronizacion/operaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[sincronizacion-GET-/api/v1/sincronizacion/operaciones/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[sincronizacion-GET-/api/v1/sincronizacion/tipos] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[sincronizacion-GET-/health] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/integraciones/conciliaciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/integraciones/conciliaciones/1/1/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/integraciones/exportaciones/devoluciones] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/monitoreo/estado] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/monitoreo/disponibilidad] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/monitoreo/alertas] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[integraciones-GET-/api/v1/monitoreo/traza/1] PASSED
+tests/e2e/test_04b_paridad_proxy.py::test_lectura_con_token_responde_igual_por_el_proxy[integraciones-GET-/health] PASSED
+tests/e2e/test_05_proxy.py::test_salud_del_proxy PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[auth] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[devoluciones] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[logistica] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[inspecciones] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[disposicion-inventario] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[reembolsos-costos] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[ventas-catalogos] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[evidencias] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[auditoria] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[reportes-analitica] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[causa-raiz] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[sincronizacion] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[proveedores] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[integraciones-monitoreo] PASSED
+tests/e2e/test_05_proxy.py::test_cada_servicio_responde_salud_por_el_proxy[clasificacion-motivos] PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[auditoria] [E2E] GET /api/v1/auditoria -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "c3ca5133cedb90cee68f639982efbcd0"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[auth] [E2E] GET /api/v1/auth -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.", "detalles": null, "correlation_id": "2b2eda0a12ec314f5de897e3a3cf7d7a"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[causa_raiz] [E2E] GET /api/v1/causa-raiz -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.", "detalles": null, "correlation_id": "9a5af5b3a33879a8e158b25d8e4a7c66"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[devoluciones] [E2E] GET /api/v1/devoluciones -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "cfce598df435ba890b56836be124f1d7"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[disposicion] [E2E] GET /api/v1/disposicion-inventario -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.", "detalles": null, "correlation_id": "1172ebf73b0805f34e0fe7d4566b61cc"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[evidencias] [E2E] GET /api/v1/evidencias -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "47e7c92321c556319a4481cf66f343a1"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[inspecciones] [E2E] GET /api/v1/inspecciones -> 405 {"error": {"codigo": 405, "tipo": "metodo_no_permitido", "mensaje": "The method is not allowed for the requested URL.", "detalles": null, "correlation_id": "56a4311cbb12d5e203755d607483b115"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[integraciones] [E2E] GET /api/v1/integraciones -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.", "detalles": null, "correlation_id": "7425ea45b4a359e90fbfeb761572a692"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[logistica] [E2E] GET /api/v1/logistica -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.", "detalles": null, "correlation_id": "a214efbc083b1e70a903ef2623922cfb"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[monitoreo] SKIPPED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[motivos] [E2E] GET /api/v1/motivos -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.", "detalles": null, "correlation_id": "f45c9e60950f14910f7a18de961cb134"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[proveedores] [E2E] GET /api/v1/proveedores -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "9cfb36e1f4445476409642238c8a472b"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[reembolsos] [E2E] GET /api/v1/reembolsos-costos -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.", "detalles": null, "correlation_id": "77f16de58b98b7db43c0d8f2828cd84f"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[reportes] [E2E] GET /api/v1 -> 404 <!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Error 404</title>
+  <link rel="stylesheet" href="/static/css/estilos.css">
+  <script src="/static/js/app.js" defer></script>
+  <link rel="stylesheet" href=...(recortado)
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[sincronizacion] [E2E] GET /api/v1/sincronizacion -> 404 {"error": {"codigo": 404, "tipo": "no_encontrado", "mensaje": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.", "detalles": null, "correlation_id": "3aa37821be9861781bed2e08598e8928"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_el_proxy_enruta_igual_que_el_servicio_directo[ventas] [E2E] GET /api/v1/ventas -> 401 {"error": {"codigo": 401, "tipo": "no_autenticado", "mensaje": "Falta el header 'Authorization: Bearer <token>'.", "detalles": null, "correlation_id": "24f36cdf7c3b82586284a6ecb001d115"}}
+PASSED
+tests/e2e/test_05_proxy.py::test_correlation_id_se_propaga_y_no_se_duplica PASSED
+tests/e2e/test_05_proxy.py::test_ip_falsificada_en_x_forwarded_for_no_se_registra PASSED
+tests/e2e/test_05_proxy.py::test_subida_de_9_mb_pasa_el_proxy_y_31_mb_se_rechazan_en_el_proxy PASSED
+tests/e2e/test_05_proxy.py::test_limite_de_login_del_proxy_responde_429 PASSED
+tests/e2e/test_99_rate_limit.py::test_login_responde_429_al_exceder_el_limite SKIPPED[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+[E2E] POST /api/v1/auth/logout -> 200 {"mensaje": "Sesion cerrada. El token ya no es valido."}
+
+
+================== 389 passed, 2 skipped in 134.22s (0:02:14) ==================
+
+=== Resumen ===
+=== docker compose run --rm -v /home/pablogcp26/Proyecto12:/repo -w /repo -e PYTHONPATH=/repo -e INTEGRACION=1 -e E2E_VIA_PROXY=1 -e PROXY_URL=http://proxy:8080 devoluciones python -m pytest -v -s -p no:cacheprovider tests/e2e ===
+================== 389 passed, 2 skipped in 134.22s (0:02:14) ==================
+Bloques con fallos: 0
