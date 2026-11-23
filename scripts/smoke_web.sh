@@ -39,9 +39,13 @@ ver() {      # ver <alias> <ruta> [texto que debe aparecer]
 }
 
 DEV="$($PG "SELECT id FROM devoluciones WHERE eliminado_en IS NULL ORDER BY id DESC LIMIT 1" 2>/dev/null | head -1)"
+# El formulario de resolucion solo existe mientras la devolucion esta pendiente
+# (ESTADOS_REVISABLES en apps/web/app/blueprints/devoluciones.py). La de id mas alto puede
+# estar ya resuelta, asi que para esa comprobacion se busca una pendiente.
+DEV_PEND="$($PG "SELECT id FROM devoluciones WHERE eliminado_en IS NULL AND estado IN ('solicitada','en_revision') ORDER BY id DESC LIMIT 1" 2>/dev/null | head -1)"
 DEV_CLI="$($PG "SELECT d.id FROM devoluciones d JOIN venta_detalle vd ON vd.id=d.venta_detalle_id JOIN ventas v ON v.id=vd.venta_id JOIN usuarios u ON u.id=v.cliente_id WHERE u.email='miguel.cliente@demo.mx' AND d.eliminado_en IS NULL ORDER BY d.id DESC LIMIT 1" 2>/dev/null | head -1)"
 USR="$($PG "SELECT id FROM usuarios WHERE email='miguel.cliente@demo.mx'" 2>/dev/null | head -1)"
-echo "devolucion: ${DEV:-?}  devolucion de Miguel: ${DEV_CLI:-?}  usuario: ${USR:-?}"
+echo "devolucion: ${DEV:-?}  pendiente: ${DEV_PEND:-ninguna}  devolucion de Miguel: ${DEV_CLI:-?}  usuario: ${USR:-?}"
 
 entrar adm pablo.admin@demo.mx
 entrar ana josue.analista@demo.mx
@@ -67,7 +71,13 @@ ver adm /notificaciones/
 # Analista (resuelve solicitudes: el expediente debe traer su formulario)
 ver ana /panel
 ver ana /devoluciones/
-ver ana "/devoluciones/$DEV" "resolucion"
+# Ultima devolucion (cualquier estado): la pantalla debe abrir.
+ver ana "/devoluciones/$DEV"
+if [ -n "$DEV_PEND" ]; then
+  ver ana "/devoluciones/$DEV_PEND" "resolucion"
+else
+  echo "OMITIDO ana /devoluciones/<pendiente> (no hay devoluciones pendientes de resolver)"
+fi
 ver ana /panel/causas
 ver ana /panel/costos
 ver ana /bitacora
