@@ -74,9 +74,37 @@ _SECRETOS = {"password", "access_token", "refresh_token", "token", "token_operac
 Respuesta = namedtuple("Respuesta", "status headers texto datos")
 
 
-def url_base(servicio):
+# Modo proxy: TODA la suite entra por Nginx (como un cliente real) en vez de ir
+# directo a cada contenedor. Las rutas fuera de /api/v1 (/health, /docs,
+# /contratos/...) viven bajo /servicios/<nombre>/ (docs/REVERSE_PROXY.md).
+VIA_PROXY = os.environ.get("E2E_VIA_PROXY") == "1"
+PROXY_URL = os.environ.get("PROXY_URL", "http://proxy:8080").rstrip("/")
+PREFIJO_PROXY = {
+    "auth": "auth", "devoluciones": "devoluciones", "logistica": "logistica",
+    "inspecciones": "inspecciones", "disposicion": "disposicion-inventario",
+    "reembolsos": "reembolsos-costos", "ventas": "ventas-catalogos",
+    "evidencias": "evidencias", "auditoria": "auditoria",
+    "motivos": "clasificacion-motivos", "causa_raiz": "causa-raiz",
+    "proveedores": "proveedores", "reportes": "reportes-analitica",
+    "sincronizacion": "sincronizacion", "integraciones": "integraciones-monitoreo",
+}
+
+
+def url_directa(servicio):
+    """URL del contenedor, sin pasar por Nginx."""
     variable, defecto = SERVICIOS[servicio]
     return os.environ.get(variable, defecto).rstrip("/")
+
+
+def url_base(servicio):
+    return PROXY_URL if VIA_PROXY else url_directa(servicio)
+
+
+def ruta_publica(servicio, ruta):
+    """En modo proxy, lo que no es /api/v1 se pide bajo /servicios/<nombre>."""
+    if VIA_PROXY and not ruta.startswith("/api/v1"):
+        return f"/servicios/{PREFIJO_PROXY[servicio]}{ruta}"
+    return ruta
 
 
 def _recortar(valor, limite=300):
@@ -117,7 +145,7 @@ def llamar(servicio, metodo, ruta, cuerpo=None, token=None, xml=None,
     - Nunca lanza por un 4xx/5xx: las pruebas comparan el codigo.
     - Imprime metodo, URL, codigo y cuerpo recortado SIN secretos (evidencia).
     """
-    url = ruta if absoluta else url_base(servicio) + ruta
+    url = ruta if absoluta else url_base(servicio) + ruta_publica(servicio, ruta)
     encabezados = {"Accept": accept}
     datos = None
     if multipart:
@@ -182,7 +210,7 @@ class SesionWeb:
     """
 
     def __init__(self, email):
-        self.base = os.environ.get("WEB_URL", "http://app:8000").rstrip("/")
+        self.base = PROXY_URL if VIA_PROXY else os.environ.get("WEB_URL", "http://app:8000").rstrip("/")
         self.jar = http.cookiejar.CookieJar()
         self.opener = urllib.request.build_opener(
             urllib.request.HTTPCookieProcessor(self.jar), _SinRedireccion())

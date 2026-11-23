@@ -9,9 +9,12 @@ Trazabilidad: RNF-28, RNF-13.
 import os
 import uuid
 
+import pytest
+
 from . import cliente as c
 
 
+@pytest.mark.skipif(c.VIA_PROXY, reason="Por Nginx el 429 llega antes (10/min, rafaga 5); lo cubre test_05_proxy")
 def test_login_responde_429_al_exceder_el_limite(ctx):
     maximo = int(os.environ.get("LOGIN_MAX_POR_MINUTO", "10"))
     # Un correo distinto por intento: repetir uno inexistente dispararia el

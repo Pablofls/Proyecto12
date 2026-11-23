@@ -231,7 +231,7 @@ class Supervision(Perfil):
 
     @task(1)
     def chequeo_en_vivo(self):
-        # Revisa los 14 servicios y las 3 bases en ese momento: la peticion mas pesada.
+        # Revisa los 15 servicios y las 3 bases en ese momento: la peticion mas pesada.
         self.get("monitoreo", "/api/v1/monitoreo/estado")
 
     @task(2)

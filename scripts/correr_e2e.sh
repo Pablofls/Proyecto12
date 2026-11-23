@@ -14,8 +14,9 @@ set -uo pipefail
 
 cd "$(dirname "$0")/.."
 FECHA="$(date +%F)"
-SALIDA="docs/pruebas/salida_${FECHA}.txt"
 MODO="${1:-todo}"
+# El modo proxy no pisa la salida versionada de la corrida normal del mismo dia.
+if [ "$MODO" = "proxy" ]; then SALIDA="docs/pruebas/salida_proxy_${FECHA}.txt"; else SALIDA="docs/pruebas/salida_${FECHA}.txt"; fi
 mkdir -p docs/pruebas
 : > "$SALIDA"
 fallos=0
@@ -66,15 +67,23 @@ correr() {
   [ "${PIPESTATUS[0]}" -eq 0 ] || fallos=$((fallos + 1))
 }
 
-# Los 14 microservicios (docker-compose.yml). Si se agrega uno, se suma aqui.
+# Los 15 microservicios (docker-compose.yml). Si se agrega uno, se suma aqui.
 SERVICIOS="auth ventas-catalogos devoluciones evidencias logistica inspecciones
-           reembolsos-costos analisis-auditoria clasificacion-motivos causa-raiz
+           disposicion-inventario reembolsos-costos analisis-auditoria clasificacion-motivos causa-raiz
            proveedores reportes-analitica sincronizacion integraciones-monitoreo"
 
 if [ "$MODO" = "todo" ] || [ "$MODO" = "e2e" ]; then
   # El repositorio se monta en /repo para que la suite vea tests/, shared/ y los XSD.
   correr docker compose run --rm -v "$PWD":/repo -w /repo -e PYTHONPATH=/repo \
     -e INTEGRACION=1 devoluciones python -m pytest -v -s -p no:cacheprovider tests/e2e
+fi
+
+if [ "$MODO" = "proxy" ]; then
+  # Toda la suite entra por Nginx (PROXY_URL=http://proxy:8080) y compara, endpoint por
+  # endpoint, el proxy contra el servicio directo (tests/e2e/test_04b_paridad_proxy.py).
+  correr docker compose run --rm -v "$PWD":/repo -w /repo -e PYTHONPATH=/repo \
+    -e INTEGRACION=1 -e E2E_VIA_PROXY=1 -e PROXY_URL=http://proxy:8080 \
+    devoluciones python -m pytest -v -s -p no:cacheprovider tests/e2e
 fi
 
 if [ "$MODO" = "todo" ] || [ "$MODO" = "paridad" ]; then
