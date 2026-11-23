@@ -30,7 +30,7 @@ SERVICIOS = [
     ("reembolsos_costos", "Reembolsos y costos", 8005, "reembolsos_url", "/api/v1/reembolsos-costos"),
     ("ventas_catalogos", "Ventas y catalogos", 8006, "ventas_url", "/api/v1/ventas"),
     ("evidencias", "Evidencias", 8007, "evidencias_url", "/api/v1/evidencias"),
-    ("analisis_auditoria", "Analisis y auditoria", 8008, "analisis_url", "/api/v1/analisis"),
+    ("analisis_auditoria", "Analisis y auditoria", 8008, "analisis_url", "/api/v1/auditoria"),
 ]
 INFO = {s[0]: s for s in SERVICIOS}
 
@@ -49,6 +49,15 @@ ROL_TEXTO = {k: v[1] for k, v in ROLES.items()}
 ROL_TEXTO["falso"] = "Token invalido (cadena sin firma)"
 
 PUBLICAS = ("/api/", "/health", "/contratos", "/docs")
+# Todo entra por el reverse proxy (puerto 80/443, sin puerto por servicio). Las rutas
+# fuera de /api/v1 (/health, /docs, /contratos) viven bajo /servicios/<nombre>/; en la
+# raiz responderia la web y la prueba pasaria por la razon equivocada.
+SERVICIO_PROXY = {
+    "auth": "auth", "devoluciones": "devoluciones", "logistica": "logistica",
+    "inspecciones": "inspecciones", "reembolsos_costos": "reembolsos-costos",
+    "ventas_catalogos": "ventas-catalogos", "evidencias": "evidencias",
+    "analisis_auditoria": "auditoria",
+}
 SENTINELA = re.compile(r'"@id:([a-z_]+)"')
 
 CORRIDA = {"n": 0}          # numero de captura, global y estable
@@ -108,8 +117,10 @@ class Coleccion:
     def _url(self, ruta, url):
         if url:
             return url
-        if ruta.startswith(PUBLICAS):
+        if ruta.startswith("/api/"):
             return "{{" + self.var_url + "}}" + ruta
+        if ruta.startswith(PUBLICAS):
+            return "{{" + self.var_url + "}}/servicios/" + SERVICIO_PROXY[self.clave] + ruta
         return "{{" + self.var_url + "}}" + self.prefijo + ruta
 
     def caso(self, nombre, metodo, ruta, desc, *, rol=None, fmt="json", accept=None,
@@ -162,7 +173,7 @@ class Coleccion:
 
         if ev:
             CORRIDA["n"] += 1
-            ep = ep or endpoint_de(self._url(ruta, url).split("}}", 1)[1])
+            ep = ep or endpoint_de(re.sub(r"^/servicios/[^/]+", "", self._url(ruta, url).split("}}", 1)[1]))
             TODOS.append({
                 "n": CORRIDA["n"], "servicio": self.clave, "carpeta": self.carpetas[-1]["name"],
                 "nombre": nombre, "metodo": metodo, "ruta": self._url(ruta, url), "ep": ep,
@@ -199,7 +210,7 @@ class Coleccion:
             "info": {
                 "name": f"{self.titulo} ({self.clave}) - v1",
                 "description": (
-                    f"Evidencias request/response del servicio {self.clave} (puerto {self.puerto}). "
+                    f"Evidencias request/response del servicio {self.clave} (por el reverse proxy). "
                     "Requiere el environment vm.postman_environment.json con vm_host, "
                     "password_demo y, si aplica, los ids de las colecciones previas. "
                     "Orden de corrida y capturas: docs/evidencias/README.md."),
@@ -264,7 +275,8 @@ def escribir_json(ruta, datos):
 
 def environment():
     valores = [("vm_host", "IP-DE-LA-VM", "default")]
-    valores += [(s[3], "http://{{vm_host}}:%d" % s[2], "default") for s in SERVICIOS]
+    # Un solo origen: Nginx. vm_host puede llevar puerto (p. ej. 34.51.108.167:8000).
+    valores += [(s[3], "http://{{vm_host}}", "default") for s in SERVICIOS]
     valores += [(f"email_{r}", ROLES[r][0], "default") for r in ROLES]
     valores += [("email_bloqueo", "sofia.cliente@demo.mx", "default"),
                ("password_demo", "", "secret")]

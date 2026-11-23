@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Ventas y catalogos (ventas_catalogos) - v1",
-    "description": "Evidencias request/response del servicio ventas_catalogos (puerto 8006). Requiere el environment vm.postman_environment.json con vm_host, password_demo y, si aplica, los ids de las colecciones previas. Orden de corrida y capturas: docs/evidencias/README.md.",
+    "description": "Evidencias request/response del servicio ventas_catalogos (por el reverse proxy). Requiere el environment vm.postman_environment.json con vm_host, password_demo y, si aplica, los ids de las colecciones previas. Orden de corrida y capturas: docs/evidencias/README.md.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -18,7 +18,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{ventas_url}}/health",
+            "url": "{{ventas_url}}/servicios/ventas-catalogos/health",
             "description": "RNF-22, RF-32: el servicio responde y reporta el estado de sus dependencias."
           },
           "event": [
