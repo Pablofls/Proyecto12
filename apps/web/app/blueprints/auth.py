@@ -10,7 +10,7 @@ from werkzeug.security import check_password_hash
 from app import api_client
 from app.cache import limpiar_intentos, registrar_intento_fallido, segundos_bloqueo_restantes
 from app.db import consultar, ejecutar
-from app.security import login_required, registrar_bitacora, usuario_actual
+from app.security import ip_cliente, login_required, registrar_bitacora, usuario_actual
 
 bp = Blueprint("auth", __name__)
 
@@ -40,7 +40,7 @@ def _registrar_intento(email, usuario_id, exitoso):
             email[:150],
             usuario_id,
             exitoso,
-            request.headers.get("X-Forwarded-For", request.remote_addr),
+            ip_cliente(),
             (request.user_agent.string or "")[:255],
         ),
     )

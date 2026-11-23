@@ -1032,3 +1032,10 @@ contenedor de disposicion-inventario (404). Se agrega `resolver 127.0.0.11` y
 `proxy_pass` por variable; los prefijos `/servicios/X/` se recortan con `rewrite`.
 Validado en la VM con un proxy temporal: reiniciar tres servicios sin recargar
 Nginx no cambia las respuestas.
+
+## 22-11-2026 — La web usa el ultimo salto de X-Forwarded-For (RNF-13, RNF-16, RF-30)
+
+`security.py` y `blueprints/auth.py` guardaban el `X-Forwarded-For` completo: el
+primer valor lo escribe el cliente, asi que la IP de la bitacora y de
+`intentos_acceso` era falsificable. Se agrega `ip_cliente()` con la misma regla
+que `shared.infra.ip_origen` (ultimo salto, solo con `TRUST_PROXY_HEADERS=true`).
