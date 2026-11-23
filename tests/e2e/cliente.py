@@ -136,7 +136,7 @@ def _decodificar(texto, tipo):
     return None
 
 
-def llamar(servicio, metodo, ruta, cuerpo=None, token=None, xml=None,
+def _llamar_una(servicio, metodo, ruta, cuerpo=None, token=None, xml=None,
            accept="application/json", cabeceras=None, correlation_id=None,
            multipart=None, absoluta=False):
     """Peticion HTTP real. Devuelve Respuesta(status, headers, texto, datos).
@@ -264,6 +264,22 @@ def cabecera_permiso(token, operacion, recurso_id):
     return {"X-Autorizacion-Operacion": resp.datos["token_operacion"]}
 
 
+def llamar(servicio, metodo, ruta, *args, **kwargs):
+    """Una peticion; por Nginx, el login espera a que se reponga su cupo.
+
+    El proxy limita /auth/login a 10/min con rafaga de 5 por IP (429 de Nginx, HTML,
+    sin Retry-After de servicio). La suite inicia sesion muchas veces desde una sola
+    IP, asi que en modo proxy se reintenta ese 429 en vez de falsear la prueba.
+    """
+    for _ in range(6):
+        resp = _llamar_una(servicio, metodo, ruta, *args, **kwargs)
+        if not (VIA_PROXY and resp.status == 429 and ruta.endswith("/auth/login")
+                and "nginx" in (resp.texto or "").lower()):
+            return resp
+        time.sleep(7)
+    return resp
+
+
 def error_tipo(resp):
     """Valor `error.tipo` de una respuesta de error en JSON."""
     return ((resp.datos or {}).get("error") or {}).get("tipo")
@@ -319,15 +335,8 @@ def email_de_rol(rol, excluir=()):
 
 def iniciar_sesion(email):
     """Login real contra auth. La contrasena viene de PASSWORD_DEMO (.env)."""
-    # Por Nginx el login admite 10/min con rafaga de 5 por IP: con 7 roles seguidos
-    # el proxy responde 429 (sin Retry-After de servicio). Se espera a que se
-    # reponga el cupo; sin proxy no hay reintentos.
-    for intento in range(6):
-        resp = llamar("auth", "POST", PREFIJO_API["auth"] + "/login",
-                      {"email": email, "password": os.environ["PASSWORD_DEMO"]})
-        if not (VIA_PROXY and resp.status == 429 and "Retry-After" not in resp.headers):
-            break
-        time.sleep(7)
+    resp = llamar("auth", "POST", PREFIJO_API["auth"] + "/login",
+                  {"email": email, "password": os.environ["PASSWORD_DEMO"]})
     assert resp.status == 200, f"login de {email}: {resp.status}"
     return resp.datos["access_token"]
 
