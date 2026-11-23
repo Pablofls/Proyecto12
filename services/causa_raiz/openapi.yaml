@@ -5,7 +5,7 @@ info:
   description: Flujo de investigacion de causa raiz de 9 pasos con acciones CAPA y medicion de eficacia. El analisis
     apoya; cada decision es humana (RN-09, RN-11). JSON o XML segun Accept; el XML se valida con los XSD de /contratos.
 servers:
-- url: http://localhost:8011
+- url: /
 paths:
   /health:
     get:
