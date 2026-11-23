@@ -162,7 +162,7 @@ class IntegracionInspecciones(unittest.TestCase):
         cuerpo.update(extra)
         return _http(SERVICIO_URL, "POST", PREFIJO, cuerpo, self.inspector)
 
-    def test_inspeccion_apta_va_a_mongo_y_postgres_y_se_etiqueta(self):
+    def test_inspeccion_apta_va_a_mongo_y_postgres(self):
         dev = _sembrar_devolucion("recibida", refrigerado=True)
         self.ids.append(dev["id"])
         codigo, resp = self._inspeccionar(dev["id"])
@@ -181,27 +181,14 @@ class IntegracionInspecciones(unittest.TestCase):
         doc = mongo.get_mongo().inspecciones.find_one({"devolucion_id": dev["id"]})
         self.assertEqual(doc["observaciones"], "Revisado de nuevo")
 
-        codigo, disp = _http(SERVICIO_URL, "POST", f"{PREFIJO}/{dev['id']}/disposicion",
-                             {"destino": "inventario", "justificacion": "Apto"}, self.analista)
-        self.assertEqual(codigo, 201, disp)
-        codigo, inv = _http(SERVICIO_URL, "POST", f"{PREFIJO}/inventario/{disp['id']}/etiqueta",
-                            None, self.centro)
-        self.assertEqual(codigo, 201, inv)
-        self.assertTrue(_sql("SELECT 1 FROM inventario_recuperado WHERE disposicion_id = %s",
-                             (disp["id"],), uno=True))
-
-    def test_refrigerado_con_cadena_rota_no_vuelve_a_inventario(self):  # RN-06, RN-07
+    def test_refrigerado_con_cadena_rota_emite_dictamen_no_apto(self):  # RN-06, RN-07
         dev = _sembrar_devolucion("recibida", refrigerado=True)
         self.ids.append(dev["id"])
         codigo, resp = self._inspeccionar(dev["id"], cadena_frio_rota=True)
         self.assertEqual(codigo, 201)
         self.assertFalse(resp["apto_para_inventario"])
-        codigo, resp = _http(SERVICIO_URL, "POST", f"{PREFIJO}/{dev['id']}/disposicion",
-                             {"destino": "inventario"}, self.analista)
-        self.assertEqual(codigo, 409)
-        self.assertEqual(resp["error"]["tipo"], "no_apto_inventario")
-        self.assertIsNone(_sql("SELECT 1 FROM disposiciones WHERE devolucion_id = %s",
-                               (dev["id"],), uno=True))
+        self.assertEqual(_sql("SELECT recomendacion FROM inspecciones_ref WHERE devolucion_id=%s",
+                              (dev["id"],),uno=True)["recomendacion"],"investigar")
 
     def test_refrigerado_exige_temperatura_y_tiempo(self):  # RN-05
         dev = _sembrar_devolucion("recibida", refrigerado=True)

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="destino"><xs:restriction base="xs:string">
+    <xs:enumeration value="reintegrar"/><xs:enumeration value="reparacion"/>
+    <xs:enumeration value="reacondicionamiento"/><xs:enumeration value="devolucion_proveedor"/>
+    <xs:enumeration value="reciclaje"/><xs:enumeration value="desecho"/>
+    <xs:enumeration value="donacion"/>
+  </xs:restriction></xs:simpleType>
+  <xs:element name="disposicion"><xs:complexType><xs:sequence>
+    <xs:element name="devolucion_id" type="xs:positiveInteger"/>
+    <xs:element name="destino" type="destino"/>
+    <xs:element name="justificacion"><xs:simpleType><xs:restriction base="xs:string"><xs:minLength value="10"/></xs:restriction></xs:simpleType></xs:element>
+  </xs:sequence></xs:complexType></xs:element>
+</xs:schema>

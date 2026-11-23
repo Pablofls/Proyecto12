@@ -41,13 +41,18 @@ body:has(.orvia-flow){margin:0;background:#f5f7fb;color:#132b48;font-family:Inte
   <label for="destino">Destino *</label>
   <select id="destino" name="destino" required>
     {% for valor, texto in destinos %}
-      <option value="{{ valor }}" {{ 'disabled' if valor == 'inventario' and not inspeccion.apto_para_inventario else '' }}>{{ texto }}</option>
+      <option value="{{ valor }}" {{ 'disabled' if valor == 'reintegrar' and not inspeccion.apto_para_inventario else '' }}>{{ texto }}</option>
     {% endfor %}
   </select>
 
-  <label for="justificacion">Justificacion</label>
+  <label for="justificacion">Justificacion *</label>
   <textarea id="justificacion" name="justificacion"
-            placeholder="Por que se asigna este destino."></textarea>
+            minlength="10" required placeholder="Por que se asigna este destino."></textarea>
+
+  <label for="password_confirmacion">Confirma tu contrasena *</label>
+  <input type="password" id="password_confirmacion" name="password_confirmacion"
+         autocomplete="current-password" required>
+  <p class="nota">La autorizacion es de un solo uso y queda registrada en auditoria.</p>
 
   <label for="costo_disposicion">Costo de reacondicionar o destruir (segun aplique)</label>
   <input type="number" step="0.01" min="0" id="costo_disposicion" name="costo_disposicion">

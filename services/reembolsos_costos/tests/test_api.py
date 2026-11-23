@@ -42,11 +42,11 @@ class PruebaReembolsos(unittest.TestCase):
         dev={"id":5,"folio_devolucion":"DEV-2026-5","estado":"autorizada","fecha_cierre":None,"valor_devuelto":valor,"cliente_id":3}
         def consultar(sql,params=None,uno=False): return dev if "FROM devoluciones" in sql else None
         def ejecutar(sql,params=None,devolver=False): return {"id":1,"devolucion_id":5,"monto":params[2],"metodo":"tarjeta","estado":"aprobado","fecha_resolucion":None} if devolver else None
-        originales=(servicio.consultar,servicio.ejecutar,servicio.registrar_bitacora,servicio.get_redis)
-        servicio.consultar,servicio.ejecutar,servicio.registrar_bitacora,servicio.get_redis=consultar,ejecutar,lambda *a,**k:None,lambda:self.r
+        originales=(servicio.consultar,servicio.ejecutar,servicio.registrar_bitacora,servicio.get_redis,servicio.exigir_autorizacion_operacion)
+        servicio.consultar,servicio.ejecutar,servicio.registrar_bitacora,servicio.get_redis,servicio.exigir_autorizacion_operacion=consultar,ejecutar,lambda *a,**k:None,lambda:self.r,lambda *a,**k:{"jti":"prueba"}
         try:
             return self.cliente.post("/api/v1/reembolsos-costos/reembolsos",headers={"Authorization":"Bearer "+self.token(seguridad.ENCARGADO_REEMBOLSOS)},json={"devolucion_id":5,"monto":monto,"estado":"aprobado","metodo":"tarjeta"})
-        finally: servicio.consultar,servicio.ejecutar,servicio.registrar_bitacora,servicio.get_redis=originales
+        finally: servicio.consultar,servicio.ejecutar,servicio.registrar_bitacora,servicio.get_redis,servicio.exigir_autorizacion_operacion=originales
     def test_reembolso_por_el_monto_maximo_exacto_se_acepta(self):
         # Regresion H-11: Decimal("227.17") > float(227.17) era True y se rechazaba el maximo.
         self.assertEqual(self._reembolso(227.17).status_code,201)
@@ -55,7 +55,7 @@ class PruebaReembolsos(unittest.TestCase):
         self.assertEqual(r.status_code,409); detalle=r.get_json()["error"]
         self.assertEqual(detalle["tipo"],"monto_excedido"); self.assertEqual(detalle["detalles"]["maximo"],227.17)
     def test_etapas_separadas_por_responsabilidad(self):
-        self.assertEqual(servicio.ETAPAS_POR_ROL[seguridad.COORDINADOR],{"transporte"})
+        self.assertEqual(servicio.ETAPAS_POR_ROL[seguridad.COORDINADOR],{"recoleccion","transporte"})
         self.assertNotIn("reembolso",servicio.ETAPAS_POR_ROL[seguridad.ANALISTA])
 
 if __name__=="__main__": unittest.main()
