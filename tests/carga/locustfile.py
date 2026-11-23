@@ -21,6 +21,7 @@ Trazabilidad: RNF-29, RNF-13, RNF-28.
 """
 import os
 import random
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -49,7 +50,7 @@ CUENTAS = {
 }
 
 TOKENS = {}
-LIMITE_ESPERADO = {"429": 0}
+LIMITE_ESPERADO = {"429": 0, "nginx": 0}
 
 # El lote offline que reenvia el movil: un id fijo, asi cada envio despues del
 # primero es un reintento (idempotencia) y la tabla no crece durante la prueba.
@@ -69,8 +70,14 @@ def iniciar_sesiones(environment, **_):
 
     clave = os.environ["PASSWORD_DEMO"]
     for rol, email in CUENTAS.items():
-        r = requests.post(URL["auth"] + "/api/v1/auth/login",
-                          json={"email": email, "password": clave}, timeout=10)
+        # Por Nginx el login admite 10/min con rafaga de 5 por IP: seis cuentas seguidas
+        # pueden toparse con su 429 (HTML, sin Retry-After); se espera a que se reponga.
+        for _ in range(6):
+            r = requests.post(URL["auth"] + "/api/v1/auth/login",
+                              json={"email": email, "password": clave}, timeout=10)
+            if r.status_code != 429:
+                break
+            time.sleep(7)
         r.raise_for_status()
         TOKENS[rol] = r.json()["access_token"]
     print(f"[carga] Sesiones iniciadas: {', '.join(TOKENS)}")
@@ -80,6 +87,8 @@ def iniciar_sesiones(environment, **_):
 def resumen(environment, **_):
     print(f"[carga] 429 del limite por usuario (esperados, contados como correctos): "
           f"{LIMITE_ESPERADO['429']}")
+    print(f"[carga] 429 de Nginx en peticiones con limite (cuentan como fallo): "
+          f"{LIMITE_ESPERADO['nginx']}")
 
 
 class Perfil(HttpUser):
@@ -98,9 +107,14 @@ class Perfil(HttpUser):
         """POST con limite por usuario: 429 es el limite funcionando."""
         with self.client.post(URL[servicio] + ruta, json=cuerpo, headers=self._h(),
                               name=nombre or ruta, catch_response=True) as r:
-            if r.status_code == 429:
+            if r.status_code == 429 and "Retry-After" in r.headers:
+                # 429 del servicio (limite por usuario, RNF-13): comportamiento esperado.
                 LIMITE_ESPERADO["429"] += 1
                 r.success()
+            elif r.status_code == 429:
+                # Sin Retry-After es el limit_req de Nginx: el proxy esta saturando, no es esperado.
+                LIMITE_ESPERADO["nginx"] += 1
+                r.failure("429 de Nginx (limit_req)")
             elif r.status_code >= 400:
                 r.failure(f"HTTP {r.status_code}")
 
