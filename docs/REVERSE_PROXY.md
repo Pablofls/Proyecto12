@@ -84,3 +84,12 @@ Para depurar un servicio no se vuelve a abrir su puerto. Use, por ejemplo,
 `docker compose exec auth wget -qO- http://localhost:8000/health` o su URL bajo
 `/servicios/`. El archivo `scripts/probar_proxy.py` verifica todos los health
 checks a través de Nginx.
+
+## Resolucion de nombres (importante al recrear servicios)
+
+Nginx usa el resolver de Docker (`127.0.0.11`) y `proxy_pass http://$destino:8000`
+con `set $destino <servicio>`, asi que vuelve a resolver el nombre cada 10 s.
+Recrear o reiniciar un servicio (`docker compose up -d --build`, `restart`) ya no
+exige recargar el proxy. Con `proxy_pass` literal, Nginx fija la IP al arrancar y
+enruta al contenedor equivocado (visto en la VM el 22-11). Todo `proxy_pass` nuevo
+debe usar `$destino`; `tests/proxy/test_proxy_config.py` lo verifica.

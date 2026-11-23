@@ -1023,3 +1023,12 @@ directos (entorno de Postman, `scripts/evidencias/*`, `evidencias_vm*.sh`).
 `/api/v1/disposicion-inventario` y `/servicios/disposicion-inventario/`.
 `EVIDENCIAS_PUERTOS_DIRECTOS=1` permite al motor de evidencias usar puertos si
 se publican a mano para depurar. Firewall de GCP: abrir 80/443 y cerrar 8000-8021.
+
+## 22-11-2026 — Nginx resuelve servicios por DNS en cada peticion (RNF-23, RNF-28)
+
+Al reiniciar `disposicion-inventario` y `reembolsos-costos` en la VM, el proxy
+siguio apuntando a las IPs anteriores: una peticion a reembolsos-costos llego al
+contenedor de disposicion-inventario (404). Se agrega `resolver 127.0.0.11` y
+`proxy_pass` por variable; los prefijos `/servicios/X/` se recortan con `rewrite`.
+Validado en la VM con un proxy temporal: reiniciar tres servicios sin recargar
+Nginx no cambia las respuestas.
