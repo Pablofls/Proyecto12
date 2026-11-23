@@ -72,9 +72,9 @@ adquirido despues por otro proceso.
 ```bash
 docker compose up -d --build logistica inspecciones reembolsos-costos
 docker compose ps
-curl http://localhost:8003/health
-curl http://localhost:8004/health
-curl http://localhost:8005/health
+curl "http://localhost:$(grep ^PROXY_HTTP_PORT .env | cut -d= -f2)/servicios/logistica/health"
+curl "http://localhost:$(grep ^PROXY_HTTP_PORT .env | cut -d= -f2)/servicios/inspecciones/health"
+curl "http://localhost:$(grep ^PROXY_HTTP_PORT .env | cut -d= -f2)/servicios/reembolsos-costos/health"
 ```
 
 Swagger queda disponible en `http://HOST:8003/docs`, `:8004/docs` y

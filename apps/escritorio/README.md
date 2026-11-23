@@ -19,7 +19,11 @@ jerarquía visual con el sistema web.
 Todas sus peticiones y respuestas usan `application/xml`; los cuerpos se
 validan localmente con XSD antes de enviarse y nuevamente en el servicio.
 
-1. Copiar `config.example.json` como `config.json` y ajustar las URL.
+1. Copiar `config.example.json` como `config.json` y poner en `base` la URL del
+   reverse proxy (por ejemplo `http://IP-DE-LA-VM:8000`, o sin puerto si el proxy
+   esta en el 80/443). Ya no se configura un puerto por microservicio: Nginx es
+   la unica entrada y enruta por `/api/v1/...`. El formato anterior (un URL por
+   servicio) sigue aceptandose.
 2. Instalar: `python -m pip install -r apps/escritorio/requirements.txt`.
 3. Ejecutar desde la raiz: `python apps/escritorio/main.py`.
 

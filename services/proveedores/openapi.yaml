@@ -8,7 +8,7 @@ info:
     responsabilidad (RN-09). El alta del catalogo de proveedores sigue en
     ventas-catalogos (8006). Responde JSON o XML segun Accept.
 servers:
-- url: http://localhost:8013
+- url: /
 paths:
   /health:
     get:

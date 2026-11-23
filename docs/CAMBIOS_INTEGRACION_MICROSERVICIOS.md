@@ -172,8 +172,8 @@ Para comprobar el despliegue:
 
 ```bash
 curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8001/health
-curl http://127.0.0.1:8002/health
+curl "http://127.0.0.1:$(grep ^PROXY_HTTP_PORT .env | cut -d= -f2)/servicios/auth/health"
+curl "http://127.0.0.1:$(grep ^PROXY_HTTP_PORT .env | cut -d= -f2)/servicios/devoluciones/health"
 # continuar hasta el puerto 8008
 ```
 

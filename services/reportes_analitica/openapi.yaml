@@ -5,7 +5,7 @@ info:
   description: Reportes en JSON, XML, CSV, Excel y PDF, datos para Highcharts, tendencias, pronosticos y anomalias.
     Solo lectura. La estadistica es explicable y orienta la revision humana; no determina causas (RN-09).
 servers:
-- url: http://localhost:8018
+- url: /
 paths:
   /health:
     get:

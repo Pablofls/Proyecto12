@@ -3,6 +3,7 @@
 Implementa RNF-09 (verificacion de rol y permisos antes de cada operacion),
 la autorizacion por recurso descrita en 5.3 y RF-30 / RN-12 (bitacora).
 """
+import os
 import uuid
 from functools import wraps
 
@@ -34,6 +35,22 @@ TODOS_LOS_ROLES = (
 
 # Personal interno: todo rol que no sea el cliente.
 INTERNOS = tuple(r for r in TODOS_LOS_ROLES if r != CLIENTE)
+
+
+def ip_cliente():
+    """IP del cliente para la bitacora y los intentos de acceso (RNF-13, RNF-16).
+
+    Detras de Nginx solo se confia en el ULTIMO salto de X-Forwarded-For, el que
+    agrega el propio proxy: el primero lo escribe el cliente y puede inventarlo.
+    Misma regla que shared.infra.ip_origen en los microservicios.
+    """
+    if os.environ.get("TRUST_PROXY_HEADERS", "false").lower() == "true":
+        reenviadas = request.headers.get("X-Forwarded-For", "")
+        if reenviadas:
+            candidata = reenviadas.rsplit(",", 1)[-1].strip()
+            if candidata:
+                return candidata[:64]
+    return (request.remote_addr or "-")[:64]
 
 
 def usuario_actual():
@@ -140,6 +157,6 @@ def registrar_bitacora(accion, entidad, entidad_id=None, detalle=None):
             entidad_id,
             detalle,
             correlation_id(),
-            request.headers.get("X-Forwarded-For", request.remote_addr),
+            ip_cliente(),
         ),
     )

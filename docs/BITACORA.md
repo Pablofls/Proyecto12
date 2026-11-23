@@ -1039,3 +1039,9 @@ Android (`OrviaApi.hostValid`) rechaza URLs con puerto, asi que el proxy debe
 estar en 80/443. Se detuvo el Apache de la VM (libreria y waylo, ya sin uso, con
 autorizacion del equipo) y `PROXY_HTTP_PORT=80`. Validado: `probar_proxy.py` 16 OK
 en el 80 y respuesta 200 desde fuera de la VM.
+## 22-11-2026 — La web usa el ultimo salto de X-Forwarded-For (RNF-13, RNF-16, RF-30)
+
+`security.py` y `blueprints/auth.py` guardaban el `X-Forwarded-For` completo: el
+primer valor lo escribe el cliente, asi que la IP de la bitacora y de
+`intentos_acceso` era falsificable. Se agrega `ip_cliente()` con la misma regla
+que `shared.infra.ip_origen` (ultimo salto, solo con `TRUST_PROXY_HEADERS=true`).
