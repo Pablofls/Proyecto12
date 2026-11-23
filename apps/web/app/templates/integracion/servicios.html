@@ -1,29 +1,1081 @@
-{% extends "base.html" %}
-{% block titulo %}Integracion de servicios{% endblock %}
-{% block contenido %}
-<h1>Arquitectura distribuida</h1>
-<p class="sub">Estado en tiempo real: {{ disponibles }} de {{ estados|length }} microservicios disponibles.</p>
 
-<div class="tabla-contenedor">
-  <table>
-    <thead><tr><th>Servicio</th><th>Estado</th><th>HTTP</th><th>Latencia</th><th>Dependencias</th></tr></thead>
-    <tbody>
-    {% for servicio in estados %}
-      <tr>
-        <td><strong>{{ servicio.nombre }}</strong><br><small>{{ servicio.url }}</small></td>
-        <td><span class="estado estado-{{ 'cerrada' if servicio.disponible else 'rechazada' }}">{{ servicio.estado }}</span></td>
-        <td>{{ servicio.codigo_http or '—' }}</td>
-        <td>{{ servicio.latencia_ms }} ms</td>
-        <td>
-          {% if servicio.dependencias %}
-            {% for nombre, dependencia in servicio.dependencias.items() %}
-              {{ nombre }}: {{ 'OK' if dependencia.ok else 'ERROR' }}{% if not loop.last %}, {% endif %}
-            {% endfor %}
-          {% else %}{{ servicio.error or '—' }}{% endif %}
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</div>
+{% extends "base.html" %}
+{% block titulo %}Arquitectura distribuida | Orvia{% endblock %}
+
+{% block contenido %}
+
+<style>
+/* =========================================
+   ORVIA - MONITOR DE MICROSERVICIOS
+   Todo dentro de servicios.html
+========================================= */
+
+body:has(#ov-monitor) {
+  margin: 0;
+  background: #f7f9fc;
+  color: #14243e;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+body:has(#ov-monitor) > main {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Navegación y barra superior únicas: definidas en base.html. */
+
+#ov-monitor,
+#ov-monitor * {
+  box-sizing: border-box;
+}
+
+#ov-monitor {
+  --green: #078858;
+  --blue: #196ed3;
+  --red: #ce414b;
+  --border: #e6ebf2;
+  --muted: #7889a2;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 100vh;
+  background: #f7f9fc;
+  font-size: 14px;
+}
+
+#ov-monitor button,
+#ov-monitor input,
+#ov-monitor select {
+  font: inherit;
+}
+
+#ov-monitor button {
+  cursor: pointer;
+}
+
+#ov-monitor [hidden] {
+  display: none !important;
+}
+
+/* MENU LATERAL */
+
+#ov-monitor .ov-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 29px 20px;
+  background: #fff;
+  border-right: 1px solid var(--border);
+  z-index: 30;
+}
+
+#ov-monitor .ov-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  margin-bottom: 40px;
+  font: bold 37px/1 Georgia, serif;
+  color: #12213b;
+  letter-spacing: -1.5px;
+}
+
+#ov-monitor .ov-logo svg {
+  width: 51px;
+  height: 36px;
+}
+
+#ov-monitor .ov-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+#ov-monitor .ov-nav a {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-height: 49px;
+  padding: 0 14px;
+  border-radius: 11px;
+  color: #4c5f7d;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+#ov-monitor .ov-nav a:hover {
+  background: #f2f7f4;
+  color: #08784f;
+}
+
+#ov-monitor .ov-nav a[aria-current="page"] {
+  color: #08754e;
+  background: #e3f2ec;
+  font-weight: 700;
+}
+
+#ov-monitor .ov-nav svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+#ov-monitor .ov-sidebar-footer {
+  margin-top: auto;
+  padding: 18px 11px 0;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: #93a1b5;
+}
+
+/* TOPBAR */
+
+#ov-monitor .ov-workspace {
+  min-width: 0;
+}
+
+#ov-monitor .ov-topbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 83px;
+  padding: 14px 30px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+#ov-monitor .ov-search {
+  position: relative;
+  flex: 1;
+  max-width: 770px;
+  min-width: 90px;
+}
+
+#ov-monitor .ov-search input {
+  width: 100%;
+  height: 49px;
+  padding: 0 78px 0 48px;
+  background: #f5f7fa;
+  color: #243853;
+  border: 1px solid #e8edf3;
+  border-radius: 12px;
+  outline: none;
+}
+
+#ov-monitor .ov-search-icon {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+#ov-monitor .ov-shortcut {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  transform: translateY(-50%);
+  padding: 5px 7px;
+  color: #8393a9;
+  font-size: 11px;
+  background: white;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+#ov-monitor .ov-actions {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-left: auto;
+}
+
+#ov-monitor .ov-bell {
+  min-width: 40px;
+}
+
+#ov-monitor .ov-bell .campanita {
+  position: relative;
+}
+
+#ov-monitor .ov-bell .campanita-panel {
+  z-index: 120;
+}
+
+#ov-monitor .ov-user {
+  position: relative;
+}
+
+#ov-monitor .ov-user-button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 0;
+  padding: 5px;
+  border-radius: 10px;
+  background: transparent;
+  color: #1a2d48;
+  text-align: left;
+}
+
+#ov-monitor .ov-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  color: #087a51;
+  background: #ddf1e9;
+  font-weight: 700;
+}
+
+#ov-monitor .ov-user-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 170px;
+}
+
+#ov-monitor .ov-user-text strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+
+#ov-monitor .ov-user-text small {
+  color: #8090a7;
+  font-size: 12px;
+}
+
+#ov-monitor .ov-user-menu {
+  position: absolute;
+  right: 0;
+  top: 58px;
+  z-index: 100;
+  width: 240px;
+  padding: 13px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 14px 35px #172a4226;
+}
+
+#ov-monitor .ov-user-menu form {
+  margin: 0;
+}
+
+#ov-monitor .ov-user-menu button {
+  width: 100%;
+  padding: 11px;
+  background: white;
+  border: 0;
+  color: #ad3845;
+  text-align: left;
+}
+
+#ov-monitor .ov-mobile-menu {
+  display: none;
+  background: #fff;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+/* CONTENIDO */
+
+#ov-monitor .ov-content {
+  max-width: 1750px;
+  margin: auto;
+  padding: 30px 31px 48px;
+}
+
+#ov-monitor .ov-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 23px;
+}
+
+#ov-monitor h1 {
+  margin: 0 0 8px;
+  color: #14223b;
+  font-size: clamp(27px, 2.6vw, 36px);
+  letter-spacing: -1.2px;
+}
+
+#ov-monitor .ov-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #7d8ca3;
+}
+
+#ov-monitor .ov-live-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: #61748e;
+  font-size: 12px;
+}
+
+#ov-monitor .ov-dot {
+  width: 9px;
+  height: 9px;
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+  background: #a3adbb;
+}
+
+#ov-monitor .ov-dot.green {
+  background: #13a569;
+}
+
+#ov-monitor .ov-dot.red {
+  background: #d94851;
+}
+
+/* INDICADORES */
+
+#ov-monitor .ov-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 17px;
+}
+
+#ov-monitor .ov-kpi {
+  position: relative;
+  min-height: 148px;
+  padding: 22px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  box-shadow: 0 5px 18px #15294308;
+}
+
+#ov-monitor .ov-kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #45607d;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+#ov-monitor .ov-kpi-icon {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  color: #078858;
+  background: #e9f5ef;
+  border-radius: 11px;
+  font-size: 19px;
+}
+
+#ov-monitor .ov-kpi-number {
+  display: block;
+  margin: 10px 0 5px 46px;
+  color: #14233e;
+  font-size: 28px;
+  font-weight: 760;
+  font-variant-numeric: tabular-nums;
+}
+
+#ov-monitor .ov-kpi-note {
+  margin-left: 46px;
+  color: #8492a8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#ov-monitor .ov-kpi.danger .ov-kpi-number {
+  color: #c83f4b;
+}
+
+#ov-monitor .ov-kpi.danger .ov-kpi-icon {
+  color: #c83f4b;
+  background: #ffedf0;
+}
+
+/* TABLA DE SERVICIOS */
+
+#ov-monitor .ov-table-card {
+  overflow: hidden;
+  padding: 18px 20px 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+#ov-monitor .ov-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+#ov-monitor .ov-table-head h2 {
+  margin: 0;
+  color: #182a43;
+  font-size: 19px;
+}
+
+#ov-monitor .ov-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+#ov-monitor .ov-filters input,
+#ov-monitor .ov-filters select {
+  height: 41px;
+  padding: 0 13px;
+  border: 1px solid #e1e8f0;
+  border-radius: 9px;
+  background: #fff;
+  color: #425775;
+  font-size: 12px;
+}
+
+#ov-monitor .ov-filters input {
+  width: 235px;
+}
+
+/* Evitar que el CSS global expanda el selector */
+#ov-monitor .ov-filters select {
+  width: 185px;
+  flex: 0 0 185px;
+  max-width: 100%;
+}
+
+#ov-monitor .ov-filters select:focus-visible {
+  outline: 2px solid #078b58;
+  outline-offset: 2px;
+}
+
+
+#ov-monitor .ov-table-scroll {
+  overflow-x: auto;
+}
+
+#ov-monitor .ov-table {
+  width: 100%;
+  min-width: 910px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+#ov-monitor .ov-table thead {
+  background: #f5f8fb;
+}
+
+#ov-monitor .ov-table th {
+  padding: 14px 18px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #71819a;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  white-space: nowrap;
+}
+
+#ov-monitor .ov-table td {
+  padding: 13px 18px;
+  border-top: 1px solid #e9eef4;
+  color: #425774;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+#ov-monitor .ov-table tbody tr:hover {
+  background: #fbfdfc;
+}
+
+#ov-monitor .ov-service-name {
+  display: block;
+  margin-bottom: 4px;
+  color: #192940;
+  font-size: 13px;
+}
+
+#ov-monitor .ov-service-url {
+  display: block;
+  color: #8999ad;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+#ov-monitor .ov-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 118px;
+  min-height: 31px;
+  padding: 6px 11px;
+  border-radius: 30px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#ov-monitor .ov-status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+#ov-monitor .ov-status.online {
+  color: #078953;
+  background: #e4f5ea;
+}
+
+#ov-monitor .ov-status.offline {
+  color: #c53949;
+  background: #fde9ed;
+}
+
+#ov-monitor .ov-status.checking {
+  color: #7a899e;
+  background: #edf1f5;
+}
+
+#ov-monitor .ov-latency {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#ov-monitor .ov-latency.slow {
+  color: #bd741c;
+  font-weight: 700;
+}
+
+#ov-monitor .ov-latency.very-slow {
+  color: #c53949;
+  font-weight: 700;
+}
+
+#ov-monitor .ov-dependency {
+  color: #60728e;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+#ov-monitor .ov-dependency-error {
+  color: #c53949;
+  font-weight: 650;
+}
+
+#ov-monitor .ov-error {
+  display: block;
+  margin-top: 7px;
+  max-width: 310px;
+  color: #bd4652;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+#ov-monitor .ov-retry {
+  min-width: 112px;
+  padding: 9px 11px;
+  border: 1px solid #cae5d7;
+  border-radius: 9px;
+  color: #087d52;
+  background: #f2faf5;
+  font-weight: 650;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+#ov-monitor .ov-retry:hover {
+  background: #e3f4ea;
+}
+
+#ov-monitor .ov-retry:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+#ov-monitor .ov-error-banner {
+  padding: 13px 16px;
+  margin-bottom: 16px;
+  color: #a93c48;
+  background: #fff0f2;
+  border: 1px solid #f5cdd3;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+#ov-monitor .ov-table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 15px 2px;
+  border-top: 1px solid #ebeff4;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #8291a6;
+}
+
+#ov-monitor .ov-refresh {
+  padding: 9px 14px;
+  border: 1px solid #d4e9dd;
+  border-radius: 9px;
+  color: #087b51;
+  background: #eff8f3;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1220px) {
+  #ov-monitor {
+    grid-template-columns: 215px minmax(0, 1fr);
+  }
+
+  #ov-monitor .ov-sidebar {
+    padding: 25px 12px;
+  }
+
+  #ov-monitor .ov-content {
+    padding: 25px 20px;
+  }
+
+  #ov-monitor .ov-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 790px) {
+  #ov-monitor {
+    display: block;
+  }
+
+  #ov-monitor .ov-sidebar {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 260px;
+    height: 100dvh;
+    z-index: 100;
+  }
+
+  #ov-monitor[data-menu-open="true"] .ov-sidebar {
+    display: flex;
+  }
+
+  #ov-monitor .ov-mobile-menu {
+    display: inline-flex;
+  }
+
+  #ov-monitor .ov-topbar {
+    min-height: 76px;
+    padding: 12px 15px;
+  }
+
+  #ov-monitor .ov-content {
+    padding: 23px 15px;
+  }
+
+  #ov-monitor .ov-user-text {
+    display: none;
+  }
+}
+
+@media (max-width: 510px) {
+  #ov-monitor .ov-kpis {
+    gap: 9px;
+  }
+
+  #ov-monitor .ov-kpi {
+    min-height: 136px;
+    padding: 15px;
+  }
+
+  #ov-monitor .ov-kpi-number,
+  #ov-monitor .ov-kpi-note {
+    margin-left: 0;
+  }
+
+  #ov-monitor .ov-filters,
+  #ov-monitor .ov-filters input,
+  #ov-monitor .ov-filters select {
+    width: 100%;
+  }
+
+  #ov-monitor .ov-shortcut {
+    display: none;
+  }
+
+  #ov-monitor .ov-search input {
+    padding-right: 12px;
+  }
+
+  #ov-monitor .ov-actions {
+    gap: 5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ov-monitor * {
+    transition: none !important;
+  }
+}
+
+/* Adaptación al sidebar global y al encabezado global. */
+#ov-monitor.orvia-contenido-unificado { grid-template-columns:minmax(0,1fr); min-height:0; }
+</style>
+
+
+<section class="orvia-contenido-unificado" id="ov-monitor"
+         data-menu-open="false"
+         aria-label="Monitor de arquitectura distribuida">
+
+  <!-- NAVEGACIÓN LATERAL -->
+<!-- ÁREA PRINCIPAL -->
+  <div class="ov-workspace">
+<main class="ov-content">
+
+      <!-- ENCABEZADO -->
+      <div class="ov-heading">
+
+        <div>
+          <h1>Arquitectura distribuida</h1>
+
+          <p class="ov-subtitle">
+            Estado en tiempo real:
+            <strong id="ov-live-summary">
+              {{ disponibles }} de {{ estados|length }}
+              microservicios disponibles
+            </strong>
+          </p>
+        </div>
+
+        <div class="ov-live-label">
+          <span class="ov-dot green"
+                id="ov-live-dot"></span>
+
+          <span id="ov-monitor-connection">
+            Estado consultado
+          </span>
+        </div>
+      </div>
+
+      <!-- ERROR DE CONEXIÓN DEL MONITOR -->
+      <div class="ov-error-banner"
+           id="ov-monitor-error"
+           role="alert"
+           hidden>
+      </div>
+
+      <!-- INDICADORES -->
+      <div class="ov-kpis">
+
+        <article class="ov-kpi"
+                 id="ov-kpi-active">
+
+          <div class="ov-kpi-label">
+            <span class="ov-kpi-icon">▤</span>
+            Servicios activos
+          </div>
+
+          <strong class="ov-kpi-number"
+                  id="ov-live-active">
+            {{ disponibles }} / {{ estados|length }}
+          </strong>
+
+          <div class="ov-kpi-note">
+            Disponibilidad comprobada
+          </div>
+        </article>
+
+        <article class="ov-kpi">
+
+          <div class="ov-kpi-label">
+            <span class="ov-kpi-icon">◷</span>
+            Latencia promedio
+          </div>
+
+          <strong class="ov-kpi-number"
+                  id="ov-live-latency">
+            —
+          </strong>
+
+          <div class="ov-kpi-note">
+            Última medición HTTP
+          </div>
+        </article>
+
+        <article class="ov-kpi"
+                 id="ov-kpi-alerts">
+
+          <div class="ov-kpi-label">
+            <span class="ov-kpi-icon">♧</span>
+            Alertas
+          </div>
+
+          <strong class="ov-kpi-number"
+                  id="ov-live-alerts">
+            {{ estados|length - disponibles }}
+          </strong>
+
+          <div class="ov-kpi-note">
+            Servicios sin disponibilidad
+          </div>
+        </article>
+
+        <article class="ov-kpi">
+
+          <div class="ov-kpi-label">
+            <span class="ov-kpi-icon">▥</span>
+            Dependencias
+          </div>
+
+          <strong class="ov-kpi-number"
+                  id="ov-live-dependencies">
+            —
+          </strong>
+
+          <div class="ov-kpi-note">
+            Dependencias detectadas
+          </div>
+        </article>
+
+      </div>
+
+      <!-- LISTA DE MICROSERVICIOS -->
+      <section class="ov-table-card"
+               aria-label="Estado de los microservicios">
+
+        <div class="ov-table-head">
+
+          <h2>Estado de microservicios</h2>
+
+          <div class="ov-filters">
+
+            <input type="search"
+                   id="ov-monitor-filter"
+                   placeholder="Buscar servicio..."
+                   aria-label="Filtrar servicios">
+
+            <select id="ov-monitor-status-filter"
+                    aria-label="Filtrar por disponibilidad">
+
+              <option value="all">
+                Todos los estados
+              </option>
+
+              <option value="online">
+                Disponibles
+              </option>
+
+              <option value="offline">
+                Sin conexión
+              </option>
+
+            </select>
+
+            <button type="button"
+                    class="ov-refresh"
+                    id="ov-refresh-all">
+              Comprobar todos
+            </button>
+          </div>
+        </div>
+
+        <div class="ov-table-scroll">
+
+          <table class="ov-table"
+                 id="ov-monitor-table">
+
+            <thead>
+              <tr>
+                <th>Servicio</th>
+                <th>Estado</th>
+                <th>HTTP</th>
+                <th>Latencia</th>
+                <th>Dependencias / error</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {% for servicio in estados %}
+
+              <tr class="ov-service-row"
+                  data-name="{{ servicio.nombre }}"
+                  data-online="{{ 'true' if servicio.disponible else 'false' }}"
+                  data-dependencies="{{ servicio.dependencias.keys()|list|join(',') if servicio.dependencias else '' }}">
+
+                <td>
+                  <strong class="ov-service-name">
+                    {{ servicio.nombre }}
+                  </strong>
+
+                  <span class="ov-service-url">
+                    {{ servicio.url }}
+                  </span>
+                </td>
+
+                <td>
+                  <span class="ov-status {{ 'online' if servicio.disponible else 'offline' }}"
+                        data-field="status">
+                    {{ 'Disponible' if servicio.disponible else 'Sin conexión' }}
+                  </span>
+                </td>
+
+                <td data-field="http">
+                  {{ servicio.codigo_http if servicio.codigo_http is not none else '—' }}
+                </td>
+
+                <td>
+                  <span class="ov-latency"
+                        data-field="latency">
+                    {{ servicio.latencia_ms }} ms
+                  </span>
+                </td>
+
+                <td>
+
+                  <div class="ov-dependency"
+                       data-field="dependencies">
+
+                    {% if servicio.dependencias %}
+
+                      {% for nombre, dependencia in servicio.dependencias.items() %}
+                        {{ nombre }}:
+                        {{ 'OK' if dependencia.ok else 'ERROR' }}
+                        {% if not loop.last %}, {% endif %}
+                      {% endfor %}
+
+                    {% else %}
+                      {{ servicio.error or '—' }}
+                    {% endif %}
+                  </div>
+
+                  <small class="ov-error"
+                         data-field="error"
+                         {% if servicio.disponible %}hidden{% endif %}>
+                    {{ servicio.error or '' }}
+                  </small>
+
+                </td>
+
+                <td>
+
+                  <button type="button"
+                          class="ov-retry"
+                          data-action="retry"
+                          data-service="{{ servicio.nombre }}"
+                          title="Actualizar los datos de todos los servicios recargando la página">
+                    Actualizar
+                  </button>
+
+                </td>
+
+              </tr>
+
+              {% endfor %}
+
+            </tbody>
+
+          </table>
+        </div>
+
+        <div class="ov-table-footer">
+
+          <span id="ov-monitor-updated"
+                aria-live="polite">
+            Datos obtenidos al cargar la página
+          </span>
+
+          <span>
+            Actualizar para consultar nuevamente
+          </span>
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+</section>
+
+
+<script>
+/* Monitor de servicios: los valores provienen del servidor Flask al cargar /integracion/servicios.
+   El backend oficial NO ofrece /integracion/servicios/estado en JSON.
+   "Actualizar" recarga la vista y solicita una NUEVA consulta real; sin polling falso. */
+(function () {
+  "use strict";
+  const root = document.getElementById("ov-monitor");
+  if (!root) return;
+  const search = document.getElementById("ov-monitor-filter");
+  const selector = document.getElementById("ov-monitor-status-filter");
+  const rows = Array.from(root.querySelectorAll(".ov-service-row"));
+  const norm = value => String(value || "").normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  function filter() {
+    const query = norm(search.value);
+    const status = selector.value;
+    rows.forEach(row => {
+      const online = row.dataset.online === "true";
+      const textOK = !query || norm(row.textContent).includes(query);
+      const stateOK = status === "all" ||
+        (status === "online" && online) || (status === "offline" && !online);
+      row.hidden = !(textOK && stateOK);
+    });
+  }
+  if (search && selector) {
+    search.addEventListener("input", filter);
+    selector.addEventListener("change", filter);
+    filter();
+  }
+  const latencies = rows.map(row => {
+    const text = row.querySelector('[data-field="latency"]')?.textContent || "";
+    return Number.parseFloat(text.replace(",", "."));
+  }).filter(value => Number.isFinite(value) && value >= 0);
+  const average = document.getElementById("ov-live-latency");
+  if (average) average.textContent = latencies.length
+    ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) + " ms"
+    : "—";
+  const dependencies = new Set();
+  rows.forEach(row => (row.dataset.dependencies || "").split(",")
+    .map(item => item.trim()).filter(Boolean).forEach(item => dependencies.add(item)));
+  const depEl = document.getElementById("ov-live-dependencies");
+  if (depEl) depEl.textContent = String(dependencies.size);
+  const updated = document.getElementById("ov-monitor-updated");
+  if (updated) updated.textContent = "Consulta del servidor: " +
+    new Date().toLocaleTimeString("es-MX");
+  root.querySelectorAll('#ov-refresh-all, [data-action="retry"]')
+    .forEach(button => button.addEventListener("click", () => window.location.reload()));
+})();
+</script>
+
 {% endblock %}
