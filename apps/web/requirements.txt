@@ -4,4 +4,3 @@ redis==5.0.8
 Flask-Session==0.8.0
 python-dotenv==1.0.1
 gunicorn==22.0.0
-PyYAML==6.0.2
