@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Borradores de código · Pliegue{% endblock %}
+{% block cabeza %}
+{% if not pliegue_lab and not config.PLIEGUE_VISUAL %}<script src="{{ url_for('static', filename='js/pliegue-codigo.js') }}" defer></script>{% endif %}
+{% endblock %}
+{% block contenido %}
+{% if config.PLIEGUE_VISUAL %}
+<h1>Borradores de código</h1>
+<p>Abre Pliegue desde la cabecera para pedir cambios o revisar tus borradores. Para seleccionar un elemento, abre la página que lo contiene.</p>
+{% if lab_pages %}
+<ul>
+  {% for slug, item in lab_pages.items() %}
+  <li><a href="{{ url_for('lab_page', slug=slug) }}">{{ item.title }}</a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% else %}
+{% include "pliegue/_codigo.html" %}
+{% endif %}
+{% endblock %}
