@@ -9,7 +9,8 @@ body.orvia-sidebar-unificado > main {
   width: calc(100% - var(--orvia-sidebar-width)) !important;
   max-width: none !important;
 }
-body.orvia-sidebar-unificado .orvia-sidebar-antiguo { display: none !important; }
+body.orvia-sidebar-unificado .orvia-sidebar-antiguo,
+body.orvia-sidebar-unificado main aside { display: none !important; }
 body.orvia-sidebar-unificado .orvia-boton-menu-antiguo { display: none !important; }
 body.orvia-sidebar-unificado .orvia-global-sidebar {
   box-sizing: border-box !important;

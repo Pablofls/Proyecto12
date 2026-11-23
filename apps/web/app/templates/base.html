@@ -28,7 +28,8 @@
   {% endif %}
   {% block cabeza %}{% endblock %}
 </head>
-<body>
+{# La clase va desde el servidor para que el menu viejo nunca se pinte (sin parpadeo). #}
+<body{% if usuario_actual %} class="orvia-sidebar-unificado"{% endif %}>
 {% if usuario_actual %}
 {% include "_topbar.html" %}
 

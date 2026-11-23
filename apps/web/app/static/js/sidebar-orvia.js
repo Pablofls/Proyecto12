@@ -37,9 +37,13 @@
     var original = document.querySelector('body > nav.menu');
     var shared = document.getElementById('orvia-global-sidebar');
     var links = document.getElementById('orvia-global-links');
-    if (!original || !shared || !links) return; // Sin sesion: no mostrar menu.
+    // La clase llega desde el servidor; si no se puede armar el menu nuevo, se
+    // retira para que el menu anterior siga disponible.
+    function revertir() { document.body.classList.remove('orvia-sidebar-unificado'); }
+    if (!original || !shared || !links) { revertir(); return; }
     var permitted = original.querySelectorAll('a[href]');
-    if (!permitted.length) return; // No ocultar alternativas si no hay enlaces validos.
+    if (!permitted.length) { revertir(); return; }
+    links.replaceChildren();
     var built = 0;
     var candidates = [];
     permitted.forEach(function (a) {
@@ -60,7 +64,7 @@
         legacy: a.classList.contains('activo') });
       links.appendChild(item); built++;
     });
-    if (!built) return;
+    if (!built) { revertir(); return; }
     /* Evita dos marcas activas, p. ej. Inspecciones e Inventario. */
     var current = candidates.filter(function (c) { return c.exact; })[0];
     if (!current) {
@@ -93,7 +97,6 @@
         }
       }
     });
-    document.body.classList.add('orvia-sidebar-unificado');
     var toggle = document.querySelector('.orvia-global-toggle');
     var overlay = document.querySelector('.orvia-global-overlay');
     function setOpen(open) {
