@@ -36,3 +36,19 @@ def test_cliente_solo_solicita_xml(tmp_path):
     config.write_text('{"disposicion":"http://servicio"}', encoding="utf-8")
     cliente = ClienteXml(config, HttpFalso()); cliente.access_token = "jwt"
     assert cliente.solicitar("disposicion", "GET", "/inventario")["datos"][0]["id"] == "1"
+
+
+def test_base_unica_del_proxy_sirve_para_todos_los_servicios(tmp_path):
+    config = tmp_path / "config.json"
+    config.write_text('{"base":"http://vm:8000/"}', encoding="utf-8")
+    cliente = ClienteXml(config, HttpFalso())
+    for servicio in ("auth", "inspecciones", "disposicion", "reembolsos"):
+        assert cliente.origen(servicio) == "http://vm:8000"
+
+
+def test_config_por_servicio_anterior_sigue_funcionando(tmp_path):
+    config = tmp_path / "config.json"
+    config.write_text('{"auth":"http://a:1","disposicion":"http://d:2/"}', encoding="utf-8")
+    cliente = ClienteXml(config, HttpFalso())
+    assert cliente.origen("auth") == "http://a:1"
+    assert cliente.origen("disposicion") == "http://d:2"
