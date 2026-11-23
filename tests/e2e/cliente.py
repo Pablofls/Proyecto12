@@ -222,6 +222,19 @@ class SesionWeb:
             pass
 
 
+def cabecera_permiso(token, operacion, recurso_id):
+    """Cabecera X-Autorizacion-Operacion de un solo uso (RN-13, RNF-12).
+
+    Las operaciones criticas (aprobar reembolso, disposicion, reincorporar)
+    exigen reconfirmar la contrasena en auth; el permiso se consume al usarse.
+    """
+    resp = llamar("auth", "POST", PREFIJO_API["auth"] + "/autorizar-operacion",
+                  {"operacion": operacion, "recurso_id": str(recurso_id),
+                   "password": os.environ["PASSWORD_DEMO"]}, token=token)
+    assert resp.status == 201, resp.texto
+    return {"X-Autorizacion-Operacion": resp.datos["token_operacion"]}
+
+
 def error_tipo(resp):
     """Valor `error.tipo` de una respuesta de error en JSON."""
     return ((resp.datos or {}).get("error") or {}).get("tipo")

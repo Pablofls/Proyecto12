@@ -277,18 +277,23 @@ def test_paso_08_inspeccion_disposicion_y_etiqueta(ctx):
                 "WHERE devolucion_id = %s", (E["dev_id"],), uno=True)
     assert ref["mongo_doc_id"] == str(doc["_id"]) and ref["apto_para_inventario"] is True
 
-    resp = c.llamar("inspecciones", "POST",
-                    f"{c.PREFIJO_API['inspecciones']}/{E['dev_id']}/disposicion",
-                    {"destino": "inventario", "justificacion": "Producto apto"},
-                    token=ctx.h(c.ANALISTA))
+    # La disposicion vive en disposicion-inventario y es una operacion critica:
+    # el analista reconfirma su contrasena y el permiso se consume (RN-13).
+    analista = ctx.h(c.ANALISTA)
+    resp = c.llamar("disposicion", "POST", f"{c.PREFIJO_API['disposicion']}/disposiciones",
+                    {"devolucion_id": E["dev_id"], "destino": "reintegrar",
+                     "justificacion": "Producto apto segun el dictamen"},
+                    token=analista,
+                    cabeceras=c.cabecera_permiso(analista, "aprobar_disposicion", E["dev_id"]))
     assert resp.status == 201, resp.texto
     disp_id = resp.datos["id"]
     assert c.sql("SELECT estado FROM devoluciones WHERE id = %s", (E["dev_id"],),
                  uno=True)["estado"] == "resuelta"
 
-    resp = c.llamar("inspecciones", "POST",
-                    f"{c.PREFIJO_API['inspecciones']}/inventario/{disp_id}/etiqueta",
-                    token=ctx.h(c.ENCARGADO_CENTRO))
+    # Primero cuarentena con etiqueta; la reincorporacion es un paso posterior autorizado.
+    resp = c.llamar("disposicion", "POST",
+                    f"{c.PREFIJO_API['disposicion']}/inventario/{disp_id}/cuarentena",
+                    {"ubicacion": "CUARENTENA-E2E"}, token=ctx.h(c.ENCARGADO_CENTRO))
     assert resp.status == 201, resp.texto
     etiqueta = c.sql("SELECT etiqueta_codigo FROM inventario_recuperado WHERE disposicion_id = %s",
                      (disp_id,), uno=True)["etiqueta_codigo"]
@@ -305,7 +310,11 @@ def test_paso_09_reembolso_unico_con_lock(ctx):
     cuerpo = {"devolucion_id": E["dev_id"], "estado": "aprobado",
               "metodo": "transferencia", "monto": float(maximo)}
     token = ctx.h(c.ENCARGADO_REEMBOLSOS)
-    resp = c.llamar("reembolsos", "POST", pref, cuerpo, token=token)
+
+    def permiso():  # un solo uso: cada intento de aprobar necesita el suyo
+        return c.cabecera_permiso(token, "aprobar_reembolso", E["dev_id"])
+
+    resp = c.llamar("reembolsos", "POST", pref, cuerpo, token=token, cabeceras=permiso())
     assert resp.status == 201, resp.texto
     assert c.sql("SELECT COUNT(*) AS n FROM reembolsos WHERE devolucion_id = %s",
                  (E["dev_id"],), uno=True)["n"] == 1
@@ -318,7 +327,7 @@ def test_paso_09_reembolso_unico_con_lock(ctx):
                                        (ctx.emails[c.CLIENTE],), uno=True)["id"]
 
     # RN-03: repetir -> 409 y sigue habiendo una sola fila.
-    resp = c.llamar("reembolsos", "POST", pref, cuerpo, token=token)
+    resp = c.llamar("reembolsos", "POST", pref, cuerpo, token=token, cabeceras=permiso())
     assert resp.status == 409 and c.error_tipo(resp) == "reembolso_duplicado"
     assert c.sql("SELECT COUNT(*) AS n FROM reembolsos WHERE devolucion_id = %s",
                  (E["dev_id"],), uno=True)["n"] == 1
@@ -328,7 +337,7 @@ def test_paso_09_reembolso_unico_con_lock(ctx):
     r = c.redis_cli()
     r.set(llave, "otro-proceso", ex=30)
     try:
-        resp = c.llamar("reembolsos", "POST", pref, cuerpo, token=token)
+        resp = c.llamar("reembolsos", "POST", pref, cuerpo, token=token, cabeceras=permiso())
         assert resp.status == 409 and c.error_tipo(resp) == "reembolso_en_proceso"
     finally:
         r.delete(llave)
