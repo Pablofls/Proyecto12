@@ -228,7 +228,7 @@ POS / ERP / transportista --JWT--> integraciones-monitoreo (8021) --> PostgreSQL
 ```
 docker compose up -d --build integraciones-monitoreo
 docker compose exec app python scripts/migrate.py
-curl localhost:8021/health
+curl "http://localhost:$(grep ^PROXY_HTTP_PORT .env | cut -d= -f2)/servicios/integraciones-monitoreo/health"
 docker compose logs -f integraciones-monitoreo
 ```
 

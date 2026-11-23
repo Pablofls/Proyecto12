@@ -8,7 +8,7 @@ info:
     automatica es solo una propuesta y nunca modifica la devolucion (RN-11).
     Responde JSON o XML segun Accept; el XML se valida con los XSD de /contratos.
 servers:
-- url: http://localhost:8010
+- url: /
 paths:
   /health:
     get:

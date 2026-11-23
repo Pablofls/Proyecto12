@@ -254,7 +254,7 @@ auth (8001) emite el JWT       integraciones-monitoreo (8021) vigila la cola (co
 ```
 docker compose up -d --build sincronizacion
 docker compose exec app python scripts/migrate.py
-curl localhost:8020/health
+curl "http://localhost:$(grep ^PROXY_HTTP_PORT .env | cut -d= -f2)/servicios/sincronizacion/health"
 docker compose logs -f sincronizacion
 ```
 

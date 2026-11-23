@@ -290,7 +290,7 @@ class Corrida:
                "## Preparacion", "",
                "```bash", "export VM_HOST=<IP-DE-LA-VM>      # o 127.0.0.1 si corres los comandos dentro de la VM",
                "export PASSWORD_DEMO=...                 # la de las cuentas de demo; no se versiona",
-               "login() { curl -s -X POST \"http://$VM_HOST:8001/api/v1/auth/login\" -H 'Content-Type: application/json' \\",
+               "login() { curl -s -X POST \"http://$VM_HOST/api/v1/auth/login\" -H 'Content-Type: application/json' \\",
                "  -d \"{\\\"email\\\":\\\"$1\\\",\\\"password\\\":\\\"$PASSWORD_DEMO\\\"}\" | jq -r .access_token; }"]
         for rol in sorted(self.tokens):
             sal.append(f"export TOKEN_{rol.upper()}=$(login {USUARIOS[rol]})")

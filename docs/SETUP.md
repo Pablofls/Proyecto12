@@ -243,7 +243,7 @@ docker compose logs --tail=100 app
 docker compose up -d --build auth
 
 # Salud del servicio
-curl -s localhost:8001/health
+curl -s "http://localhost:$(grep ^PROXY_HTTP_PORT .env | cut -d= -f2)/servicios/auth/health"
 
 # Pruebas unitarias dentro del contenedor
 docker compose run --rm --no-deps auth python -m pytest -v

@@ -67,3 +67,13 @@ def test_nginx_resuelve_los_nombres_en_cada_peticion():
 def test_los_prefijos_de_servicios_se_recortan_con_rewrite():
     for conf in (HTTP, TLS):
         assert "rewrite ^/servicios/auth/(.*)$ /$1 break;" in conf
+
+
+def test_cabecera_de_correlacion_no_se_duplica():
+    comun = (RAIZ / "infra/nginx/snippets/proxy-common.conf").read_text(encoding="utf-8")
+    assert "proxy_hide_header X-Correlation-ID;" in comun
+
+
+def test_openapi_no_apunta_a_puertos_directos():
+    for archivo in (RAIZ / "services").glob("*/openapi.yaml"):
+        assert "localhost:80" not in archivo.read_text(encoding="utf-8"), archivo
