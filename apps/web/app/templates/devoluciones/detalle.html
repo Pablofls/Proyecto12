@@ -1641,6 +1641,17 @@ body.ov-detalle-ready > main > .avisos {
                                 <td>{{ e.etapa }}</td>
 
                                 <td>
+                                    {% if e.tipo == 'fotografia' and e.mime_type in ['image/jpeg', 'image/png'] %}
+                                    {% set url_archivo = url_for('devoluciones.ver_evidencia', devolucion_id=d.id, evidencia_id=e.id) %}
+                                    <a href="{{ url_archivo }}" target="_blank" rel="noopener">
+                                        <img src="{{ url_archivo }}"
+                                             alt="{{ e.nombre_original or 'Fotografia de evidencia' }}"
+                                             loading="lazy"
+                                             style="max-width:220px; max-height:160px; border-radius:8px; display:block; margin-bottom:6px;">
+                                    </a>
+                                    {% elif e.tipo == 'documento' and e.mime_type %}
+                                    <a href="{{ url_for('devoluciones.ver_evidencia', devolucion_id=d.id, evidencia_id=e.id) }}">Descargar</a>
+                                    {% endif %}
                                     {{ e.comentario or e.nombre_original }}
                                 </td>
 

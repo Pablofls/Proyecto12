@@ -8,7 +8,9 @@ Trazabilidad: RF-06 a RF-11, RF-21, RF-27, RN-01, RN-02, RN-12,
 """
 from datetime import datetime
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint, Response, abort, flash, redirect, render_template, request, url_for,
+)
 
 from app import api_client
 from app.db import consultar, ejecutar
@@ -287,7 +289,7 @@ def detalle(devolucion_id):
     evidencias = consultar(
         """
         SELECT e.id, e.tipo, e.etapa, e.comentario, e.nombre_original,
-               e.objeto, e.fecha_registro, u.nombre AS autor
+               e.objeto, e.mime_type, e.fecha_registro, u.nombre AS autor
           FROM evidencias e
           JOIN usuarios u ON u.id = e.usuario_id
          WHERE e.devolucion_id = %s AND e.eliminado_en IS NULL
@@ -360,6 +362,38 @@ def detalle(devolucion_id):
         disposicion=disposicion, reembolso=reembolso, historial=historial, costos=costos,
         estados_revisables=ESTADOS_REVISABLES,
     )
+
+
+@bp.get("/<int:devolucion_id>/evidencias/<int:evidencia_id>/archivo")
+@roles_required(*TODOS_LOS_ROLES)
+def ver_evidencia(devolucion_id, evidencia_id):
+    """Entrega el archivo de una evidencia para verlo en el expediente (RF-09, RNF-15).
+
+    El archivo vive en el volumen privado del servicio de evidencias; la web lo
+    pide con el JWT de la sesion y lo reenvia, de modo que el navegador nunca ve
+    el token ni la URL interna. El servicio vuelve a comprobar que el usuario
+    puede ver ese expediente.
+    """
+    exigir_devolucion_visible(devolucion_id)
+    fila = consultar(
+        "SELECT tipo, mime_type FROM evidencias "
+        "WHERE id = %s AND devolucion_id = %s AND eliminado_en IS NULL",
+        (evidencia_id, devolucion_id), uno=True,
+    )
+    if fila is None or fila["tipo"] == "comentario" or not api_client.habilitados():
+        abort(404)
+    try:
+        contenido, tipo_mime = api_client.descargar(
+            "evidencias", f"/api/v1/evidencias/{evidencia_id}/archivo")
+    except api_client.ErrorServicio as exc:
+        abort(404 if exc.codigo in (403, 404) else 502)
+    respuesta = Response(contenido, mimetype=tipo_mime)
+    # Solo JPG y PNG se muestran en linea; cualquier otra cosa se descarga.
+    if tipo_mime not in ("image/jpeg", "image/png"):
+        respuesta.headers["Content-Disposition"] = "attachment"
+    respuesta.headers["X-Content-Type-Options"] = "nosniff"
+    respuesta.headers["Cache-Control"] = "private, max-age=300"
+    return respuesta
 
 
 @bp.post("/<int:devolucion_id>/evidencias")

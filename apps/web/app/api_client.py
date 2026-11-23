@@ -119,3 +119,38 @@ def solicitar(servicio, metodo, ruta, *, datos=None, parametros=None,
             f"El microservicio {servicio} no esta disponible temporalmente.",
             "servicio_no_disponible",
         ) from exc
+
+
+def descargar(servicio, ruta, *, reintentar=True):
+    """Descarga un archivo binario con el JWT de la sesion.
+
+    Devuelve (bytes, content_type). Sirve para que el navegador vea las fotos
+    de evidencia sin tener nunca el token ni la URL interna del servicio (RNF-15).
+    """
+    from app.security import correlation_id
+
+    token = session.get("access_token")
+    if not token:
+        raise ErrorServicio(401, "La sesion distribuida no tiene un token vigente.",
+                            "token_ausente")
+    peticion = urllib.request.Request(
+        _url(servicio, ruta),
+        headers={"Authorization": f"Bearer {token}",
+                 "X-Correlation-ID": correlation_id()},
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(
+            peticion, timeout=current_app.config["MICROSERVICE_TIMEOUT"]
+        ) as respuesta:
+            return respuesta.read(), respuesta.headers.get_content_type()
+    except urllib.error.HTTPError as exc:
+        if exc.code == 401 and reintentar and _refrescar():
+            return descargar(servicio, ruta, reintentar=False)
+        raise _leer_error(exc) from exc
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        raise ErrorServicio(
+            503,
+            f"El microservicio {servicio} no esta disponible temporalmente.",
+            "servicio_no_disponible",
+        ) from exc
