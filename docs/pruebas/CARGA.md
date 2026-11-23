@@ -67,6 +67,15 @@ vivo del monitoreo (`/monitoreo/estado`, revisa 14 servicios y 3 bases) sube de 
 
 **Memoria estable:** cada microservicio usa 76 a 116 MB y MongoDB 340 MB, de 7.5 GB.
 
+## 3b. Via reverse proxy (2026-11-23, 03:47 UTC)
+
+Esta corrida fue **directa a cada servicio**, sin Nginx. El mismo dia se repitieron `normal`
+y `pico` por el proxy (`CARGA_VIA_PROXY=1`) y de nuevo directos, en la misma VM, para comparar:
+el proxy agrega 2 a 3 ms a la mediana y no cambia el rendimiento (0 fallos, 0 429 de Nginx).
+Detalle y tabla en [`proxy_2026-11-23.md`](proxy_2026-11-23.md). Las cifras de pico de la
+seccion 2 no se reprodujeron ese dia (mediana de 55 ms directa, no 540 ms): dependen del estado
+de la VM al correr.
+
 ## 4. Que haria falta para mas carga
 
 Por orden de costo, sin reconstruir la arquitectura:

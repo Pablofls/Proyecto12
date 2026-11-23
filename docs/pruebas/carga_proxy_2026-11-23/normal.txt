@@ -1,0 +1,94 @@
+Unable to find image 'locustio/locust:2.31.8' locally
+2.31.8: Pulling from locustio/locust
+4f4fb700ef54: Pulling fs layer
+0538735e543f: Pulling fs layer
+302e3ee49805: Pulling fs layer
+4aeebc636537: Pulling fs layer
+2aee89346c42: Pulling fs layer
+2be05687fd3f: Pulling fs layer
+9a200e66cd33: Pulling fs layer
+b855fcf2b3bd: Pulling fs layer
+4f4fb700ef54: Already exists
+4aeebc636537: Download complete
+0538735e543f: Download complete
+2aee89346c42: Download complete
+302e3ee49805: Download complete
+2be05687fd3f: Download complete
+9a200e66cd33: Download complete
+7a1e1841f0f4: Download complete
+b855fcf2b3bd: Download complete
+302e3ee49805: Pull complete
+4aeebc636537: Pull complete
+0538735e543f: Pull complete
+2aee89346c42: Pull complete
+2be05687fd3f: Pull complete
+9a200e66cd33: Pull complete
+4f4fb700ef54: Pull complete
+b855fcf2b3bd: Pull complete
+Digest: sha256:aace7624daa62d895d616f5ccc861a486c742582e1445a1d52d3aae83bbaa614
+Status: Downloaded newer image for locustio/locust:2.31.8
+[2026-11-23 03:47:53,293] ad6cae44fea0/INFO/locust.main: Starting Locust 2.31.8
+[2026-11-23 03:47:53,294] ad6cae44fea0/INFO/locust.main: Run time limit set to 120 seconds
+[carga] Sesiones iniciadas: cliente, analista, coordinador, inspector, recolector, admin
+[2026-11-23 03:47:53,984] ad6cae44fea0/INFO/locust.runners: Ramping to 25 users at a rate of 5.00 per second
+[2026-11-23 03:47:57,991] ad6cae44fea0/INFO/locust.runners: All users spawned: {"Analista": 6, "Cliente": 9, "MovilCampo": 4, "Operacion": 4, "Supervision": 2} (25 total users)
+[2026-11-23 03:49:52,570] ad6cae44fea0/INFO/locust.main: --run-time limit reached, shutting down
+[carga] 429 del limite por usuario (esperados, contados como correctos): 2
+[carga] 429 de Nginx en peticiones con limite (cuentan como fallo): 0
+[2026-11-23 03:49:52,696] ad6cae44fea0/INFO/locust.main: writing html report to file: /salida/normal.html
+[2026-11-23 03:49:52,699] ad6cae44fea0/INFO/locust.main: Shutting down (exit code 0)
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/v1/analitica/alertas-fraude                                                  37     0(0.00%) |     52      23     216     35 |    0.31        0.00
+GET      /api/v1/analitica/tendencias                                                      22     0(0.00%) |     33      17     105     25 |    0.18        0.00
+GET      /api/v1/causa-raiz/alertas                                                        33     0(0.00%) |     18      13      37     16 |    0.28        0.00
+GET      /api/v1/causa-raiz/investigaciones                                                 3     0(0.00%) |     33      28      37     33 |    0.03        0.00
+GET      /api/v1/devoluciones (inspector)                                                 134     0(0.00%) |     60      24     399     36 |    1.12        0.00
+GET      /api/v1/devoluciones/[id]                                                        146     0(0.00%) |     48      22     420     31 |    1.22        0.00
+GET      /api/v1/devoluciones/elegibilidad                                                172     0(0.00%) |     43      19     325     30 |    1.44        0.00
+GET      /api/v1/devoluciones?por_pagina=10                                               332     0(0.00%) |     55      22     366     33 |    2.79        0.00
+GET      /api/v1/devoluciones?por_pagina=20                                               146     0(0.00%) |     52      23     298     35 |    1.22        0.00
+GET      /api/v1/logistica/recolecciones                                                   44     0(0.00%) |     26      14      73     21 |    0.37        0.00
+GET      /api/v1/monitoreo/alertas                                                         10     0(0.00%) |     13       5      32     11 |    0.08        0.00
+GET      /api/v1/monitoreo/disponibilidad                                                   5     0(0.00%) |     90      25     250     64 |    0.04        0.00
+GET      /api/v1/monitoreo/estado                                                           3     0(0.00%) |    298     220     396    280 |    0.03        0.00
+POST     /api/v1/motivos/sugerencias                                                       62     0(0.00%) |     28       4     217     18 |    0.52        0.00
+GET      /api/v1/proveedores                                                               10     0(0.00%) |     59      26     147     43 |    0.08        0.00
+GET      /api/v1/reportes/pareto                                                           74     0(0.00%) |     50      21     415     30 |    0.62        0.00
+GET      /api/v1/sincronizacion/operaciones [GET]                                          28     0(0.00%) |     41      16     228     19 |    0.23        0.00
+POST     /api/v1/sincronizacion/operaciones [POST]                                         50     0(0.00%) |     34      13     315     20 |    0.42        0.00
+GET      /api/v1/sincronizacion/tipos                                                      30     0(0.00%) |      5       3      11      4 |    0.25        0.00
+GET      /api/v1/trazabilidad/tasas                                                        31     0(0.00%) |     44      19     218     25 |    0.26        0.00
+GET      /api/v1/ventas/[id]                                                              172     0(0.00%) |     44      18     321     28 |    1.44        0.00
+GET      /api/v1/ventas?por_pagina=5                                                      172     0(0.00%) |     40      16     240     24 |    1.44        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      1716     0(0.00%) |     46       3     420     29 |   14.40        0.00
+
+Response time percentiles (approximated)
+Type     Name                                                                                  50%    66%    75%    80%    90%    95%    98%    99%  99.9% 99.99%   100% # reqs
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+GET      /api/v1/analitica/alertas-fraude                                                       35     41     57     78    100    190    220    220    220    220    220     37
+GET      /api/v1/analitica/tendencias                                                           25     28     31     34     70     93    110    110    110    110    110     22
+GET      /api/v1/causa-raiz/alertas                                                             16     19     20     21     24     34     38     38     38     38     38     33
+GET      /api/v1/causa-raiz/investigaciones                                                     33     33     38     38     38     38     38     38     38     38     38      3
+GET      /api/v1/devoluciones (inspector)                                                       36     48     64     77    130    170    340    390    400    400    400    134
+GET      /api/v1/devoluciones/[id]                                                              31     40     44     49     89    130    270    280    420    420    420    146
+GET      /api/v1/devoluciones/elegibilidad                                                      30     37     46     54     74    120    170    300    330    330    330    172
+GET      /api/v1/devoluciones?por_pagina=10                                                     34     43     59     67    120    180    270    290    370    370    370    332
+GET      /api/v1/devoluciones?por_pagina=20                                                     35     43     49     58    110    170    250    270    300    300    300    146
+GET      /api/v1/logistica/recolecciones                                                        21     28     33     36     47     49     73     73     73     73     73     44
+GET      /api/v1/monitoreo/alertas                                                              13     14     17     20     32     32     32     32     32     32     32     10
+GET      /api/v1/monitoreo/disponibilidad                                                       64     82     82    250    250    250    250    250    250    250    250      5
+GET      /api/v1/monitoreo/estado                                                              280    280    400    400    400    400    400    400    400    400    400      3
+POST     /api/v1/motivos/sugerencias                                                            18     21     23     27     54     94     97    220    220    220    220     62
+GET      /api/v1/proveedores                                                                    44     51     68    110    150    150    150    150    150    150    150     10
+GET      /api/v1/reportes/pareto                                                                30     34     40     47     91    180    350    420    420    420    420     74
+GET      /api/v1/sincronizacion/operaciones [GET]                                               20     24     50     54     81    170    230    230    230    230    230     28
+POST     /api/v1/sincronizacion/operaciones [POST]                                              21     32     39     42     59     80    320    320    320    320    320     50
+GET      /api/v1/sincronizacion/tipos                                                            4      5      6      6      9     11     12     12     12     12     12     30
+GET      /api/v1/trazabilidad/tasas                                                             25     30     37     39    120    160    220    220    220    220    220     31
+GET      /api/v1/ventas/[id]                                                                    28     34     43     50     81    130    250    320    320    320    320    172
+GET      /api/v1/ventas?por_pagina=5                                                            24     29     42     52     86    130    200    220    240    240    240    172
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+         Aggregated                                                                             29     37     45     55     90    150    230    280    420    420    420   1716
+
