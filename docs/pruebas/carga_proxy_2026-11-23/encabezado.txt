@@ -1,0 +1,8 @@
+# Pruebas de carga
+Fecha (UTC): 2026-11-23 03:49:55
+Rama: HEAD
+Commit: 06af04321bf38e1d4f4c314990c2a792d954ddf4
+Host: maquina01, 2 CPU, 7.5Gi de RAM
+Locust: locustio/locust:2.31.8, red orvia_backend
+Ruta: via reverse proxy (http://proxy:8080)
+=== Escenario pico: 60 usuarios, 10/s, 2m ===
