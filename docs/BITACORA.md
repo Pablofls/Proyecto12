@@ -1045,3 +1045,11 @@ en el 80 y respuesta 200 desde fuera de la VM.
 primer valor lo escribe el cliente, asi que la IP de la bitacora y de
 `intentos_acceso` era falsificable. Se agrega `ip_cliente()` con la misma regla
 que `shared.infra.ip_origen` (ultimo salto, solo con `TRUST_PROXY_HEADERS=true`).
+
+## 23-11-2026 — La web reenvia la IP del cliente a los microservicios (RNF-13, RF-30)
+
+El login de la web pasa por el servicio `auth`, que guardaba la IP del contenedor
+`app` para todos los usuarios y aplicaba el limite de login por IP a toda la web
+como si fuera un solo cliente. `api_client.solicitar` ahora envia
+`X-Forwarded-For` con `ip_cliente()`; los servicios toman ese ultimo salto con
+`TRUST_PROXY_HEADERS=true`.

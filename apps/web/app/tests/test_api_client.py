@@ -51,6 +51,19 @@ class PruebaClienteApi(unittest.TestCase):
             self.assertEqual(peticion.full_url, "http://auth:8000/api/v1/auth/login")
             self.assertNotIn("Authorization", dict(peticion.header_items()))
 
+    @patch("app.api_client.urllib.request.urlopen")
+    def test_reenvia_la_ip_del_cliente_a_los_servicios(self, abrir):
+        abrir.return_value = Respuesta({"ok": True})
+        with patch.dict("os.environ", {"TRUST_PROXY_HEADERS": "true"}):
+            with self.app.test_request_context(
+                "/login", method="POST",
+                headers={"X-Forwarded-For": "1.2.3.4, 203.0.113.8"},
+                environ_base={"REMOTE_ADDR": "172.20.0.2"},
+            ):
+                api_client.solicitar("auth", "GET", "/health", autenticado=False)
+        cabeceras = dict(abrir.call_args.args[0].header_items())
+        self.assertEqual(cabeceras["X-forwarded-for"], "203.0.113.8")
+
     @patch("app.api_client.urllib.request.urlopen", side_effect=URLError("caido"))
     def test_falla_de_red_se_traduce_a_503(self, _abrir):
         with self.app.test_request_context("/"):

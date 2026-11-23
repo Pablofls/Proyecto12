@@ -73,12 +73,16 @@ def _refrescar():
 def solicitar(servicio, metodo, ruta, *, datos=None, parametros=None,
               autenticado=True, reintentar=True, encabezados_extra=None):
     """Ejecuta una llamada JSON y devuelve el cuerpo decodificado."""
-    from app.security import correlation_id
+    from app.security import correlation_id, ip_cliente
 
     cuerpo = None
     encabezados = {
         "Accept": "application/json",
         "X-Correlation-ID": correlation_id(),
+        # Sin esto los servicios ven la IP del contenedor `app` para todos los
+        # usuarios: el limite de login por IP (RNF-13) contaria a toda la web como
+        # uno solo y intentos_acceso guardaria siempre la misma IP.
+        "X-Forwarded-For": ip_cliente(),
     }
     if datos is not None:
         cuerpo = json.dumps(datos).encode("utf-8")
