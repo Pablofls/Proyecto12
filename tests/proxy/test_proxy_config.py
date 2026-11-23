@@ -41,7 +41,7 @@ def test_todas_las_api_tienen_destino_en_http_y_tls():
         "clasificacion-motivos",
     }
     for destino in destinos:
-        expresion = f"proxy_pass http://{destino}:8000"
+        expresion = f"set $destino {destino};"
         assert expresion in HTTP, destino
         assert expresion in TLS, destino
 
@@ -50,3 +50,20 @@ def test_tls_redirige_y_no_admite_protocolos_obsoletos():
     assert "return 308 https://$host$request_uri" in TLS
     assert "ssl_protocols TLSv1.2 TLSv1.3;" in TLS
     assert "TLSv1.1" not in TLS
+
+
+def test_nginx_resuelve_los_nombres_en_cada_peticion():
+    # Con IPs fijadas al arrancar, recrear un contenedor enruta al equivocado.
+    base = (RAIZ / "infra/nginx/nginx.conf").read_text(encoding="utf-8")
+    assert "resolver 127.0.0.11" in base
+    for conf in (HTTP, TLS):
+        assert "proxy_pass http://$destino:8000;" in conf
+        # proxy_pass sin variable (literal) volveria a fijar la IP al arrancar
+        for linea in conf.splitlines():
+            if "proxy_pass" in linea:
+                assert "$destino" in linea, linea
+
+
+def test_los_prefijos_de_servicios_se_recortan_con_rewrite():
+    for conf in (HTTP, TLS):
+        assert "rewrite ^/servicios/auth/(.*)$ /$1 break;" in conf
