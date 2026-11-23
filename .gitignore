@@ -17,6 +17,3 @@ db/data/
 
 # Sistema
 .DS_Store
-
-# Estado privado de Pliegue: sesiones, revisiones, sockets y tokens
-.pliegue_runtime/

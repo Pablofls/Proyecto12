@@ -20,15 +20,6 @@ def create_app():
     app.config["SESSION_REDIS"] = Config.session_redis()
     Session(app)
 
-    # Integración segura: apagada por defecto, sin tocar la app del equipo.
-    app.config["ORVIA_PLIEGUE20"] = os.environ.get("ORVIA_PLIEGUE20") == "1"
-    app.config["PLIEGUE_LAB"] = False
-    app.config["PLIEGUE_VISUAL"] = (app.config["ORVIA_PLIEGUE20"] and
-                                    os.environ.get("PLIEGUE_GLOBAL_CODE") == "1")
-    app.config["PLIEGUE_FASE6"] = (app.config["ORVIA_PLIEGUE20"] and
-                                   os.environ.get("PLIEGUE_FASE6") == "1")
-    app.config["PLIEGUE_WORKER_SOCKET"] = os.environ.get("PLIEGUE_WORKER_SOCKET", "")
-
     app.teardown_appcontext(db.cerrar_conn)
 
     from app.blueprints.auth import bp as auth_bp
@@ -56,13 +47,6 @@ def create_app():
     app.register_blueprint(reembolsos_bp)
     app.register_blueprint(notificaciones_bp)
     app.register_blueprint(reportes_bp)
-
-    if app.config["ORVIA_PLIEGUE20"]:
-        from app.blueprints.pliegue import bp as pliegue_bp, orvia as pliegue_orvia_bp
-        app.register_blueprint(pliegue_bp)
-        app.register_blueprint(pliegue_orvia_bp)
-        from app.pliegue_asistente_roles import bp as pliegue_roles_bp
-        app.register_blueprint(pliegue_roles_bp)
 
     @app.get("/health")
     def health():
@@ -99,38 +83,5 @@ def create_app():
             "TODOS": list(TODOS_LOS_ROLES),
             "modo_distribuido": app.config["USE_MICROSERVICES"],
         }
-
-    @app.context_processor
-    def inyectar_pliegue20():
-        # No filtrar secretos ni registros privados en el contexto compartido.
-        if not app.config["ORVIA_PLIEGUE20"]:
-            return {"pliegue_activo": False}
-        from app.blueprints.pliegue import code_csrf, orvia_pages, public_context
-        from app.security import rol_actual
-        info = public_context()
-        admin = rol_actual() == "Administrador"
-        info["is_admin"] = admin
-        return {
-            "pliegue_activo": True,
-            "pliegue_boot": info,
-            "orvia_pages": orvia_pages() if admin else {},
-            "csrf": code_csrf() if admin else "",
-        }
-
-
-    # PLIEGUE20: REGISTRO OPT-IN VERIFICADO
-    # Inactivo por defecto. No habilita Codex en instalaciones que no lo soliciten.
-    if os.environ.get("PLIEGUE_LAB", "").strip().lower() in ("1", "true", "yes", "si"):
-        for _flag in ("PLIEGUE_LAB", "PLIEGUE_VISUAL", "PLIEGUE_FASE6", "PLIEGUE_REVISIONS"):
-            app.config[_flag] = os.environ.get(_flag, "1").strip().lower() in ("1", "true", "yes", "si")
-
-        from app.blueprints.pliegue import bp as _pliegue_bp, orvia as _pliegue_orvia_bp
-        from app.pliegue_asistente_roles import bp as _pliegue_roles_bp
-
-        # No se duplican blueprints si una configuración anterior ya los registró.
-        for _pliegue_blueprint in (_pliegue_bp, _pliegue_orvia_bp, _pliegue_roles_bp):
-            if _pliegue_blueprint.name not in app.blueprints:
-                app.register_blueprint(_pliegue_blueprint)
-    # FIN PLIEGUE20: REGISTRO OPT-IN VERIFICADO
 
     return app
