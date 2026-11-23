@@ -1,0 +1,50 @@
+[2026-11-23 02:14:43,759] 8857e3a45875/INFO/locust.main: Starting Locust 2.31.8
+[2026-11-23 02:14:43,761] 8857e3a45875/INFO/locust.main: Run time limit set to 30 seconds
+[carga] Sesiones iniciadas: cliente, analista, coordinador, inspector, recolector, admin
+[2026-11-23 02:14:45,957] 8857e3a45875/INFO/locust.runners: Ramping to 5 users at a rate of 5.00 per second
+[2026-11-23 02:14:45,963] 8857e3a45875/INFO/locust.runners: All users spawned: {"Analista": 1, "Cliente": 2, "MovilCampo": 1, "Operacion": 1, "Supervision": 0} (5 total users)
+[2026-11-23 02:15:13,083] 8857e3a45875/INFO/locust.main: --run-time limit reached, shutting down
+[carga] 429 del limite por usuario (esperados, contados como correctos): 0
+[2026-11-23 02:15:13,378] 8857e3a45875/INFO/locust.main: writing html report to file: /salida/humo.html
+[2026-11-23 02:15:13,383] 8857e3a45875/INFO/locust.main: Shutting down (exit code 0)
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /api/v1/analitica/alertas-fraude                                                   1     0(0.00%) |    272     272     272    272 |    0.03        0.00
+GET      /api/v1/analitica/tendencias                                                       1     0(0.00%) |     53      53      53     53 |    0.03        0.00
+GET      /api/v1/devoluciones/[id]                                                          6     0(0.00%) |     49      41      58     48 |    0.21        0.00
+GET      /api/v1/devoluciones/elegibilidad                                                  8     0(0.00%) |     46      32     109     38 |    0.27        0.00
+GET      /api/v1/devoluciones?por_pagina=10                                                17     0(0.00%) |     85      35     274     44 |    0.58        0.00
+GET      /api/v1/devoluciones?por_pagina=20                                                 6     0(0.00%) |     47      37      59     43 |    0.21        0.00
+GET      /api/v1/logistica/recolecciones                                                   12     0(0.00%) |     55      24     164     31 |    0.41        0.00
+POST     /api/v1/motivos/sugerencias                                                        6     0(0.00%) |     54      27     176     28 |    0.21        0.00
+GET      /api/v1/reportes/pareto                                                            5     0(0.00%) |     41      34      53     41 |    0.17        0.00
+GET      /api/v1/sincronizacion/operaciones [GET]                                           1     0(0.00%) |     25      25      25     25 |    0.03        0.00
+POST     /api/v1/sincronizacion/operaciones [POST]                                          3     0(0.00%) |     64      28     131     35 |    0.10        0.00
+GET      /api/v1/sincronizacion/tipos                                                       3     0(0.00%) |     10       5      20      6 |    0.10        0.00
+GET      /api/v1/trazabilidad/tasas                                                         1     0(0.00%) |     35      35      35     35 |    0.03        0.00
+GET      /api/v1/ventas/[id]                                                                8     0(0.00%) |     44      31      91     35 |    0.27        0.00
+GET      /api/v1/ventas?por_pagina=5                                                        8     0(0.00%) |     39      27      75     32 |    0.27        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                        86     0(0.00%) |     56       5     274     39 |    2.95        0.00
+
+Response time percentiles (approximated)
+Type     Name                                                                                  50%    66%    75%    80%    90%    95%    98%    99%  99.9% 99.99%   100% # reqs
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+GET      /api/v1/analitica/alertas-fraude                                                      270    270    270    270    270    270    270    270    270    270    270      1
+GET      /api/v1/analitica/tendencias                                                           54     54     54     54     54     54     54     54     54     54     54      1
+GET      /api/v1/devoluciones/[id]                                                              48     48     59     59     59     59     59     59     59     59     59      6
+GET      /api/v1/devoluciones/elegibilidad                                                      38     38     45     45    110    110    110    110    110    110    110      8
+GET      /api/v1/devoluciones?por_pagina=10                                                     44     57     63     78    270    270    270    270    270    270    270     17
+GET      /api/v1/devoluciones?por_pagina=20                                                     44     44     57     57     59     59     59     59     59     59     59      6
+GET      /api/v1/logistica/recolecciones                                                        31     37     77     77    150    160    160    160    160    160    160     12
+POST     /api/v1/motivos/sugerencias                                                            31     31     39     39    180    180    180    180    180    180    180      6
+GET      /api/v1/reportes/pareto                                                                41     46     46     53     53     53     53     53     53     53     53      5
+GET      /api/v1/sincronizacion/operaciones [GET]                                               25     25     25     25     25     25     25     25     25     25     25      1
+POST     /api/v1/sincronizacion/operaciones [POST]                                              35     35    130    130    130    130    130    130    130    130    130      3
+GET      /api/v1/sincronizacion/tipos                                                            6      6     20     20     20     20     20     20     20     20     20      3
+GET      /api/v1/trazabilidad/tasas                                                             36     36     36     36     36     36     36     36     36     36     36      1
+GET      /api/v1/ventas/[id]                                                                    36     41     49     49     92     92     92     92     92     92     92      8
+GET      /api/v1/ventas?por_pagina=5                                                            33     35     59     59     76     76     76     76     76     76     76      8
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+         Aggregated                                                                             39     45     54     59    110    180    270    270    270    270    270     86
+

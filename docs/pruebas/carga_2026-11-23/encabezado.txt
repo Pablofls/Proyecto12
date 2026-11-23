@@ -1,0 +1,9 @@
+# Pruebas de carga
+Fecha (UTC): 2026-11-23 02:14:41
+Rama: david/pruebas-carga
+Commit: 3f5ff5244a43687b821db53df6ef508959146ffa
+Host: maquina01, 2 CPU, 7.5Gi de RAM
+Locust: locustio/locust:2.31.8, red proyecto12_default
+=== Escenario humo: 5 usuarios, 5/s, 30s ===
+=== Escenario normal: 25 usuarios, 5/s, 2m ===
+=== Escenario pico: 60 usuarios, 10/s, 2m ===

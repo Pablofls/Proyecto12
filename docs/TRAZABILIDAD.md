@@ -121,7 +121,7 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-26 | Adaptarse a distintos tamanos de pantalla | `apps/web/app/static/css/estilos.css` | implementado |
 | RNF-27 | Docker y Google Compute Engine | `docker-compose.yml`, VM del equipo | implementado |
 | RNF-28 | Pruebas | 119 unitarias y de API con dobles en `services/*/tests` y `apps/web/app/tests`; suite E2E `tests/e2e/` y `test_integracion.py` en los ocho servicios (`INTEGRACION=1`, solo en la VM); casos en `docs/PRUEBAS.md`. VM (21 de octubre): E2E 100 passed y integracion 8 de 8 (`docs/pruebas/salida_2026-10-21.txt`); 119 unitarias passed en local. Faltan caidas de dependencias, concurrencia real, 413 y carga | parcial |
-| RNF-29 | Locust con distintos perfiles | — | pendiente |
+| RNF-29 | Locust con distintos perfiles | `tests/carga/locustfile.py` (5 perfiles), `scripts/correr_carga.sh` (3 escenarios), resultados en `docs/pruebas/CARGA.md` | implementado |
 | RNF-30 | Retencion y eliminacion logica | `db/migrations/005_eliminacion_logica.sql`; `DELETE /api/v1/devoluciones/{id}` marca `eliminado_en` | implementado |
 
 ## Reglas de negocio
