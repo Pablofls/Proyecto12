@@ -1012,3 +1012,14 @@ de un `while read` y solo borraba la primera clave. Corregido, la corrida
 definitiva (`4a0fe99`) dio 866 pruebas aprobadas y 0 bloques con fallos. Detalle
 en `docs/pruebas/REPORTE_FINAL.md`.
 
+
+## 22-11-2026 — Reverse proxy Nginx integrado a main (RNF-12, RNF-13, RNF-28)
+
+Se integra `infra/reverse-proxy-nginx` (Roberto): Nginx es la unica entrada y los
+puertos 8000-8021 dejan de publicarse en la VM. Decision tomada con el equipo:
+se integra tal cual lo diseno Roberto y se adaptan los consumidores de puertos
+directos (entorno de Postman, `scripts/evidencias/*`, `evidencias_vm*.sh`).
+`disposicion-inventario` (PR de la rama de escritorio) entra al proxy bajo
+`/api/v1/disposicion-inventario` y `/servicios/disposicion-inventario/`.
+`EVIDENCIAS_PUERTOS_DIRECTOS=1` permite al motor de evidencias usar puertos si
+se publican a mano para depurar. Firewall de GCP: abrir 80/443 y cerrar 8000-8021.

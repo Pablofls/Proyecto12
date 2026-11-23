@@ -90,9 +90,12 @@ class Corrida:
     """Una corrida = un servicio. `sigla` da los ids de los casos (P4-<SIGLA>-NN)."""
 
     def __init__(self, servicio, sigla, titulo, puerto, base="http://127.0.0.1", host_mostrado="$VM_HOST",
-                 ejecutar_sql=None, puerto_auth=8001, password=None):
+                 ejecutar_sql=None, puerto_auth=8001, password=None, via_proxy=False):
         self.servicio, self.sigla, self.titulo, self.puerto = servicio, sigla, titulo, puerto
         self.base, self.host_mostrado, self.puerto_auth = base, host_mostrado, puerto_auth
+        # Con el reverse proxy los puertos 8001-8021 ya no se publican: todo entra
+        # por Nginx en el puerto 80 y las rutas /api/v1 se conservan (RNF-28).
+        self.via_proxy = via_proxy
         self.tokens, self.ctx, self.casos, self.limpieza = {}, {}, [], []
         self._ejecutar_sql = ejecutar_sql or self._psql
         self._password = password
@@ -166,7 +169,7 @@ class Corrida:
             return self.tokens[rol]
         cuerpo = json.dumps({"email": USUARIOS[rol], "password": self.password()}).encode()
         self._ocultos.add(self.password())
-        r = self._curl("POST", f"{self.base}:{self.puerto_auth}/api/v1/auth/login",
+        r = self._curl("POST", f"{self.origen(self.puerto_auth)}/api/v1/auth/login",
                        {"Content-Type": "application/json"}, cuerpo)
         if r.estado != 200:
             raise SystemExit(f"No se pudo iniciar sesion como {rol}: HTTP {r.estado} (el login admite 10 por minuto).")
@@ -176,6 +179,9 @@ class Corrida:
         return token
 
     # ------------------------------------------------------------------ casos
+    def origen(self, puerto):
+        return self.base if self.via_proxy else f"{self.base}:{puerto}"
+
     def caso(self, titulo, metodo, ruta, *, objetivo, rol=None, json_cuerpo=None, xml=None, accept="application/json",
              espera=200, verifica=(), guarda=None, efecto=None, cabeceras_extra=None, token=None, puerto=None):
         """Ejecuta un caso y lo registra.
@@ -207,7 +213,7 @@ class Corrida:
         for nombre, valor in (cabeceras_extra or {}).items():
             cabeceras[nombre] = mostradas[nombre] = valor
         ruta = ruta.format(**self.ctx)
-        resp = self._curl(metodo, f"{self.base}:{puerto}{ruta}", cabeceras, cuerpo)
+        resp = self._curl(metodo, f"{self.origen(puerto)}{ruta}", cabeceras, cuerpo)
 
         registro = {
             "id": id_caso, "titulo": titulo, "objetivo": objetivo, "metodo": metodo, "ruta": ruta, "puerto": puerto,
@@ -241,7 +247,8 @@ class Corrida:
     # ------------------------------------------------------------------ salida
     def comando(self, c):
         """El curl que el lector puede copiar: mismo metodo, cabeceras y cuerpo que se ejecutaron."""
-        url = f"http://{self.host_mostrado}:{c['puerto']}{c['ruta']}"
+        url = (f"http://{self.host_mostrado}{c['ruta']}" if self.via_proxy
+               else f"http://{self.host_mostrado}:{c['puerto']}{c['ruta']}")
         partes = [f'curl -sS -i -X {c["metodo"]} "{url}"']
         for nombre, valor in c["cabeceras"].items():
             partes.append(f'-H "{nombre}: {valor}"')

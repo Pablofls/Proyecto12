@@ -44,8 +44,9 @@ echo "devolucion del proceso: ${ID:-?}   devolucion con evidencias: ${ID_EV:-?}"
   printf '\n>>> docker stats --no-stream\n';    docker stats --no-stream 2>&1
   printf '\n>>> docker volume ls\n';             docker volume ls 2>&1
   printf '\n>>> health de los servicios (desde la VM)\n'
-  for p in 8000 8001 8002 8003 8004 8005 8006 8007 8008; do
-    printf '%s: ' "$p"; curl -s -m 5 -o /dev/null -w '%{http_code}\n' "http://localhost:$p/health"
+  printf 'proxy: '; curl -s -m 5 -o /dev/null -w '%{http_code}\n' "http://localhost/proxy-health"
+  for s in auth devoluciones logistica inspecciones reembolsos-costos ventas-catalogos evidencias auditoria; do
+    printf '%s: ' "$s"; curl -s -m 5 -o /dev/null -w '%{http_code}\n' "http://localhost/servicios/$s/health"
   done
   printf '\n>>> docker compose logs --tail=15 devoluciones (se ve el X-Correlation-ID)\n'
   docker compose logs --tail=15 devoluciones 2>&1
@@ -112,11 +113,11 @@ primera() { docker compose exec -T redis redis-cli --scan --pattern "$1" 2>/dev/
   rc SET devoluciones:lock:reembolso:999999 x NX EX 30
   rc TTL devoluciones:lock:reembolso:999999
   PASS="$(grep -E '^PASSWORD_DEMO=' .env | head -1 | cut -d= -f2-)"
-  TOK="$(curl -s -m 10 -X POST http://localhost:8001/api/v1/auth/login -H 'Content-Type: application/json' \
+  TOK="$(curl -s -m 10 -X POST http://localhost/api/v1/auth/login -H 'Content-Type: application/json' \
         -d "{\"email\":\"carla.reembolsos@demo.mx\",\"password\":\"$PASS\"}" \
         | python3 -c 'import sys,json; print(json.load(sys.stdin).get("access_token",""))' 2>/dev/null)"
   printf '\n>>> POST /api/v1/reembolsos-costos/reembolsos con el candado puesto (devolucion_id 999999)\n'
-  curl -s -m 10 -i -X POST http://localhost:8005/api/v1/reembolsos-costos/reembolsos \
+  curl -s -m 10 -i -X POST http://localhost/api/v1/reembolsos-costos/reembolsos \
        -H "Authorization: Bearer $TOK" -H 'Content-Type: application/json' \
        -d '{"devolucion_id":999999,"estado":"aprobado","metodo":"transferencia","monto":1}' 2>&1 | sed -n '1p;/^X-Correlation-ID/p;$p'
   rc DEL devoluciones:lock:reembolso:999999
@@ -130,7 +131,7 @@ primera() { docker compose exec -T redis redis-cli --scan --pattern "$1" 2>/dev/
   printf '\n>>> docker volume inspect (nombre desde docker volume ls)\n'
   docker volume inspect "$(docker volume ls -q | grep evidencias_data | head -1)" 2>&1
   printf '\n>>> el directorio no se sirve por HTTP: curl -i /uploads/\n'
-  curl -s -m 5 -i http://localhost:8007/uploads/ 2>&1 | head -3
+  curl -s -m 5 -i http://localhost/uploads/ 2>&1 | head -3
 } > "$SAL/volumen.txt"
 
 # Oculta cualquier JWT que haya quedado y avisa si aparece la contrasena demo.

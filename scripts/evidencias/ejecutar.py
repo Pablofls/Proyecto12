@@ -34,7 +34,8 @@ def commit_actual():
 
 def correr(nombre):
     modulo = importlib.import_module(f"casos_{nombre}")
-    corrida = Corrida(modulo.SERVICIO, modulo.SIGLA, modulo.TITULO, modulo.PUERTO)
+    corrida = Corrida(modulo.SERVICIO, modulo.SIGLA, modulo.TITULO, modulo.PUERTO,
+                      via_proxy=os.environ.get("EVIDENCIAS_PUERTOS_DIRECTOS") != "1")
     corrida.nombre_cli = nombre
     interrupcion = None
     try:

@@ -47,17 +47,17 @@ class OrviaViewModel(application: Application) : AndroidViewModel(application) {
             finally { busy = false }
         }
     }
-    private suspend fun call(port: Int, path: String, method: String = "GET",
+    private suspend fun call(path: String, method: String = "GET",
                              json: JSONObject? = null, auth: Boolean = true): JSONObject = withContext(Dispatchers.IO) {
         val before = session
-        try { api.call(host, port, path, method, if (auth) before?.accessToken else null, json) }
+        try { api.call(host, path, method, if (auth) before?.accessToken else null, json) }
         catch (e: ApiError) {
             if (e.status != 401 || !auth || before == null || before.refreshToken.isBlank()) throw e
-            val renewed = api.call(host, 8001, "/api/v1/auth/refresh", "POST", null,
+            val renewed = api.call(host, "/api/v1/auth/refresh", "POST", null,
                 JSONObject().put("refresh_token", before.refreshToken))
             val after = before.copy(accessToken = renewed.getString("access_token"))
             withContext(Dispatchers.Main) { session = after; store.saveSession(after) }
-            api.call(host, port, path, method, after.accessToken, json)
+            api.call(host, path, method, after.accessToken, json)
         }
     }
     fun saveHost(raw: String) {
@@ -68,7 +68,7 @@ class OrviaViewModel(application: Application) : AndroidViewModel(application) {
     }
     fun login(email: String, password: String) = job {
         require(api.hostValid(host)) { "Configura primero la IP del servidor." }
-        val result = call(8001, "/api/v1/auth/login", "POST",
+        val result = call("/api/v1/auth/login", "POST",
             JSONObject().put("email", email.trim().lowercase(Locale.ROOT)).put("password", password), false)
         val person = result.getJSONObject("usuario")
         val s = Session(person.getInt("id"), person.optString("nombre"), person.optString("email"),
@@ -80,7 +80,7 @@ class OrviaViewModel(application: Application) : AndroidViewModel(application) {
         refreshDataInternal()
     }
     fun logout() = job {
-        try { call(8001, "/api/v1/auth/logout", "POST") }
+        try { call("/api/v1/auth/logout", "POST") }
         catch (_: Exception) { /* Caducada/revocada: se cierra localmente de todas formas. */ }
         store.remove("session")
         session = null; sales = emptyList(); returns = emptyList(); reasons = emptyList(); monitorAlerts = emptyList()
@@ -91,14 +91,14 @@ class OrviaViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun refreshDataInternal() {
         val role = session?.role ?: return
         if (role == Roles.CLIENTE) {
-            val v = call(8006, "/api/v1/ventas?por_pagina=50")
+            val v = call("/api/v1/ventas?por_pagina=50")
             sales = v.list("datos").map { Sale(it.optInt("id"), it.optString("folio_venta"),
                 it.optString("fecha_venta"), it.optString("total")) }
-            val m = call(8006, "/api/v1/catalogos/motivos?por_pagina=100")
+            val m = call("/api/v1/catalogos/motivos?por_pagina=100")
             reasons = m.list("datos").map { Reason(it.optInt("id"), it.optString("nombre")) }
         }
         try {
-            val r = call(8002, "/api/v1/devoluciones?por_pagina=50")
+            val r = call("/api/v1/devoluciones?por_pagina=50")
             returns = r.list("datos").map { ReturnItem(it.optInt("id"), it.optString("folio_devolucion"),
                 it.optString("producto"), it.optString("estado"), it.optString("fecha_solicitud"),
                 it.optString("numero_lote")) }
@@ -109,13 +109,13 @@ class OrviaViewModel(application: Application) : AndroidViewModel(application) {
         }
         if (role in listOf(Roles.SUPERVISOR, Roles.ADMIN)) {
             try {
-                monitorAlerts = call(8021, "/api/v1/monitoreo/alertas?estado=activa&por_pagina=25").list("datos")
+                monitorAlerts = call("/api/v1/monitoreo/alertas?estado=activa&por_pagina=25").list("datos")
             } catch (_: Exception) { monitorAlerts = emptyList() }
         }
     }
     fun chooseSale(sale: Sale) = job {
         selectedSale = sale
-        val detail = call(8006, "/api/v1/ventas/${sale.id}")
+        val detail = call("/api/v1/ventas/${sale.id}")
         saleLines = detail.list("lineas").map { SaleLine(it.optInt("id"), it.optString("producto"),
             it.optString("numero_lote"), it.optInt("disponible"), it.optInt("cantidad")) }
         currentTab = "nueva"
@@ -124,11 +124,11 @@ class OrviaViewModel(application: Application) : AndroidViewModel(application) {
         require(session?.role == Roles.CLIENTE) { "Solo clientes pueden usar esta pantalla" }
         require(lineId > 0 && motiveId > 0 && count > 0) { "Selecciona producto, motivo y cantidad valida" }
         require(description.trim().length in 10..2000) { "La descripcion requiere entre 10 y 2000 caracteres" }
-        val eligibility = call(8002, "/api/v1/devoluciones/elegibilidad?venta_detalle_id=$lineId")
+        val eligibility = call("/api/v1/devoluciones/elegibilidad?venta_detalle_id=$lineId")
         require(eligibility.optBoolean("elegible") && count <= eligibility.optInt("disponible")) {
             "El producto no es elegible o la cantidad supera lo disponible."
         }
-        val created = call(8002, "/api/v1/devoluciones", "POST", JSONObject()
+        val created = call("/api/v1/devoluciones", "POST", JSONObject()
             .put("venta_detalle_id", lineId).put("motivo_id", motiveId)
             .put("descripcion_problema", description.trim()).put("cantidad_devuelta", count))
         val newId = created.getInt("id")
@@ -227,7 +227,7 @@ class OrviaViewModel(application: Application) : AndroidViewModel(application) {
                     val result = try {
                         val body = JSONObject().put("dispositivo_id", device)
                             .put("operaciones", JSONArray().put(item.wireJson()))
-                        call(8020, "/api/v1/sincronizacion/operaciones", "POST", body)
+                        call("/api/v1/sincronizacion/operaciones", "POST", body)
                     } catch (e: Exception) {
                         // Red caida: conservar el MISMO UUID y el payload para reintentar.
                         error = "Sin conexion o servidor no disponible: ${e.message}"

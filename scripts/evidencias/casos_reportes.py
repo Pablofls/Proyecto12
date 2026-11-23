@@ -144,7 +144,7 @@ def ejecutar(c):
     # una por una; la 21 si se muestra completa. Se usa otra cuenta para no gastar la cuota de las anteriores.
     token = c.sesion("admin")
     for _ in range(20):
-        c._curl("GET", f"{c.base}:{c.puerto}{API}/costos?formato=csv",
+        c._curl("GET", f"{c.origen(c.puerto)}{API}/costos?formato=csv",
                 {"Accept": "application/json", "Authorization": f"Bearer {token}"})
     c.caso("descarga 429 tras 20 en un minuto", "GET", f"{API}/costos?formato=csv", rol="admin", espera=429,
            objetivo="Un archivo cuesta mas que una pagina: tras 20 descargas en un minuto el usuario recibe 429 con Retry-After.",
