@@ -77,3 +77,9 @@ def test_cabecera_de_correlacion_no_se_duplica():
 def test_openapi_no_apunta_a_puertos_directos():
     for archivo in (RAIZ / "services").glob("*/openapi.yaml"):
         assert "localhost:80" not in archivo.read_text(encoding="utf-8"), archivo
+
+
+def test_healthcheck_del_proxy_usa_ipv4_explicito():
+    # `localhost` resuelve a ::1 en Alpine y Nginx solo escucha IPv4: quedaba unhealthy.
+    assert "http://127.0.0.1:8080/proxy-health" in COMPOSE
+    assert "localhost:8080" not in COMPOSE

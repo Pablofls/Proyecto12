@@ -33,7 +33,7 @@ services:
       - ./infra/nginx/snippets/proxy-common.conf:/etc/nginx/snippets/proxy-common.conf:ro,z
     networks: [default, public]
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/proxy-health"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/proxy-health"]
       interval: 15s
       timeout: 5s
       retries: 3
