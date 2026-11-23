@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titulo %}Acceso al laboratorio · Pliegue{% endblock %}
+{% block contenido %}
+<section class="tarjeta">
+  <h1>Laboratorio de Pliegue</h1>
+  {% if invalid %}<p role="alert">Usuario o contraseña incorrectos.</p>{% endif %}
+  <form method="post" action="{{ url_for('lab_login') }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label for="lab-user">Usuario</label>
+    <input id="lab-user" name="username" autocomplete="username" required>
+    <label for="lab-password">Contraseña</label>
+    <input id="lab-password" name="password" type="password" autocomplete="current-password" required>
+    <button type="submit">Iniciar sesión</button>
+  </form>
+</section>
+{% endblock %}

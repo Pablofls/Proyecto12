@@ -1,0 +1,230 @@
+<section id="pliegue-codigo" data-csrf="{{ csrf }}" {% if config.PLIEGUE_VISUAL %}data-visual-global data-current-screen="{{ pliegue_screen }}"{% endif %}
+         data-drafts="{{ url_for('pliegue.code_drafts') }}"
+         data-mentions="{{ url_for('pliegue.code_mentions') }}"
+         data-status="{{ url_for('pliegue.codex_status') }}">
+  {% if config.PLIEGUE_LAB and config.PLIEGUE_VISUAL %}
+  <template data-codex-account-template>
+    <div class="pliegue-account" data-codex-account="{{ url_for('pliegue.codex_session') }}">
+      <button type="button" class="pliegue-account-trigger" popovertarget="pliegue-account-popover">
+        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3">
+          <circle cx="8" cy="5" r="2.4"/><path d="M3 13a5 5 0 0 1 10 0" stroke-linecap="round"/>
+        </svg>
+        <span data-account-label>Sesión de Codex</span>
+        <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="m3 4.5 3 3 3-3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div id="pliegue-account-popover" popover role="region" aria-label="Cuenta de Codex">
+        <strong>Cuenta de Codex</strong>
+        <p data-account-message role="status"></p>
+        <div data-account-device hidden>
+          <p>Introduce este código en la página oficial.</p>
+          <code data-account-code></code>
+          <a data-account-link target="_blank" rel="noopener noreferrer">Abrir ChatGPT <span aria-hidden="true">↗</span></a>
+        </div>
+        <button type="button" data-account-login hidden>Continuar con ChatGPT</button>
+        <button type="button" data-account-logout hidden>Cerrar sesión de Codex</button>
+      </div>
+    </div>
+  </template>
+  {% endif %}
+  <div class="pliegue-thread" tabindex="0" aria-label="Conversación con Pliegue">
+    <div class="pliegue-code-navigation">
+      {% if config.PLIEGUE_VISUAL %}
+      <div data-visual-editor>
+        {% with main_tools=true %}{% include "pliegue/_visual_tools.html" %}{% endwith %}
+        {% if not (visual_page and visual_page.selection) %}
+        <p class="pliegue-visual-unavailable">
+          <strong>Selección visual no disponible en esta pantalla</strong>
+          {{ (visual_page.selection_reason if visual_page else '') or
+             'Esta vista no tiene elementos vinculados a un documento de una revisión editable. Puedes enviar una instrucción libre.' }}
+        </p>
+        {% endif %}
+        <p data-visual-status role="status"></p>
+        <div class="pliegue-visual-card" hidden>
+          <div class="pliegue-visual-overview">
+            <span data-visual-total role="status"></span>
+            <button type="button" data-visual-clear>Limpiar selección</button>
+          </div>
+          <ul aria-label="Elementos seleccionados" data-visual-card hidden></ul>
+          <label hidden><input type="checkbox" data-visual-allow> Autorizar la modificación o eliminación funcional solicitada</label>
+          <button type="button" data-visual-describe>Describir cambio</button>
+        </div>
+      </div>
+      {% endif %}
+      <div id="pliegue-historial" {% if config.PLIEGUE_VISUAL %}hidden{% endif %}>
+        <div class="pliegue-history">
+          <div class="pliegue-history-search">
+            <label for="pliegue-codigo-buscar">Buscar solicitudes</label>
+            <input type="search" id="pliegue-codigo-buscar" maxlength="120" autocomplete="off">
+            <p data-history-results role="status"></p>
+          </div>
+          <div>
+            <label for="pliegue-codigo-lista">Historial de solicitudes</label>
+            <select id="pliegue-codigo-lista"><option value="">Nueva solicitud</option></select>
+          </div>
+          <button type="button" id="pliegue-codigo-refresh">Actualizar</button>
+        </div>
+        <div class="pliegue-version" data-version-panel hidden
+             data-active-url="{{ url_for('pliegue.code_active') }}"
+             data-rollback-url="{{ url_for('pliegue.code_rollback') }}"
+             data-redo-url="{{ url_for('pliegue.code_redo') }}">
+          <p data-version-label role="status"></p>
+          <button type="button" data-version-view hidden>Ver versión activa</button>
+          <button type="button" data-version-undo hidden>Deshacer</button>
+          <button type="button" data-version-redo hidden>Rehacer</button>
+        </div>
+      </div>
+    </div>
+    <p class="pliegue-msg" data-welcome>Escribe una consulta o describe un cambio para Orvia.</p>
+    <article hidden>
+      <time data-job-date></time>
+      <p class="pliegue-msg user" data-job-message></p>
+      <div class="pliegue-msg pliegue-result">
+        <img class="pliegue-result-logo" src="{{ url_for('static', filename='img/pliegue.png') }}" width="24" height="24" alt="">
+        <p class="pliegue-state" data-job-state role="status"></p>
+        <p data-job-progress role="status" hidden></p>
+        <p data-job-summary></p>
+        <details class="pliegue-answer-details" data-answer-details hidden>
+          <summary>Más información</summary>
+          <p data-answer-rest></p>
+        </details>
+        <p data-job-decision hidden></p>
+        <p data-approval-reason hidden></p>
+        <div class="pliegue-actions">
+          <button type="button" data-job-stop hidden>Detener</button>
+          <button type="button" data-job-approve hidden disabled>Aceptar cambio</button>
+          <button type="button" data-job-continue aria-pressed="false" hidden>Continuar borrador</button>
+          <button type="button" data-job-reject hidden>Rechazar borrador</button>
+        </div>
+        <div class="pliegue-warnings" data-job-warnings hidden>
+          <strong>Advertencias de Codex</strong>
+          <ul></ul>
+        </div>
+        <div data-job-review hidden>
+          <details>
+            <summary data-job-files>Archivos modificados</summary>
+            <ul data-job-file-list></ul>
+            <pre data-job-diff tabindex="0" aria-label="Diferencias de código"></pre>
+          </details>
+          <details>
+            <summary data-job-test-summary>Resultados de pruebas</summary>
+            <pre data-job-tests tabindex="0"></pre>
+          </details>
+          <details>
+            <summary>Salida de Codex</summary>
+            <pre data-job-codex tabindex="0"></pre>
+          </details>
+          <details data-job-pages hidden><summary>Páginas y componentes</summary><ul></ul></details>
+          <p data-comparison-reason hidden></p>
+          <button type="button" data-comparison-open hidden>Comparar ANTES y DESPUÉS</button>
+          <details data-job-preview hidden>
+            <summary>Muestras CSS de la revisión de código</summary>
+            <iframe sandbox="" title="Muestras CSS aisladas" referrerpolicy="no-referrer" loading="lazy"></iframe>
+          </details>
+        </div>
+      </div>
+    </article>
+  </div>
+  <dialog class="pliegue-comparison" aria-labelledby="pliegue-comparison-title">
+    <header>
+      <div>
+        <h2 id="pliegue-comparison-title">Vista previa de Orvia</h2>
+        <p>Comparación aislada y segura: no modifica datos en vivo ni publica archivos automáticamente.</p>
+      </div>
+      <div>
+        <button type="button" data-comparison-width aria-pressed="false">Ancho completo</button>
+        <button type="button" data-comparison-close>Cerrar</button>
+      </div>
+    </header>
+    <label data-comparison-pages hidden>Pantalla <select aria-label="Pantalla que se está revisando"></select></label>
+    <p data-comparison-navigation hidden></p>
+    <p data-comparison-status role="status"></p>
+    {% if config.PLIEGUE_VISUAL %}
+    <button type="button" data-visual-draft hidden>Preparar selección en el borrador</button>
+    {% with comparison_tools=true %}{% include "pliegue/_visual_tools.html" %}{% endwith %}
+    <button type="button" data-visual-compose hidden>Describir cambio</button>
+    {% endif %}
+    <div class="pliegue-comparison-panes" hidden>
+      <section>
+        <h3>ANTES</h3>
+        <iframe sandbox="" title="Pantalla antes del borrador" referrerpolicy="no-referrer"></iframe>
+      </section>
+      <section>
+        <h3>DESPUÉS</h3>
+        <iframe sandbox="" title="Pantalla con los cambios del borrador" referrerpolicy="no-referrer"></iframe>
+      </section>
+    </div>
+  </dialog>
+  <dialog class="pliegue-decision" aria-labelledby="pliegue-decision-title">
+    <h2 id="pliegue-decision-title"></h2>
+    <p data-decision-description></p>
+    <label data-decision-warnings hidden>
+      <input type="checkbox"> Confirmo que revisé las advertencias
+    </label>
+    <label data-decision-reason hidden>Motivo (opcional)
+      <textarea maxlength="500" rows="3"></textarea>
+    </label>
+    <p data-decision-error role="alert" hidden></p>
+    <div class="pliegue-actions">
+      <button type="button" data-decision-cancel autofocus>Cancelar</button>
+      <button type="button" data-decision-confirm>Confirmar</button>
+    </div>
+  </dialog>
+  <form class="pliegue-code-compose">
+    <p id="pliegue-codigo-worker" role="status"></p>
+    <p id="pliegue-codigo-feedback" role="alert" hidden></p>
+    <div class="pliegue-attachments">
+      <input id="pliegue-code-files" hidden type="file" multiple
+             accept=".txt,.md,.csv,.json,.xml,.py,.js,.ts,.html,.css,.sql,.yaml,.yml,.docx,.xlsx,.pptx,.pdf,.png,.jpg,.jpeg,.webp">
+      <small id="pliegue-file-help">Hasta 4 archivos · Texto 3 KiB · Documentos 64 KiB · Imágenes 192 KiB</small>
+      <p data-attachment-error role="status"></p>
+      <button type="button" data-attachment-cancel hidden>Cancelar lectura</button>
+      <button type="button" data-attachment-clear hidden>Quitar todos</button>
+      <ul data-attachment-list aria-label="Adjuntos de la solicitud"></ul>
+    </div>
+    <label class="pliegue-sr-only" for="pliegue-codigo-mensaje">Mensaje para Codex</label>
+    <textarea id="pliegue-codigo-mensaje" rows="2" required maxlength="1000" placeholder="Escribe un mensaje. Usa @ para páginas y / para servicios."></textarea>
+    <div class="pliegue-compose-actions">
+      <button type="button" data-attachment-open aria-label="Adjuntar archivos" aria-describedby="pliegue-file-help"
+              title="Adjuntar archivos"><span class="pliegue-icon icon-clip" aria-hidden="true"></span></button>
+      <button type="button" data-camera-open hidden aria-label="Abrir cámara" title="Abrir cámara">Cámara</button>
+      <button type="button" data-voice-open hidden aria-label="Opciones de voz" title="Opciones de voz">Voz</button>
+      <div class="pliegue-segments" role="group" aria-label="Modo de solicitud">
+        <button type="button" data-request-mode="consult" aria-pressed="false"><span class="pliegue-icon icon-eye" aria-hidden="true"></span>Consultar</button>
+        <button type="button" data-request-mode="edit" aria-pressed="true"><span class="pliegue-icon icon-code" aria-hidden="true"></span>Editar</button>
+      </div>
+      <button type="submit" disabled><span class="pliegue-icon icon-send" aria-hidden="true"></span><span data-submit-label>Enviar solicitud</span></button>
+    </div>
+  </form>
+  <dialog data-media-dialog aria-labelledby="pliegue-media-title">
+    <h3 id="pliegue-media-title">Cámara</h3>
+    <video data-camera-video autoplay muted playsinline hidden></video>
+    <img data-media-image alt="Vista previa del adjunto" hidden>
+    <p data-camera-status role="status"></p>
+    <div class="pliegue-actions">
+      <button type="button" data-camera-take hidden>Tomar foto</button>
+      <button type="button" data-camera-switch hidden>Cambiar cámara</button>
+      <button type="button" data-camera-retake hidden>Repetir</button>
+      <button type="button" data-camera-attach hidden>Adjuntar foto</button>
+      <button type="button" data-camera-fallback hidden>Elegir archivo</button>
+      <button type="button" data-media-replace hidden>Sustituir adjunto</button>
+      <button type="button" data-media-close>Cancelar</button>
+    </div>
+  </dialog>
+  <dialog data-voice-dialog aria-labelledby="pliegue-voice-title">
+    <h3 id="pliegue-voice-title">Voz</h3>
+    <p>El navegador puede usar un servicio de reconocimiento. Revisa el texto antes de enviarlo.</p>
+    <label>Idioma <select data-voice-language><option value="es-MX">Español</option><option value="en-US">English</option></select></label>
+    <label data-voice-auto-label hidden><input type="checkbox" data-voice-auto> Leer el resumen del siguiente envío</label>
+    <p data-voice-status role="status">Micrófono apagado</p>
+    <div class="pliegue-actions">
+      <button type="button" data-voice-start hidden>Dictar</button>
+      <button type="button" data-voice-stop hidden>Terminar dictado</button>
+      <button type="button" data-voice-abort hidden>Cancelar dictado</button>
+      <button type="button" data-voice-read hidden>Leer respuesta</button>
+      <button type="button" data-voice-silence hidden>Detener lectura</button>
+      <button type="button" data-voice-close>Cerrar</button>
+    </div>
+  </dialog>
+</section>
