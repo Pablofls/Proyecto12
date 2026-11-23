@@ -10,6 +10,7 @@ import http.cookiejar
 import json
 import os
 import re
+import time
 import uuid
 import urllib.error
 import urllib.parse
@@ -74,9 +75,37 @@ _SECRETOS = {"password", "access_token", "refresh_token", "token", "token_operac
 Respuesta = namedtuple("Respuesta", "status headers texto datos")
 
 
-def url_base(servicio):
+# Modo proxy: TODA la suite entra por Nginx (como un cliente real) en vez de ir
+# directo a cada contenedor. Las rutas fuera de /api/v1 (/health, /docs,
+# /contratos/...) viven bajo /servicios/<nombre>/ (docs/REVERSE_PROXY.md).
+VIA_PROXY = os.environ.get("E2E_VIA_PROXY") == "1"
+PROXY_URL = os.environ.get("PROXY_URL", "http://proxy:8080").rstrip("/")
+PREFIJO_PROXY = {
+    "auth": "auth", "devoluciones": "devoluciones", "logistica": "logistica",
+    "inspecciones": "inspecciones", "disposicion": "disposicion-inventario",
+    "reembolsos": "reembolsos-costos", "ventas": "ventas-catalogos",
+    "evidencias": "evidencias", "auditoria": "auditoria",
+    "motivos": "clasificacion-motivos", "causa_raiz": "causa-raiz",
+    "proveedores": "proveedores", "reportes": "reportes-analitica",
+    "sincronizacion": "sincronizacion", "integraciones": "integraciones-monitoreo",
+}
+
+
+def url_directa(servicio):
+    """URL del contenedor, sin pasar por Nginx."""
     variable, defecto = SERVICIOS[servicio]
     return os.environ.get(variable, defecto).rstrip("/")
+
+
+def url_base(servicio):
+    return PROXY_URL if VIA_PROXY else url_directa(servicio)
+
+
+def ruta_publica(servicio, ruta):
+    """En modo proxy, lo que no es /api/v1 se pide bajo /servicios/<nombre>."""
+    if VIA_PROXY and not ruta.startswith("/api/v1"):
+        return f"/servicios/{PREFIJO_PROXY[servicio]}{ruta}"
+    return ruta
 
 
 def _recortar(valor, limite=300):
@@ -107,7 +136,7 @@ def _decodificar(texto, tipo):
     return None
 
 
-def llamar(servicio, metodo, ruta, cuerpo=None, token=None, xml=None,
+def _llamar_una(servicio, metodo, ruta, cuerpo=None, token=None, xml=None,
            accept="application/json", cabeceras=None, correlation_id=None,
            multipart=None, absoluta=False):
     """Peticion HTTP real. Devuelve Respuesta(status, headers, texto, datos).
@@ -117,7 +146,7 @@ def llamar(servicio, metodo, ruta, cuerpo=None, token=None, xml=None,
     - Nunca lanza por un 4xx/5xx: las pruebas comparan el codigo.
     - Imprime metodo, URL, codigo y cuerpo recortado SIN secretos (evidencia).
     """
-    url = ruta if absoluta else url_base(servicio) + ruta
+    url = ruta if absoluta else url_base(servicio) + ruta_publica(servicio, ruta)
     encabezados = {"Accept": accept}
     datos = None
     if multipart:
@@ -182,7 +211,7 @@ class SesionWeb:
     """
 
     def __init__(self, email):
-        self.base = os.environ.get("WEB_URL", "http://app:8000").rstrip("/")
+        self.base = PROXY_URL if VIA_PROXY else os.environ.get("WEB_URL", "http://app:8000").rstrip("/")
         self.jar = http.cookiejar.CookieJar()
         self.opener = urllib.request.build_opener(
             urllib.request.HTTPCookieProcessor(self.jar), _SinRedireccion())
@@ -233,6 +262,22 @@ def cabecera_permiso(token, operacion, recurso_id):
                    "password": os.environ["PASSWORD_DEMO"]}, token=token)
     assert resp.status == 201, resp.texto
     return {"X-Autorizacion-Operacion": resp.datos["token_operacion"]}
+
+
+def llamar(servicio, metodo, ruta, *args, **kwargs):
+    """Una peticion; por Nginx, el login espera a que se reponga su cupo.
+
+    El proxy limita /auth/login a 10/min con rafaga de 5 por IP (429 de Nginx, HTML,
+    sin Retry-After de servicio). La suite inicia sesion muchas veces desde una sola
+    IP, asi que en modo proxy se reintenta ese 429 en vez de falsear la prueba.
+    """
+    for _ in range(6):
+        resp = _llamar_una(servicio, metodo, ruta, *args, **kwargs)
+        if not (VIA_PROXY and resp.status == 429 and ruta.endswith("/auth/login")
+                and "nginx" in (resp.texto or "").lower()):
+            return resp
+        time.sleep(7)
+    return resp
 
 
 def error_tipo(resp):

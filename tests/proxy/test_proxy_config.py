@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 
 RAIZ = Path(__file__).parents[2]
@@ -83,3 +84,17 @@ def test_healthcheck_del_proxy_usa_ipv4_explicito():
     # `localhost` resuelve a ::1 en Alpine y Nginx solo escucha IPv4: quedaba unhealthy.
     assert "http://127.0.0.1:8080/proxy-health" in COMPOSE
     assert "localhost:8080" not in COMPOSE
+
+
+def test_toda_ruta_de_los_openapi_tiene_location_en_nginx():
+    """Si alguien agrega un endpoint o servicio, esta prueba falla hasta que Nginx lo enrute."""
+    import re
+    yaml = pytest.importorskip("yaml")
+    for nombre, conf in (("http", HTTP), ("tls", TLS)):
+        prefijos = re.findall(r"location (?:\^~ |= )?(/api/v1/[^ ]*) ", conf)
+        assert prefijos, nombre
+        for archivo in sorted((RAIZ / "services").glob("*/openapi.yaml")):
+            spec = yaml.safe_load(archivo.read_text(encoding="utf-8"))
+            for ruta in (spec.get("paths") or {}):
+                if ruta.startswith("/api/v1"):
+                    assert any(ruta.startswith(p) for p in prefijos), (nombre, archivo.parent.name, ruta)
