@@ -19,7 +19,7 @@ límites de petición y terminación TLS.
 | Contrato de un servicio | `http(s)://HOST/servicios/SERVICIO/contratos/NOMBRE.xsd` |
 
 Los prefijos disponibles bajo `/servicios/` son `auth`, `devoluciones`,
-`logistica`, `inspecciones`, `reembolsos-costos`, `ventas-catalogos`,
+`logistica`, `inspecciones`, `disposicion-inventario`, `reembolsos-costos`, `ventas-catalogos`,
 `evidencias`, `auditoria`, `reportes-analitica`, `causa-raiz`,
 `sincronizacion`, `proveedores`, `integraciones-monitoreo` y
 `clasificacion-motivos`.

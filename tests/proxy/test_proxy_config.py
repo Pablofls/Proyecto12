@@ -7,7 +7,7 @@ TLS = (RAIZ / "infra/nginx/conf.d/orvia-tls.conf").read_text(encoding="utf-8")
 
 SERVICIOS = {
     "app", "auth", "devoluciones", "logistica", "inspecciones",
-    "reembolsos-costos", "ventas-catalogos", "evidencias",
+    "disposicion-inventario", "reembolsos-costos", "ventas-catalogos", "evidencias",
     "analisis-auditoria", "reportes-analitica", "causa-raiz",
     "sincronizacion", "proveedores", "integraciones-monitoreo",
     "clasificacion-motivos",
@@ -35,7 +35,7 @@ def test_backend_no_publica_puertos_y_proxy_tiene_dos_redes():
 def test_todas_las_api_tienen_destino_en_http_y_tls():
     destinos = {
         "auth", "devoluciones", "logistica", "inspecciones",
-        "reembolsos-costos", "ventas-catalogos", "evidencias",
+        "disposicion-inventario", "reembolsos-costos", "ventas-catalogos", "evidencias",
         "analisis-auditoria", "reportes-analitica", "causa-raiz",
         "sincronizacion", "proveedores", "integraciones-monitoreo",
         "clasificacion-motivos",

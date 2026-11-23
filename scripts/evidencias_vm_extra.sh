@@ -19,7 +19,7 @@ FECHA="$(date -u '+%Y-%m-%d %H:%M UTC')"
 QUE="${1:-todo}"
 PASS="$(grep -E '^PASSWORD_DEMO=' .env | head -1 | cut -d= -f2-)"
 cab() { printf '# %s\n\nCapturado en la VM el %s con scripts/evidencias_vm_extra.sh. Salida real, sin editar.\n' "$1" "$FECHA"; }
-login() { curl -s -m 10 -X POST http://localhost:8001/api/v1/auth/login -H 'Content-Type: application/json' \
+login() { curl -s -m 10 -X POST http://localhost/api/v1/auth/login -H 'Content-Type: application/json' \
           -d "{\"email\":\"$1\",\"password\":\"$2\"}"; }
 tok()   { python3 -c 'import sys,json; print(json.load(sys.stdin).get("access_token",""))' 2>/dev/null; }
 quiere() { [ "$QUE" = "todo" ] || [ "$QUE" = "$1" ]; }
@@ -29,9 +29,9 @@ if quiere jwt; then
     cab "EV-03: lista negra de JWT en Redis tras el logout"
     T="$(login carla.reembolsos@demo.mx "$PASS" | tok)"
     printf '\n>>> POST /auth/logout (cierra la sesion de Carla)\n'
-    curl -s -m 10 -i -X POST http://localhost:8001/api/v1/auth/logout -H "Authorization: Bearer $T" | sed -n '1p;$p'
+    curl -s -m 10 -i -X POST http://localhost/api/v1/auth/logout -H "Authorization: Bearer $T" | sed -n '1p;$p'
     printf '\n>>> GET /auth/sesion con el mismo token (debe ser 401 token_revocado)\n'
-    curl -s -m 10 -i http://localhost:8001/api/v1/auth/sesion -H "Authorization: Bearer $T" | sed -n '1p;$p'
+    curl -s -m 10 -i http://localhost/api/v1/auth/sesion -H "Authorization: Bearer $T" | sed -n '1p;$p'
     printf '\n>>> redis-cli --scan --pattern devoluciones:jwt_revocado:*\n'
     K="$(docker compose exec -T redis redis-cli --scan --pattern 'devoluciones:jwt_revocado:*' | tr -d '\r')"
     echo "$K"
@@ -78,7 +78,7 @@ if quiere bloqueo; then
     CORREO="sofia.cliente@demo.mx"
     for i in 1 2 3 4 5 6; do
       printf '\n>>> intento %s con contrasena incorrecta\n' "$i"
-      curl -s -m 10 -i -X POST http://localhost:8001/api/v1/auth/login -H 'Content-Type: application/json' \
+      curl -s -m 10 -i -X POST http://localhost/api/v1/auth/login -H 'Content-Type: application/json' \
            -d "{\"email\":\"$CORREO\",\"password\":\"incorrecta-$i\"}" | sed -n '1p;$p'
     done
     printf '\n>>> intentos y bloqueo en Redis\n'
