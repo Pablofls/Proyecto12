@@ -150,8 +150,8 @@ def test_cliente_no_ve_la_devolucion_de_otro_y_queda_en_bitacora(ctx):
 INVALIDOS = [
     ("devoluciones", "GET", P["devoluciones"] + "?por_pagina=0", None, c.CLIENTE),
     ("devoluciones", "POST", P["devoluciones"], {"motivo_id": 1}, c.CLIENTE),
-    ("inspecciones", "POST", P["inspecciones"] + "/1/disposicion",
-     {"destino": "al-espacio"}, c.ANALISTA),
+    ("disposicion", "POST", P["disposicion"] + "/disposiciones",
+     {"devolucion_id": 1, "destino": "al-espacio", "justificacion": "corta"}, c.ANALISTA),
     ("reembolsos", "POST", P["reembolsos"] + "/reembolsos",
      {"devolucion_id": 1, "estado": "aprobado", "metodo": "tarjeta", "monto": -5},
      c.ENCARGADO_REEMBOLSOS),
@@ -244,10 +244,12 @@ def test_reembolso_sin_autorizar_responde_409(ctx):  # RN-04
     resp = flujo.registrar(ctx)
     assert resp.status == 201
     dev_id = resp.datos["id"]
+    token = ctx.h(c.ENCARGADO_REEMBOLSOS)
     r = c.llamar("reembolsos", "POST", P["reembolsos"] + "/reembolsos",
                  {"devolucion_id": dev_id, "estado": "aprobado",
                   "metodo": "tarjeta", "monto": 1},
-                 token=ctx.h(c.ENCARGADO_REEMBOLSOS))
+                 token=token,
+                 cabeceras=c.cabecera_permiso(token, "aprobar_reembolso", dev_id))
     assert r.status == 409 and c.error_tipo(r) == "estado_no_permite"
     assert c.sql("SELECT COUNT(*) AS n FROM reembolsos WHERE devolucion_id = %s",
                  (dev_id,), uno=True)["n"] == 0
@@ -281,15 +283,21 @@ def test_cadena_de_frio_rota_impide_inventario_409(ctx):  # RN-06, RN-07
     # La inspeccion no se puede duplicar.
     assert flujo.inspeccionar(ctx, dev_id).status == 409
 
-    ruta = f"{P['inspecciones']}/{dev_id}/disposicion"
+    ruta = f"{P['disposicion']}/disposiciones"
     analista = ctx.h(c.ANALISTA)
-    r = c.llamar("inspecciones", "POST", ruta, {"destino": "inventario"}, token=analista)
-    assert r.status == 409 and c.error_tipo(r) == "no_apto_inventario"
+
+    def decidir(destino, justificacion):
+        return c.llamar("disposicion", "POST", ruta,
+                        {"devolucion_id": dev_id, "destino": destino, "justificacion": justificacion},
+                        token=analista,
+                        cabeceras=c.cabecera_permiso(analista, "aprobar_disposicion", dev_id))
+
+    r = decidir("reintegrar", "Intento de reintegrar con cadena rota")
+    assert r.status == 409 and c.error_tipo(r) == "decision_no_permitida"
     assert c.sql("SELECT COUNT(*) AS n FROM disposiciones WHERE devolucion_id = %s",
                  (dev_id,), uno=True)["n"] == 0
     # El destino correcto para un producto no apto si se permite.
-    r = c.llamar("inspecciones", "POST", ruta,
-                 {"destino": "desecho", "justificacion": "Cadena de frio rota"}, token=analista)
+    r = decidir("desecho", "Cadena de frio rota, se desecha")
     assert r.status == 201
 
 
