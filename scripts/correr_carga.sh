@@ -46,7 +46,7 @@ escenario() {
   [ "$SOLO" = "todos" ] || [ "$SOLO" = "$nombre" ] || return 0
   echo; echo "=== Escenario $nombre: $usuarios usuarios, $ritmo/s, $duracion ===" | tee -a "$DIR/encabezado.txt"
   liberar_limites
-  docker run --rm --network "$RED" \
+  docker run --rm --network "$RED" --user "$(id -u):$(id -g)" \
     -e PASSWORD_DEMO="$PASSWORD_DEMO" \
     -v "$PWD/tests/carga:/carga:ro" -v "$PWD/$DIR:/salida" \
     "$IMAGEN" -f /carga/locustfile.py --headless \
