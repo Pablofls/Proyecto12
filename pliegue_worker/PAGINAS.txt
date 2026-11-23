@@ -1,0 +1,54 @@
+# PLIEGUE 20 - CONTRATO COMPATIBLE DE PAGINAS
+# Archivo reconstruido porque el recurso original no estaba en el laboratorio ni en Git.
+# No constituye un reemplazo de especificaciones o decisiones futuras del usuario.
+
+OBJETIVO
+Actúa sobre una copia aislada del proyecto. Cumple la solicitud libre del
+administrador mediante cambios reales y verificables. Preserva módulos,
+plantillas, sidebar, topbar, datos, acceso por rol, rutas y trabajo del equipo
+que no se haya solicitado modificar. No reconstruyas Seguimiento de mapa:
+era una prueba descartada, no una característica a publicar.
+
+PAGINAS DEL LABORATORIO
+Los documentos editables de Pliegue son archivos JSON bajo
+apps/web/app/pliegue_pages/<slug>.json; slug: minúsculas, dígitos y guiones,
+comenzando por una letra y con un máximo de 40 caracteres. Cada documento
+contiene EXACTAMENTE estas seis propiedades:
+  title: texto no vacío de hasta 80 caracteres
+  sidebar: texto no vacío de hasta 80 caracteres, sin nombres repetidos
+  icon: uno de chart, form, page o grid
+  html: fragmento de HTML bien formado, sin scripts ni declaraciones XML
+  css: texto CSS local sin referencias remotas ni @import
+  datasets: objeto con conjuntos ficticios de filas numéricas o de texto
+El validador de pliegue_worker.builder.documents es la fuente de verdad
+para tamaños, atributos, etiquetas, datos y comportamiento admitido.
+
+GRAFICAS Y COMPONENTES
+El elemento <orvia-chart/> admite dataset, kind, x, y, title y color;
+kind puede ser bars, bars-3d, lines, pie, area o scatter. Opcionales:
+group, interactive (true o false) y key. No inventes datasets reales:
+marca claramente las demostraciones como ficticias. Los elementos HTML
+solo pueden usar etiquetas y atributos permitidos por builder.py y
+page_extensions.py. Las imágenes deben utilizar un asset local autorizado
+(por ejemplo img asset="orvia" con atributo alt). No agregues scripts,
+onclick, iframes, cargas externas, enlaces remotos ni credenciales a páginas
+producidas bajo ese contrato. Usa interacciones nativas que valide el builder
+(pestañas, filtros, diálogos y formularios locales) cuando sean suficientes.
+
+SOLICITUDES DE CODIGO FUERA DEL CONSTRUCTOR
+Pliegue no es un catálogo cerrado de cambios: cuando la solicitud requiere
+HTML, CSS, JS, Python, endpoints, lógica, componentes o pruebas de la
+aplicación, prepara una propuesta de código en los archivos fuente pertinentes
+sin tocar la base de datos ni servicios externos desde la copia aislada.
+Identifica dependencias y límites de validación. Cuando un cambio no puede
+previsualizarse o aprobarse mediante los verificadores existentes, repórtalo
+como propuesta pendiente y no lo presentes como publicado.
+
+SEGURIDAD Y REVISION
+No toques contraseñas, tokens, sesiones, políticas de autorización, migraciones,
+infraestructura, archivos .env, bases reales ni archivos ajenos a la solicitud.
+Preserva roles: solo Administrador puede editar o aprobar código; los demás
+usuarios solo acceden a consultas permitidas. No publiques ni despliegues
+ningún cambio por tu cuenta. El administrador debe revisar Antes/Después y
+autorizar expresamente. No inventes resultados de pruebas. Para cambios
+visualizados reporta archivos tocados, pruebas y limitaciones.
