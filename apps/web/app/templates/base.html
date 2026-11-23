@@ -6,31 +6,21 @@
   <title>{% block titulo %}Plataforma de devoluciones{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
   <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar-orvia.css') }}">
-  <script src="{{ url_for('static', filename='js/sidebar-orvia.js') }}" defer></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/topbar-orvia.css') }}">
-  <script src="{{ url_for('static', filename='js/topbar-orvia.js') }}" defer></script>
-  {# Pliegue 20.0: un solo panel global, habilitado por configuración y rol. #}
-  {% if pliegue_activo %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/pliegue.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/pliegue-roles.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/pliegue-acabado.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/pliegue-revision-v7.css') }}">
-  <script src="{{ url_for('static', filename='js/pliegue.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/pliegue-roles.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/pliegue-live-selector.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/pliegue-acabado.js') }}" defer></script>
-  {% if rol_actual == 'Administrador' and config.PLIEGUE_VISUAL %}
-  <script src="{{ url_for('static', filename='js/pliegue-mentions.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/pliegue-visual.js') }}" defer></script>
-  <script src="{{ url_for('static', filename='js/pliegue-codigo.js') }}" defer></script>
-  {% endif %}
-  {% endif %}
   {% block cabeza %}{% endblock %}
 </head>
 <body>
 {% if usuario_actual %}
-{% include "_topbar.html" %}
+<header class="barra">
+  <div class="marca">DEVOLUCIONES &middot; LOGISTICA INVERSA</div>
+  <div class="sesion">
+    {% if modo_distribuido %}<span class="estado estado-cerrada">API distribuida</span>{% endif %}
+    {% include "_campanita.html" %}
+    <span>{{ usuario_actual.nombre }} &mdash; {{ rol_actual }}</span>
+    <form method="post" action="{{ url_for('auth.logout') }}">
+      <button class="salir" type="submit">Cerrar sesion</button>
+    </form>
+  </div>
+</header>
 
 {% macro enlace(endpoint, texto, roles) -%}
   {% if rol_actual in roles %}
@@ -54,7 +44,6 @@
   {{ enlace('panel.bitacora', 'Bitacora', ['Administrador', 'Analista de Devoluciones']) }}
   {{ enlace('integracion.servicios', 'Servicios', ['Administrador']) }}
 </nav>
-{% include "_sidebar.html" %}
 {% endif %}
 
 <main>
@@ -65,12 +54,5 @@
   </div>
   {% block contenido %}{% endblock %}
 </main>
-{% if pliegue_activo and usuario_actual %}
-  {% if rol_actual == 'Administrador' and config.PLIEGUE_VISUAL %}
-    {% set pliegue_screen = self.titulo()|striptags|trim %}
-    {% include 'pliegue/_codigo.html' %}
-  {% endif %}
-<script id="pliegue-boot" type="application/json">{{ pliegue_boot|tojson }}</script>
-{% endif %}
 </body>
 </html>

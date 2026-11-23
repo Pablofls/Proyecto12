@@ -1,113 +1,52 @@
 {% extends "base.html" %}
-{% block titulo %}Venta {{ venta.folio_venta }} | Orvia{% endblock %}
+{% block titulo %}Venta {{ venta.folio_venta }}{% endblock %}
 {% block contenido %}
-<style>
-/* Solo la pantalla de detalle de venta; el layout original de Orvia no se modifica. */
-body:has(#ov-venta-detalle){margin:0;background:#f7f9fc;font-family:"Segoe UI",Arial,sans-serif;color:#14243b}
-/* Encabezado y sidebar únicos en base.html */
-body:has(#ov-venta-detalle)>main{max-width:none;width:100%;margin:0;padding:0}
-body:has(#ov-venta-detalle)>main>.avisos{position:fixed;right:24px;top:96px;z-index:70;max-width:min(440px,90vw)}
-#ov-venta-detalle,#ov-venta-detalle *{box-sizing:border-box}
-#ov-venta-detalle{--ink:#14243b;--muted:#7487a0;--line:#e5ebf2;--green:#078858;display:grid;grid-template-columns:minmax(0,1fr);min-height:100vh;background:#f7f9fc;font-size:14px}
-#ov-venta-detalle a{text-decoration:none}
-#ov-venta-detalle .ov-side{background:#fff;border-right:1px solid var(--line);height:100vh;position:sticky;top:0;display:flex;flex-direction:column;padding:30px 21px 23px;overflow-y:auto}
-#ov-venta-detalle .ov-logo{display:flex;align-items:center;gap:10px;color:#111d30;padding:0 8px;margin-bottom:43px;font:700 37px/1 Georgia,serif;letter-spacing:-1.5px}
-#ov-venta-detalle .ov-logo svg{width:52px;height:36px;flex:none}
-#ov-venta-detalle .ov-nav{display:flex;flex-direction:column;gap:4px}
-#ov-venta-detalle .ov-nav a{display:flex;align-items:center;gap:16px;min-height:49px;padding:0 15px;border-radius:11px;color:#4b5d79;font-size:15px;white-space:nowrap;font-weight:500}
-#ov-venta-detalle .ov-nav a:hover{background:#f0f7f3;color:#08734b}
-#ov-venta-detalle .ov-nav a[aria-current="page"]{background:#e1f1eb;color:#086c46;font-weight:700}
-#ov-venta-detalle .ov-nav svg{height:21px;width:21px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linejoin:round;stroke-linecap:round}
-#ov-venta-detalle .ov-footer{margin-top:auto;padding:19px 12px 0;border-top:1px solid var(--line);color:#91a0b5;font-size:12px}
-#ov-venta-detalle .ov-space{min-width:0}
-#ov-venta-detalle .ov-top{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:15px 31px;min-height:92px;background:#fff;border-bottom:1px solid var(--line)}
-#ov-venta-detalle .ov-top-search{width:min(770px,65%);display:flex;align-items:center;gap:13px;padding:15px 18px;border:1px solid #e9eef3;border-radius:12px;background:#f6f8fa;color:#8293aa;font-size:13px}
-#ov-venta-detalle .ov-top-search svg,#ov-venta-detalle .ov-bell svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
-#ov-venta-detalle .ov-key{margin-left:auto;font-size:11px;color:#91a0b5;background:#fff;border-radius:7px;padding:6px 8px}
-#ov-venta-detalle .ov-session{display:flex;align-items:center;gap:16px;min-width:0}
-#ov-venta-detalle .ov-avatar{background:#dcf2e9;color:#087f56;border-radius:50%;height:42px;width:42px;display:grid;place-items:center;font-weight:750;flex:none}
-#ov-venta-detalle .ov-user{min-width:0;white-space:nowrap}
-#ov-venta-detalle .ov-user strong{display:block;font-size:13px}
-#ov-venta-detalle .ov-user small{display:block;color:var(--muted);margin-top:4px;font-size:11px}
-#ov-venta-detalle .ov-content{padding:39px 31px 68px;max-width:1660px;margin:0 auto}
-#ov-venta-detalle .ov-breadcrumb{font-size:12px;margin-bottom:18px;color:#8a9bb0}
-#ov-venta-detalle .ov-breadcrumb a{color:#078858;font-weight:650}
-#ov-venta-detalle .ov-head{display:flex;align-items:start;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:24px}
-#ov-venta-detalle h1{font-size:clamp(26px,2.5vw,36px);line-height:1.2;letter-spacing:-.7px;margin:0 0 9px;font-weight:750;color:#10223c;overflow-wrap:anywhere}
-#ov-venta-detalle .ov-sub{color:var(--muted);line-height:1.6;margin:0;font-size:13px}
-#ov-venta-detalle .ov-back{display:inline-flex;align-items:center;padding:12px 16px;border:1px solid #dce5ee;background:#fff;color:#526985;border-radius:10px;font-size:13px;font-weight:650}
-#ov-venta-detalle .ov-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:23px;box-shadow:0 6px 20px rgba(20,37,62,.025)}
-#ov-venta-detalle .ov-card-title{padding:21px 24px;border-bottom:1px solid var(--line);font-size:18px;color:#10243f;font-weight:750}
-#ov-venta-detalle .ov-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:25px;padding:24px}
-#ov-venta-detalle .ov-meta dt{font-size:12px;color:var(--muted);margin-bottom:8px}
-#ov-venta-detalle .ov-meta dd{font-size:15px;font-weight:650;margin:0;color:#14243b;overflow-wrap:anywhere}
-#ov-venta-detalle .ov-headline{padding:24px;display:flex;justify-content:space-between;align-items:flex-start;gap:15px;flex-wrap:wrap}
-#ov-venta-detalle .ov-headline h2{font-size:19px;font-weight:750;color:#10243f;margin:0 0 7px}
-#ov-venta-detalle .ov-headline p{font-size:12px;color:var(--muted);margin:0;max-width:750px;line-height:1.6}
-#ov-venta-detalle .ov-tablewrap{overflow-x:auto}
-#ov-venta-detalle table{border-collapse:collapse;width:100%;min-width:1030px;font-size:12px}
-#ov-venta-detalle th{padding:15px 16px;text-align:left;background:#e8f4ee;color:#658199;font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.025em;white-space:nowrap}
-#ov-venta-detalle td{padding:18px 16px;border-top:1px solid #e9eef3;color:#4c607d;vertical-align:middle}
-#ov-venta-detalle td:first-child{color:#203550;font-weight:700}
-#ov-venta-detalle .ov-chip{display:inline-flex;padding:7px 12px;border-radius:99px;background:#fff3e8;color:#ae681b;font-size:11px;font-weight:650;white-space:nowrap}
-#ov-venta-detalle .ov-chip.refrigerado{background:#e9f2ff;color:#2174c6}
-#ov-venta-detalle .ov-button{display:inline-flex;align-items:center;justify-content:center;border-radius:9px;padding:10px 13px;background:#e9f6ef;border:1px solid #d4e9dc;color:#087c52;white-space:nowrap;font-size:12px;font-weight:750}
-#ov-venta-detalle .ov-disabled{font-size:11px;color:#91a0b5}
-#ov-venta-detalle .ov-empty{color:var(--muted);padding:28px;text-align:center}
-@media(max-width:1000px){
-#ov-venta-detalle{grid-template-columns:215px minmax(0,1fr)}#ov-venta-detalle .ov-side{padding:24px 14px}#ov-venta-detalle .ov-nav a{font-size:13px;gap:11px}#ov-venta-detalle .ov-content{padding:28px 18px}}
-@media(max-width:720px){
-#ov-venta-detalle{display:block}#ov-venta-detalle .ov-side{height:auto;position:relative;padding:14px;gap:9px}#ov-venta-detalle .ov-logo{font-size:28px;margin:0}#ov-venta-detalle .ov-nav{flex-direction:row;overflow:auto}#ov-venta-detalle .ov-nav a{min-height:40px;padding:0 12px}#ov-venta-detalle .ov-footer{display:none}#ov-venta-detalle .ov-top{min-height:70px;padding:12px 16px}#ov-venta-detalle .ov-top-search{display:none}#ov-venta-detalle .ov-meta{grid-template-columns:1fr;gap:18px}#ov-venta-detalle .ov-user{white-space:normal}}
+<h1>Venta {{ venta.folio_venta }}</h1>
+<p class="sub"><a href="{{ url_for('ventas.listar') }}">Ventas</a> / {{ venta.folio_venta }}</p>
 
-#ov-venta-detalle {display:block;width:100%;min-width:0;}
-#ov-venta-detalle .ov-space {width:100%;min-width:0;}
-#ov-venta-detalle .ov-tablewrap {max-width:100%;overflow-x:auto;}
-</style>
+<div class="tarjeta">
+  <dl class="datos">
+    <dt>Cliente</dt><dd>{{ venta.cliente }}</dd>
+    <dt>Tienda</dt><dd>{{ venta.tienda }}</dd>
+    <dt>Fecha de venta</dt><dd>{{ venta.fecha_venta.strftime('%d/%m/%Y') }}</dd>
+  </dl>
+</div>
 
-<div id="ov-venta-detalle">
-
-  <div class="ov-space">
-    <div class="ov-content">
-      <div class="ov-breadcrumb"><a href="{{ url_for('ventas.listar') }}">Ventas</a> / {{ venta.folio_venta }}</div>
-      <div class="ov-head">
-        <div><h1>Detalle de venta</h1><p class="ov-sub">{{ venta.folio_venta }} · Información y artículos de la compra</p></div>
-        <a class="ov-back" href="{{ url_for('ventas.listar') }}">← Volver a ventas</a>
-      </div>
-      <section class="ov-card" aria-label="Información de la venta">
-        <div class="ov-card-title">Información de compra</div>
-        <dl class="ov-meta">
-          <div><dt>Cliente</dt><dd>{{ venta.cliente }}</dd></div>
-          <div><dt>Tienda</dt><dd>{{ venta.tienda }}</dd></div>
-          <div><dt>Fecha de venta</dt><dd>{{ venta.fecha_venta.strftime('%d/%m/%Y') }}</dd></div>
-        </dl>
-      </section>
-      <section class="ov-card" aria-label="Artículos de la venta">
-        <div class="ov-headline"><div><h2>Artículos de la venta</h2><p>La devolución se registra sobre la línea específica, no sobre la venta completa (RF-06).</p></div></div>
-        <div class="ov-tablewrap"><table>
-          <thead><tr><th>Producto</th><th>SKU</th><th>Tipo</th><th>Lote</th><th>Caducidad</th><th>Proveedor</th><th>Cantidad</th><th>Precio</th><th>Devuelto</th><th>Acciones</th></tr></thead>
-          <tbody>
-          {% for l in lineas %}
-            <tr>
-              <td>{{ l.producto }}</td>
-              <td>{{ l.sku }}</td>
-              <td><span class="ov-chip {{ 'refrigerado' if l.clasificacion_temperatura == 'refrigerado' else '' }}">{{ l.clasificacion_temperatura|replace('_', ' ') }}</span></td>
-              <td>{{ l.numero_lote }}</td>
-              <td>{{ l.fecha_caducidad.strftime('%d/%m/%Y') if l.fecha_caducidad else '' }}</td>
-              <td>{{ l.proveedor }}</td>
-              <td>{{ l.cantidad }}</td>
-              <td>$ {{ '%.2f'|format(l.precio_unitario) }}</td>
-              <td>{{ l.ya_devuelto }}</td>
-              <td>{% if rol_actual in ['Cliente', 'Analista de Devoluciones'] %}
-                    {% if l.ya_devuelto < l.cantidad %}
-                      <a class="ov-button" href="{{ url_for('devoluciones.nueva', venta_detalle_id=l.id) }}">Solicitar devolución</a>
-                    {% else %}<span class="ov-disabled">Sin unidades disponibles</span>{% endif %}
-                  {% else %}<span class="ov-disabled">—</span>{% endif %}</td>
-            </tr>
-          {% else %}<tr><td class="ov-empty" colspan="10">Esta venta no tiene artículos registrados.</td></tr>{% endfor %}
-          </tbody>
-        </table></div>
-      </section>
-    </div>
-  </div>
+<h2>Articulos de la venta</h2>
+<p class="nota">
+  La devolucion se registra sobre la linea especifica, no sobre la venta completa,
+  para poder devolver un solo articulo de una compra con varios (RF-06).
+</p>
+<div class="tabla-envoltura">
+  <table>
+    <thead><tr>
+      <th>Producto</th><th>SKU</th><th>Tipo</th><th>Lote</th><th>Caducidad</th>
+      <th>Proveedor</th><th>Cantidad</th><th>Precio</th><th>Devuelto</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for l in lineas %}
+      <tr>
+        <td>{{ l.producto }}</td>
+        <td>{{ l.sku }}</td>
+        <td><span class="etiqueta {{ 'azul' if l.clasificacion_temperatura == 'refrigerado' else '' }}">{{ l.clasificacion_temperatura|replace('_', ' ') }}</span></td>
+        <td>{{ l.numero_lote }}</td>
+        <td>{{ l.fecha_caducidad.strftime('%d/%m/%Y') if l.fecha_caducidad else '' }}</td>
+        <td>{{ l.proveedor }}</td>
+        <td>{{ l.cantidad }}</td>
+        <td>$ {{ '%.2f'|format(l.precio_unitario) }}</td>
+        <td>{{ l.ya_devuelto }}</td>
+        <td>
+          {% if rol_actual in ['Cliente', 'Analista de Devoluciones'] %}
+            {% if l.ya_devuelto < l.cantidad %}
+              <a class="boton pequeno" href="{{ url_for('devoluciones.nueva', venta_detalle_id=l.id) }}">Devolver</a>
+            {% else %}
+              <span class="nota">Sin unidades disponibles</span>
+            {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}
