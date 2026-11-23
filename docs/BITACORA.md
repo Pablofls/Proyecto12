@@ -1032,3 +1032,10 @@ contenedor de disposicion-inventario (404). Se agrega `resolver 127.0.0.11` y
 `proxy_pass` por variable; los prefijos `/servicios/X/` se recortan con `rewrite`.
 Validado en la VM con un proxy temporal: reiniciar tres servicios sin recargar
 Nginx no cambia las respuestas.
+
+## 22-11-2026 — El proxy pasa al puerto 80 (RNF-12, RNF-28)
+
+Android (`OrviaApi.hostValid`) rechaza URLs con puerto, asi que el proxy debe
+estar en 80/443. Se detuvo el Apache de la VM (libreria y waylo, ya sin uso, con
+autorizacion del equipo) y `PROXY_HTTP_PORT=80`. Validado: `probar_proxy.py` 16 OK
+en el 80 y respuesta 200 desde fuera de la VM.
