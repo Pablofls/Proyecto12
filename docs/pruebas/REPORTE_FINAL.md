@@ -13,23 +13,23 @@ version, para que nunca se mezclen resultados de distintas versiones.
 
 | Dato | Valor |
 |---|---|
-| Fecha (UTC) | 2026-11-22 17:18:18 |
-| Rama | `david/pruebas-seguridad`: `main` hasta el PR #39 (app Android) mas la suite de seguridad del tercer parcial |
-| Commit | `4a0fe99389bf4632e05826fe0bdc96192a83215e` |
+| Fecha (UTC) | 2026-11-23 01:57:16 |
+| Rama | `david/pruebas-seguridad`: `main` hasta el PR #69 (retiro del analisis del 8008, trazabilidad, rediseno) mas la suite de seguridad del tercer parcial |
+| Commit | `9e64b5a62ee30e6efad5ced1d116df70ba655f46` |
 | Arbol de trabajo | limpio (sin cambios sin commit) |
 | Entorno | VM `maquina01` de Google Compute Engine (e2-standard-2), CentOS Stream 10, kernel 6.12.0 |
 | Contenedores | Docker 29.9.1, Docker Compose 5.6.0; 18 contenedores (web, 14 microservicios y 3 bases), todas las imagenes reconstruidas antes de la corrida |
 | Bases | PostgreSQL 16.15, Redis 7.4.11, MongoDB 7.0.45 |
 | Esquema | Migraciones hasta `045_bitacora_solo_agregar.sql` |
 | Datos | `db/seeds/001_catalogos.sql` + `scripts/seed_demo.py` del mismo dia |
-| Salida completa | [`salida_2026-11-22.txt`](salida_2026-11-22.txt) (1031 lineas, sin contrasenas ni tokens) |
+| Salida completa | [`salida_2026-11-23.txt`](salida_2026-11-23.txt) (1087 lineas, sin contrasenas ni tokens) |
 | Resultado | **0 bloques con fallos** |
 
 ### E2E, paridad e integracion
 
 | Bloque | Pruebas | Resultado |
 |---|---|---|
-| Suite E2E (`tests/e2e`): proceso completo, seguridad y errores, JSON/XML, **seguridad del tercer parcial** (`test_04`), rate limit | 130 | **130 passed** |
+| Suite E2E (`tests/e2e`): proceso completo, seguridad y errores, JSON/XML, **seguridad del tercer parcial** (`test_04`), rate limit | 143 | **143 passed** |
 | Paridad monolito / distribuido / API (`apps/web/app/tests/test_paridad.py`) | 8 casos x 3 caminos | **8 OK** |
 | Integracion `auth` | 7 | 7 passed |
 | Integracion `ventas-catalogos` | 4 | 4 passed |
@@ -42,10 +42,11 @@ version, para que nunca se mezclen resultados de distintas versiones.
 | Integracion `clasificacion-motivos` | 6 | 6 passed |
 | Integracion `causa-raiz` | 4 | 4 passed |
 | Integracion `proveedores` | 5 | 5 passed |
-| Integracion `reportes-analitica` | 13 | 13 passed |
+| Integracion `reportes-analitica` | 16 | 16 passed |
 | Integracion `sincronizacion` | 9 | 9 passed |
 | Integracion `integraciones-monitoreo` | 8 | 8 passed |
-| **Total** | **227** | **227 aprobadas, 0 fallos** |
+| Integracion `ventas-catalogos`: trazabilidad de lotes y series | 8 | 8 passed |
+| **Total** | **251** | **251 aprobadas, 0 fallos** |
 
 ### Unitarias (misma corrida, en la VM)
 
@@ -61,17 +62,17 @@ por eso cada bloque muestra pruebas "skipped".
 | logistica | 5 passed |
 | inspecciones | 5 passed |
 | reembolsos-costos | 8 passed |
-| analisis-auditoria | 44 passed |
+| analisis-auditoria | 31 passed |
 | clasificacion-motivos | 67 passed |
 | causa-raiz | 132 passed |
 | proveedores | 74 passed |
-| reportes-analitica | 118 passed |
+| reportes-analitica | 133 passed |
 | sincronizacion | 24 passed |
 | integraciones-monitoreo | 19 passed |
 | web (`apps/web/app/tests`) | 37 OK |
-| **Total** | **639 aprobadas** |
+| **Total** | **641 aprobadas** |
 
-**Total de la corrida: 866 pruebas aprobadas, 0 fallos.**
+**Total de la corrida: 892 pruebas aprobadas, 0 fallos.**
 
 ### Prueba de recuperacion (aparte)
 
@@ -92,7 +93,9 @@ entre filas: cambian el codigo, las pruebas o ambos.
 | 3 | 2026-11-10 | `eeed8a4` | 100 / 100 | 8 de 8 (38 pruebas) | Primera corrida con encabezado automatico y salida completa ([`salida_2026-11-10.txt`](salida_2026-11-10.txt)) |
 | 4 | 2026-11-22 | `aaaee06` | 130 / 130 | 13 de 14; devoluciones 3/6; paridad 4/8 | Los fallos fueron 429 del limite de 20 registros por minuto: el script no liberaba bien los contadores (ver tabla 3). Salida no incluida en el repositorio |
 | 5 | 2026-11-22 | `01c7c24` | 130 / 130 | 13 de 14; devoluciones 3/6; paridad 4/8 | Mismo 429: el primer arreglo del script todavia borraba solo la primera clave. Salida no incluida |
-| 6 | 2026-11-22 | `4a0fe99` (seccion 1) | 130 / 130 | 14 de 14; paridad 8/8 | **Resultado definitivo.** Incluye los 14 microservicios, la paridad y las unitarias |
+| 6 | 2026-11-22 | `4a0fe99` | 130 / 130 | 14 de 14; paridad 8/8 | 866 pruebas, 0 fallos. Antes de integrar los PR #40 a #69. Salida en [`salida_2026-11-22.txt`](salida_2026-11-22.txt) |
+| 7 | 2026-11-23 | `d900e93` | 143 / 143 | 14 de 14; paridad 8/8; trazabilidad 6/8 | Tras mergear `main`. 2 fallos de trazabilidad por datos: el seed sumo una venta reciente al lote problematico (ver tabla 3). Salida no incluida |
+| 8 | 2026-11-23 | `9e64b5a` (seccion 1) | 143 / 143 | 14 de 14 + trazabilidad; paridad 8/8 | **Resultado definitivo.** 892 pruebas, 0 fallos |
 
 ## 3. Fallos encontrados y como se corrigieron
 
@@ -106,6 +109,8 @@ entre filas: cambian el codigo, las pruebas o ambos.
 | Paridad, 2026-11-20 | La web monolitica aceptaba descripciones de mas de 2000 caracteres | **Bug de producto** | La web no validaba el maximo que si valida la API | `MAX_DESCRIPCION` en la web | Paridad 8/8 |
 | Paridad, 2026-11-20 | La web monolitica respondia 500 con un motivo inexistente | **Bug de producto** | La web no comprobaba que el motivo existiera | La web valida que el motivo exista y este activo | Paridad 8/8 |
 | 4 y 5 | Paridad (4 casos) e integracion de devoluciones (3) con 429 | Entorno: **bug del script de pruebas** | `liberar_limite_login` corria `docker compose exec` dentro de un `while read`; el `exec` consumia la entrada y solo se borraba la primera clave, asi que el contador de registros de devoluciones seguia lleno | Se borran todos los contadores dentro del contenedor de Redis de una sola vez (`redis-cli --scan` + `xargs redis-cli DEL`); se comprobo que borra 3 de 3 claves de prueba | Corrida 6 |
+
+| 7 | `test_integracion_trazabilidad` (2 pruebas): 27 unidades en vez de 24, 59.26 % en vez de 66.67 % | Datos de prueba: **bug del seed** | Al cambiar el dia, `crear_ventas_recientes` eligio el lote `L-2026-PROB-01` para la venta `VTA-20261123-R6` | El seed excluye el lote problematico de las ventas recientes; en la VM se borro esa linea (sin devoluciones) | Corrida 8 |
 
 El 429 de las corridas 4 y 5 confirma que el limite de 20 registros por minuto
 por usuario (RNF-13) funciona; lo que fallaba era la preparacion entre bloques.

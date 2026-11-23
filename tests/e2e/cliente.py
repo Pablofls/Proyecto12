@@ -67,7 +67,7 @@ ENCARGADO_REEMBOLSOS = "Encargado de Reembolsos"
 ADMINISTRADOR = "Administrador"
 
 # Campos que jamas se imprimen (RNF-16).
-_SECRETOS = {"password", "access_token", "refresh_token", "token"}
+_SECRETOS = {"password", "access_token", "refresh_token", "token", "token_operacion"}
 
 Respuesta = namedtuple("Respuesta", "status headers texto datos")
 
