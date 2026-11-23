@@ -82,7 +82,7 @@ usa su rango de numeros:
 |---|---|
 | David | 014 - 019 |
 | Persona 2 | 020 - 029 |
-| Persona 3 | 030 - 039 |
+| Roberto | 030 - 039 |
 | Persona 4 | 040 - 049 |
 
 `scripts/migrate.py` aplica las que falten en orden de nombre, asi que los huecos

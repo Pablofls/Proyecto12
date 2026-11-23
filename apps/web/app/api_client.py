@@ -71,7 +71,7 @@ def _refrescar():
 
 
 def solicitar(servicio, metodo, ruta, *, datos=None, parametros=None,
-              autenticado=True, reintentar=True):
+              autenticado=True, reintentar=True, encabezados_extra=None):
     """Ejecuta una llamada JSON y devuelve el cuerpo decodificado."""
     from app.security import correlation_id
 
@@ -89,6 +89,7 @@ def solicitar(servicio, metodo, ruta, *, datos=None, parametros=None,
             raise ErrorServicio(401, "La sesion distribuida no tiene un token vigente.",
                                 "token_ausente")
         encabezados["Authorization"] = f"Bearer {token}"
+    encabezados.update(encabezados_extra or {})
 
     peticion = urllib.request.Request(
         _url(servicio, ruta, parametros), data=cuerpo,
@@ -105,6 +106,7 @@ def solicitar(servicio, metodo, ruta, *, datos=None, parametros=None,
             return solicitar(
                 servicio, metodo, ruta, datos=datos, parametros=parametros,
                 autenticado=True, reintentar=False,
+                encabezados_extra=encabezados_extra,
             )
         raise _leer_error(exc) from exc
     except (urllib.error.URLError, TimeoutError, OSError) as exc:

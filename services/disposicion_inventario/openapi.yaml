@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  title: Servicio de disposicion e inventario
+  version: 1.0.0
+  description: Decision autorizada, cuarentena y reincorporacion controlada.
+security: [{bearerAuth: []}]
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    autorizacionOperacion:
+      name: X-Autorizacion-Operacion
+      in: header
+      required: true
+      schema: {type: string}
+      description: Token de un solo uso emitido por auth tras confirmar contrasena.
+paths:
+  /api/v1/disposicion-inventario/pendientes:
+    get: {summary: Dictamenes pendientes de decision, responses: {'200': {description: Lista}}}
+  /api/v1/disposicion-inventario/disposiciones:
+    post:
+      summary: Autorizar destino final
+      parameters: [{$ref: '#/components/parameters/autorizacionOperacion'}]
+      requestBody:
+        required: true
+        content:
+          application/json: {schema: {type: object, required: [devolucion_id, destino, justificacion]}}
+          application/xml: {schema: {type: string}}
+      responses: {'201': {description: Decision autorizada}, '403': {description: Autorizacion requerida}, '409': {description: Regla de negocio}}
+  /api/v1/disposicion-inventario/inventario/{disposicion_id}/cuarentena:
+    post: {summary: Ingresar producto recuperable en cuarentena, responses: {'201': {description: Ingreso}}}
+  /api/v1/disposicion-inventario/inventario/{inventario_id}/reincorporar:
+    post:
+      summary: Reincorporar tras autorizacion
+      parameters: [{$ref: '#/components/parameters/autorizacionOperacion'}]
+      responses: {'200': {description: Disponible}, '403': {description: Autorizacion requerida}}
+  /api/v1/disposicion-inventario/inventario:
+    get: {summary: Inventario recuperado, responses: {'200': {description: Lista}}}
+  /health:
+    get: {security: [], summary: Salud, responses: {'200': {description: OK}, '503': {description: Degradado}}}

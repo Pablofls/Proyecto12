@@ -20,7 +20,7 @@ body:has(.orvia-flow){margin:0;background:#f5f7fb;color:#132b48;font-family:Inte
 
  <div class="ov-workspace">
 
- <div class="ov-content"><div class="ov-heading"><div><h1>Inventario recuperado</h1><p class="sub">Productos que regresaron al inventario, con su etiqueta de control (RF-19).</p></div></div>
+ <div class="ov-content"><div class="ov-heading"><div><h1>Inventario recuperado</h1><p class="sub">Productos recuperables: primero cuarentena y despues reincorporacion autorizada (RF-19).</p></div></div>
  <div class="ov-page-body">
 {% if por_etiquetar %}
 <h2>Pendientes de etiquetar</h2>
@@ -36,7 +36,8 @@ body:has(.orvia-flow){margin:0;background:#f5f7fb;color:#132b48;font-family:Inte
         <td>
           {% if rol_actual == 'Encargado del Centro de Devoluciones' %}
           <form method="post" action="{{ url_for('inspecciones.etiquetar', disposicion_id=p.disposicion_id) }}">
-            <button class="boton pequeno" type="submit">Generar etiqueta</button>
+            <input name="ubicacion" value="CUARENTENA-A" required aria-label="Ubicacion">
+            <button class="boton pequeno" type="submit">Ingresar a cuarentena</button>
           </form>
           {% endif %}
         </td>
@@ -59,7 +60,7 @@ body:has(.orvia-flow){margin:0;background:#f5f7fb;color:#132b48;font-family:Inte
         <td>{{ a.sku }}</td>
         <td><a href="{{ url_for('devoluciones.detalle', devolucion_id=a.devolucion_id) }}">{{ a.folio_devolucion }}</a></td>
         <td><span class="etiqueta">{{ a.estado }}</span></td>
-        <td>{{ a.fecha_ingreso.strftime('%d/%m/%Y') }}</td>
+        <td>{{ a.fecha_ingreso.strftime('%d/%m/%Y') if a.fecha_ingreso and a.fecha_ingreso.strftime is defined else a.fecha_ingreso }}</td>
       </tr>
     {% else %}
       <tr><td colspan="6" class="vacio">Sin articulos recuperados.</td></tr>

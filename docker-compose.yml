@@ -141,6 +141,23 @@ services:
       mongo: {condition: service_healthy}
     ports: ["0.0.0.0:8004:8000"]
 
+  disposicion-inventario:
+    build:
+      context: .
+      dockerfile: services/disposicion_inventario/Dockerfile
+    container_name: devoluciones_disposicion_inventario
+    restart: unless-stopped
+    env_file: ${APP_ENV_FILE:-.env}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    ports: ["0.0.0.0:8014:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
   reembolsos-costos:
     build:
       context: .

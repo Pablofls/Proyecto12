@@ -114,11 +114,21 @@ def registrar(devolucion_id):
 
         if api_client.habilitados():
             try:
+                encabezados = None
+                if decision == "aprobado":
+                    permiso = api_client.solicitar(
+                        "auth", "POST", "/api/v1/auth/autorizar-operacion",
+                        datos={"operacion": "aprobar_reembolso",
+                               "recurso_id": str(devolucion_id),
+                               "password": request.form.get("password_confirmacion", "")},
+                    )["token_operacion"]
+                    encabezados = {"X-Autorizacion-Operacion": permiso}
                 api_client.solicitar(
                     "reembolsos", "POST",
                     "/api/v1/reembolsos-costos/reembolsos",
                     datos={"devolucion_id": devolucion_id, "monto": monto,
                            "metodo": metodo, "estado": decision},
+                    encabezados_extra=encabezados,
                 )
             except api_client.ErrorServicio as exc:
                 flash(exc.mensaje, "error")

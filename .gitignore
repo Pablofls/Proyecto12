@@ -9,6 +9,10 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+build/
+dist/
+*.spec.bak
+.pytest_*/
 
 # Datos locales y volumenes de Docker
 db/data/
