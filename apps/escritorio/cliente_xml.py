@@ -80,10 +80,17 @@ class ClienteXml:
         else:
             ejemplo = raiz_recursos() / "apps" / "escritorio" / "config.example.json"
             self.servicios = json.loads(ejemplo.read_text(encoding="utf-8"))
+        # Con el reverse proxy todos los servicios cuelgan de un solo origen
+        # (las rutas /api/v1/... lo distinguen); ya no hay un puerto por servicio.
+        self.base = str(self.servicios.get("base") or "").rstrip("/")
         self.http = sesion or requests.Session()
         self.access_token = None
         self.refresh_token = None
         self.usuario = None
+
+    def origen(self, servicio):
+        """URL base: la unica del proxy ("base") o, por compatibilidad, la del servicio."""
+        return self.base or self.servicios[servicio].rstrip("/")
 
     def solicitar(self, servicio, metodo, ruta, *, raiz=None, datos=None,
                   xsd=None, respuesta_xsd=None, token_operacion=None, autenticado=True):
@@ -102,7 +109,7 @@ class ClienteXml:
             cabeceras["Authorization"] = f"Bearer {self.access_token}"
         if token_operacion:
             cabeceras["X-Autorizacion-Operacion"] = token_operacion
-        respuesta = self.http.request(metodo, self.servicios[servicio].rstrip("/") + ruta,
+        respuesta = self.http.request(metodo, self.origen(servicio) + ruta,
                                       data=cuerpo, headers=cabeceras, timeout=12)
         try:
             if respuesta_xsd and respuesta.status_code < 400:
