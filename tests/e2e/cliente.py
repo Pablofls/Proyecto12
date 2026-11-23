@@ -10,6 +10,7 @@ import http.cookiejar
 import json
 import os
 import re
+import time
 import uuid
 import urllib.error
 import urllib.parse
@@ -318,8 +319,15 @@ def email_de_rol(rol, excluir=()):
 
 def iniciar_sesion(email):
     """Login real contra auth. La contrasena viene de PASSWORD_DEMO (.env)."""
-    resp = llamar("auth", "POST", PREFIJO_API["auth"] + "/login",
-                  {"email": email, "password": os.environ["PASSWORD_DEMO"]})
+    # Por Nginx el login admite 10/min con rafaga de 5 por IP: con 7 roles seguidos
+    # el proxy responde 429 (sin Retry-After de servicio). Se espera a que se
+    # reponga el cupo; sin proxy no hay reintentos.
+    for intento in range(6):
+        resp = llamar("auth", "POST", PREFIJO_API["auth"] + "/login",
+                      {"email": email, "password": os.environ["PASSWORD_DEMO"]})
+        if not (VIA_PROXY and resp.status == 429 and "Retry-After" not in resp.headers):
+            break
+        time.sleep(7)
     assert resp.status == 200, f"login de {email}: {resp.status}"
     return resp.datos["access_token"]
 
