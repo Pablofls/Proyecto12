@@ -4,7 +4,7 @@ Corre dentro de la red del compose en la VM (scripts/correr_carga.sh), asi se
 mide la plataforma y no el internet entre la VM y quien la prueba.
 
 Perfiles (el peso es cuantos usuarios de cada tipo hay en la mezcla):
-- Cliente (5):     consulta sus devoluciones y ventas, catalogo de motivos, pide sugerencia.
+- Cliente (5):     sus devoluciones, sus compras y si una linea se puede devolver, pide sugerencia.
 - Analista (3):    bandeja de devoluciones, detalle, reportes, analitica, trazabilidad, causa raiz.
 - Operacion (2):   Coordinador de Logistica e Inspector revisan recolecciones y devoluciones.
 - Movil campo (2): el Recolector sincroniza su cola offline (reenvia siempre el mismo lote).
@@ -114,12 +114,19 @@ class Cliente(Perfil):
         self.get("devoluciones", "/api/v1/devoluciones?por_pagina=10")
 
     @task(3)
-    def mis_compras(self):
-        self.get("ventas", "/api/v1/ventas?por_pagina=5")
-
-    @task(2)
-    def catalogo_de_motivos(self):
-        self.get("motivos", "/api/v1/motivos/categorias")
+    def compra_y_elegibilidad(self):
+        # El flujo antes de pedir una devolucion: mis compras, el detalle de una
+        # y si una de sus lineas todavia se puede devolver (RN-16).
+        r = self.get("ventas", "/api/v1/ventas?por_pagina=5")
+        if not r.ok or not (r.json().get("datos") or []):
+            return
+        venta = random.choice(r.json()["datos"])["id"]
+        d = self.get("ventas", f"/api/v1/ventas/{venta}", "/api/v1/ventas/[id]")
+        lineas = d.json().get("lineas") or [] if d.ok else []
+        if lineas:
+            linea = random.choice(lineas)["id"]
+            self.get("devoluciones", f"/api/v1/devoluciones/elegibilidad?venta_detalle_id={linea}",
+                     "/api/v1/devoluciones/elegibilidad")
 
     @task(1)
     def sugerencia_de_motivo(self):
