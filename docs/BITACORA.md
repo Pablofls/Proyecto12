@@ -1033,6 +1033,12 @@ contenedor de disposicion-inventario (404). Se agrega `resolver 127.0.0.11` y
 Validado en la VM con un proxy temporal: reiniciar tres servicios sin recargar
 Nginx no cambia las respuestas.
 
+## 22-11-2026 — El proxy pasa al puerto 80 (RNF-12, RNF-28)
+
+Android (`OrviaApi.hostValid`) rechaza URLs con puerto, asi que el proxy debe
+estar en 80/443. Se detuvo el Apache de la VM (libreria y waylo, ya sin uso, con
+autorizacion del equipo) y `PROXY_HTTP_PORT=80`. Validado: `probar_proxy.py` 16 OK
+en el 80 y respuesta 200 desde fuera de la VM.
 ## 22-11-2026 — La web usa el ultimo salto de X-Forwarded-For (RNF-13, RNF-16, RF-30)
 
 `security.py` y `blueprints/auth.py` guardaban el `X-Forwarded-For` completo: el

@@ -55,6 +55,14 @@ desplegar Nginx y comprobar los recorridos por 80/443. No se eliminan a ciegas:
 primero se ejecuta `scripts/probar_proxy.py`, se valida la app web y los clientes,
 y luego se comprueba desde una red externa que esos puertos ya no respondan.
 
+**Estado real de la VM (22-11-2026).** El proxy publica el **80**. Antes lo ocupaba
+un Apache (`httpd`, sitios `libreria` y `waylo`, sin uso) que se detuvo con
+`systemctl stop httpd` sin deshabilitarlo; sigue sin arrancar al reiniciar solo si
+se hace `systemctl disable httpd`. El 443 queda libre (TLS de Orvia aun sin
+activar). Rollback: `systemctl start httpd` y `PROXY_HTTP_PORT=8000` en `.env`.
+Ojo: la regla de firewall `libreria-permitir-http` abre el 80 a `0.0.0.0/0`; si
+Orvia no debe ser publica, restringirla a las IPs del equipo.
+
 Al agregar un servicio nuevo se crea su ruta en `infra/nginx/conf.d/`; no se abre
 otro puerto público. La matriz ejecutable está en `docs/REVERSE_PROXY.md`.
 
