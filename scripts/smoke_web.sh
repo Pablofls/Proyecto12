@@ -74,7 +74,8 @@ ver ana /devoluciones/
 # Ultima devolucion (cualquier estado): la pantalla debe abrir.
 ver ana "/devoluciones/$DEV"
 if [ -n "$DEV_PEND" ]; then
-  ver ana "/devoluciones/$DEV_PEND" "resolucion"
+  # El marcador es el campo del formulario (name="decision"), no un texto de la interfaz.
+  ver ana "/devoluciones/$DEV_PEND" 'name="decision"'
 else
   echo "OMITIDO ana /devoluciones/<pendiente> (no hay devoluciones pendientes de resolver)"
 fi
