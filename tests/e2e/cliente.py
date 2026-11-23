@@ -31,8 +31,13 @@ SERVICIOS = {
     "evidencias": ("EVIDENCIAS_URL", "http://evidencias:8000"),
     # Auditoria (8008) conserva su servicio; el analisis que tenia se fue a motivos (8010) y reportes (8018).
     "auditoria": ("AUDITORIA_URL", "http://analisis-auditoria:8000"),
+    # Tercer parcial
     "motivos": ("MOTIVOS_URL", "http://clasificacion-motivos:8000"),
+    "causa_raiz": ("CAUSA_RAIZ_URL", "http://causa-raiz:8000"),
+    "proveedores": ("PROVEEDORES_URL", "http://proveedores:8000"),
     "reportes": ("REPORTES_URL", "http://reportes-analitica:8000"),
+    "sincronizacion": ("SINCRONIZACION_URL", "http://sincronizacion:8000"),
+    "integraciones": ("INTEGRACIONES_URL", "http://integraciones-monitoreo:8000"),
 }
 
 PREFIJO_API = {
@@ -45,7 +50,12 @@ PREFIJO_API = {
     "evidencias": "/api/v1/evidencias",
     "auditoria": "/api/v1/auditoria",
     "motivos": "/api/v1/motivos",
+    "causa_raiz": "/api/v1/causa-raiz",
+    "proveedores": "/api/v1/proveedores",
     "reportes": "/api/v1",   # reportes, graficas y analitica comparten el prefijo base
+    "sincronizacion": "/api/v1/sincronizacion",
+    "integraciones": "/api/v1/integraciones",
+    "monitoreo": "/api/v1/monitoreo",
 }
 
 CLIENTE = "Cliente"
@@ -57,7 +67,7 @@ ENCARGADO_REEMBOLSOS = "Encargado de Reembolsos"
 ADMINISTRADOR = "Administrador"
 
 # Campos que jamas se imprimen (RNF-16).
-_SECRETOS = {"password", "access_token", "refresh_token", "token"}
+_SECRETOS = {"password", "access_token", "refresh_token", "token", "token_operacion"}
 
 Respuesta = namedtuple("Respuesta", "status headers texto datos")
 

@@ -50,10 +50,13 @@ fallos=0
 # suite hace varios logins, asi que se borran los contadores antes de cada bloque.
 # Solo claves de limite: no toca sesiones, intentos fallidos ni bloqueos de cuentas.
 liberar_limite_login() {
-  docker compose exec -T redis redis-cli --scan --pattern 'devoluciones:limite:*:login' \
-    | while read -r clave; do
-        [ -n "$clave" ] && docker compose exec -T redis redis-cli DEL "$clave" > /dev/null
-      done
+  # Todos los contadores de limite (login, registro de devoluciones, sincronizacion...):
+  # los bloques corren seguidos con los mismos usuarios y el limite por minuto de
+  # uno frenaria al siguiente (H-07). Solo contadores: no toca sesiones ni bloqueos.
+  # Se borran dentro del contenedor de una vez: un `docker compose exec` dentro de
+  # un `while read` se come la entrada y solo borraba la primera clave.
+  docker compose exec -T redis sh -c \
+    "redis-cli --scan --pattern 'devoluciones:limite:*' | xargs -r redis-cli DEL" > /dev/null
 }
 
 correr() {
@@ -62,6 +65,11 @@ correr() {
   "$@" 2>&1 | tee -a "$SALIDA"
   [ "${PIPESTATUS[0]}" -eq 0 ] || fallos=$((fallos + 1))
 }
+
+# Los 14 microservicios (docker-compose.yml). Si se agrega uno, se suma aqui.
+SERVICIOS="auth ventas-catalogos devoluciones evidencias logistica inspecciones
+           reembolsos-costos analisis-auditoria clasificacion-motivos causa-raiz
+           proveedores reportes-analitica sincronizacion integraciones-monitoreo"
 
 if [ "$MODO" = "todo" ] || [ "$MODO" = "e2e" ]; then
   # El repositorio se monta en /repo para que la suite vea tests/, shared/ y los XSD.
@@ -77,10 +85,7 @@ if [ "$MODO" = "todo" ] || [ "$MODO" = "paridad" ]; then
 fi
 
 if [ "$MODO" = "todo" ] || [ "$MODO" = "servicios" ]; then
-  for servicio in auth ventas-catalogos devoluciones evidencias logistica \
-                  inspecciones reembolsos-costos analisis-auditoria sincronizacion \
-                  integraciones-monitoreo clasificacion-motivos proveedores causa-raiz \
-                  reportes-analitica; do
+  for servicio in $SERVICIOS; do
     correr docker compose run --rm -e INTEGRACION=1 "$servicio" \
       python -m pytest -v -p no:cacheprovider tests/test_integracion.py
   done
@@ -89,9 +94,19 @@ if [ "$MODO" = "todo" ] || [ "$MODO" = "servicios" ]; then
     python -m pytest -v -p no:cacheprovider tests/test_integracion_trazabilidad.py
 fi
 
+if [ "$MODO" = "todo" ] || [ "$MODO" = "unitarias" ]; then
+  # Sin INTEGRACION: las pruebas de integracion se saltan solas.
+  for servicio in $SERVICIOS; do
+    correr docker compose run --rm "$servicio" \
+      python -m pytest -q -p no:cacheprovider tests
+  done
+  correr docker compose exec -T app sh -c "cd apps/web && PYTHONPATH=/srv/app:. python -m unittest \
+    app.tests.test_api_client app.tests.test_exportacion app.tests.test_microservicios app.tests.test_notificaciones"
+fi
+
 echo | tee -a "$SALIDA"
 echo "=== Resumen ===" | tee -a "$SALIDA"
-grep -E "^(=== |=+ .*(passed|failed|error|skipped).* =+$|Ran [0-9]+ tests|OK$|FAILED \\()" "$SALIDA" | grep -v "=== Resumen" | tee -a "$SALIDA.resumen" > /dev/null
+grep -E "^(=== |=+ .*(passed|failed|error|skipped).* =+$|[0-9]+ (passed|failed)|Ran [0-9]+ tests|OK$|FAILED \\()" "$SALIDA" | grep -v "=== Resumen" | tee -a "$SALIDA.resumen" > /dev/null
 cat "$SALIDA.resumen" >> "$SALIDA"; rm -f "$SALIDA.resumen"
 echo "Bloques con fallos: $fallos" | tee -a "$SALIDA"
 echo

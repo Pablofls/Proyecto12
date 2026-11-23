@@ -994,3 +994,21 @@ espacio, se hace a mano y con la decision del equipo.
 **Costo.** El interruptor `ANALISIS_HABILITADO` desaparece: revertir el retiro exige `git revert`. El analisis
 sigue en el historial de git por si alguien lo necesita.
 
+## 2026-11-22 — Suite de seguridad del tercer parcial y corrida final
+
+**Suite nueva `tests/e2e/test_04_seguridad_tercer_parcial.py`.** Contra los
+servicios reales: los seis servicios nuevos rechazan peticiones sin token y con
+token revocado; los roles de campo solo entran a lo que los nombra; un usuario
+con sucursal no ve devoluciones de otra tienda (ni en el detalle ni en el
+listado); operaciones criticas con contrasena incorrecta, rol no permitido, sin
+permiso, permiso para otro registro y permiso de un solo uso (se comprueba que
+desaparece de Redis al usarse); XXE, inyeccion SQL en el login y en la
+sincronizacion, rutas con caracteres peligrosos y `/health` sin datos sensibles.
+
+**Corrida final.** `correr_e2e.sh` ahora cubre los 14 microservicios y las
+pruebas unitarias. Las dos primeras corridas del dia fallaron con 429 por un bug
+del propio script: `liberar_limite_login` ejecutaba `docker compose exec` dentro
+de un `while read` y solo borraba la primera clave. Corregido, la corrida
+definitiva (`4a0fe99`) dio 866 pruebas aprobadas y 0 bloques con fallos. Detalle
+en `docs/pruebas/REPORTE_FINAL.md`.
+
