@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Devoluciones (devoluciones) - v1",
-    "description": "Evidencias request/response del servicio devoluciones (puerto 8002). Requiere el environment vm.postman_environment.json con vm_host, password_demo y, si aplica, los ids de las colecciones previas. Orden de corrida y capturas: docs/evidencias/README.md.",
+    "description": "Evidencias request/response del servicio devoluciones (por el reverse proxy). Requiere el environment vm.postman_environment.json con vm_host, password_demo y, si aplica, los ids de las colecciones previas. Orden de corrida y capturas: docs/evidencias/README.md.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -18,7 +18,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{devoluciones_url}}/health",
+            "url": "{{devoluciones_url}}/servicios/devoluciones/health",
             "description": "RNF-22, RF-32: el servicio responde y reporta el estado de sus dependencias."
           },
           "event": [

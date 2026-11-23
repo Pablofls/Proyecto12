@@ -761,70 +761,19 @@ def analisis_auditoria(c):
     for r in ("cliente", "analista", "admin", "centro"):
         c.login(r)
 
-    c.carpeta("01 Clasificar motivo (POST)")
-    desc = {"descripcion": "El producto llego roto y el empaque aplastado por el golpe."}
-    c.caso("clasificar 200 cliente", "POST", A + "/clasificar-motivo", "RF-24, RN-11: sugiere un motivo; el usuario siempre confirma.",
-           rol="cliente", body=desc, tests=[tj("requiere confirmacion", "J.requiere_confirmacion === true")],
-           explica="Ranking explicable por palabras clave; nunca decide la causa (RN-09, RN-11).",
-           pg="`SELECT id, nombre FROM motivos WHERE activo;` (los motivos sugeridos salen de aqui).")
-    c.caso("clasificar 200 analista XML", "POST", A + "/clasificar-motivo", "Mismo servicio con XML (clasificacion.xsd).", rol="analista",
-           fmt="xml", body=xb("clasificacion", descripcion="La leche llego caliente, la temperatura estaba alta."))
-    c.caso("clasificar 400 descripcion corta", "POST", A + "/clasificar-motivo", "La descripcion exige entre 10 y 2000 caracteres.",
-           rol="cliente", body={"descripcion": "roto"}, codigo=400, tipo="validacion")
-    c.caso("clasificar 401 sin token", "POST", A + "/clasificar-motivo", "Endpoint protegido sin Authorization.", body=desc,
-           codigo=401, tipo="no_autenticado")
-    c.caso("clasificar 403 centro", "POST", A + "/clasificar-motivo", "Rol sin permiso.", rol="centro", body=desc, codigo=403, tipo="sin_permiso")
-
-    c.carpeta("02 Sincronizar y Pareto")
-    c.caso("sincronizar 403 cliente", "POST", A + "/sincronizar", "Solo Administrador y Analista.", rol="cliente", body={},
-           codigo=403, tipo="sin_permiso")
-    c.caso("sincronizar 401 sin token", "POST", A + "/sincronizar", "Endpoint protegido sin Authorization.", body={}, codigo=401, tipo="no_autenticado")
-    c.caso("sincronizar 200 exitoso", "POST", A + "/sincronizar", "RF-23: proyecta las devoluciones de PostgreSQL a MongoDB (snapshots).",
-           rol="analista", body={}, tests=[tj("sincronizo casos", "J.casos_sincronizados >= 0 && J.version_cache > 0")],
-           explica="No modifica PostgreSQL. Hace upsert por devolucion en `resultados_analisis`, marca no vigentes los desaparecidos y "
-                   "sube la version del cache en Redis, lo que invalida el Pareto anterior.",
-           pg="`SELECT count(*) FROM devoluciones WHERE eliminado_en IS NULL;` (debe coincidir con `casos_sincronizados`).",
-           mongo="`db.resultados_analisis.countDocuments({tipo_analisis:'snapshot_devolucion', vigente:true})` y "
-                 "`db.resultados_analisis.getIndexes()` (idx_snapshot_devolucion_unico, idx_tipo_fecha).",
-           redis="`GET devoluciones:analisis:version` aumento en 1; `TTL` cerca de 86400 s.")
-    c.caso("pareto 200 miss", "GET", A + "/pareto?dimension=motivo&medida=frecuencia", "RF-25, RNF-19: primer calculo tras sincronizar, "
-           "con aggregate real en MongoDB.", rol="analista",
-           tests=[tj("cache miss", 'J.cache === "miss" && Array.isArray(J.categorias)')],
-           explica="Pipeline `$match` -> `$group` -> `$sort` sobre los snapshots vigentes; guarda el resultado en MongoDB y en Redis (10 min).",
-           mongo="`db.resultados_analisis.aggregate([{$match:{tipo_analisis:'snapshot_devolucion',vigente:true}},{$group:{_id:'$motivo',total:{$sum:1}}},{$sort:{total:-1}}])` "
-                 "y `db.resultados_analisis.find({tipo_analisis:'pareto'}).sort({fecha_calculo:-1}).limit(1)`.",
-           redis="`KEYS devoluciones:cache:causas:*`, `GET` de la clave (JSON) y `TTL` <= 600.")
-    c.caso("pareto 200 hit", "GET", A + "/pareto?dimension=motivo&medida=frecuencia", "Misma consulta: ahora sale del cache de Redis.",
-           rol="analista", tests=[tj("cache hit", 'J.cache === "hit"')],
-           redis="El `TTL` de la clave ya no es 600 (va bajando); no se creo una clave nueva.")
-    c.caso("pareto 200 XML por proveedor y costo", "GET", A + "/pareto?dimension=proveedor&medida=costo", "Otra dimension y medida; XML.",
-           rol="admin", accept="xml")
-    c.caso("pareto 400 dimension desconocida", "GET", A + "/pareto?dimension=color", "Dimension fuera de la lista.", rol="analista",
-           codigo=400, tipo="validacion")
-    c.caso("pareto 400 fecha invalida", "GET", A + "/pareto?desde=ayer", "desde debe usar AAAA-MM-DD.", rol="analista", codigo=400, tipo="validacion")
-    c.caso("pareto 400 rango invertido", "GET", A + "/pareto?desde=2026-12-31&hasta=2026-01-01", "hasta no puede ser menor que desde.",
-           rol="analista", codigo=400, tipo="validacion")
-    c.caso("pareto 403 cliente", "GET", A + "/pareto", "Solo Administrador y Analista.", rol="cliente", codigo=403, tipo="sin_permiso")
-    c.caso("pareto 401 token invalido", "GET", A + "/pareto", "JWT sin firma valida.", rol="falso", codigo=401, tipo="token_invalido")
-
-    c.carpeta("03 Resumen, alertas y eventos")
-    c.caso("resumen 200", "GET", A + "/resumen", "Cuantos casos y reportes hay en MongoDB.", rol="analista",
-           tests=[tj("trae contadores", "J.casos_sincronizados >= 0")])
-    c.caso("resumen 403 cliente", "GET", A + "/resumen", "Rol sin permiso.", rol="cliente", codigo=403, tipo="sin_permiso")
-    c.caso("alertas 200", "GET", A + "/alertas-fraude", "RF-25, RN-09: senales de revision humana; no acusan ni bloquean.", rol="analista",
-           tests=[tj("aviso de no determinacion", "!!J.aviso")],
-           pg="Misma agregacion sobre `devoluciones` y `reembolsos` de los ultimos 90 dias.")
-    c.caso("alertas 200 XML", "GET", A + "/alertas-fraude", "Respuesta XML.", rol="admin", accept="xml")
-    c.caso("alertas 403 cliente", "GET", A + "/alertas-fraude", "Rol sin permiso.", rol="cliente", codigo=403, tipo="sin_permiso")
-    c.caso("eventos 200 paginado", "GET", A + "/eventos?pagina=1&por_pagina=5", "RNF-23: eventos publicados por los servicios.", rol="analista",
-           tests=[tj("trae paginacion", "J.paginacion.por_pagina === 5")],
-           mongo="`db.eventos.find({}, {datos: 0}).sort({fecha: -1}).limit(5)` y `db.eventos.getIndexes()` (idx_correlation, idx_fecha).")
-    c.caso("eventos 200 XML", "GET", A + "/eventos?servicio=devoluciones", "Filtro por servicio; XML.", rol="admin", accept="xml")
-    c.caso("eventos 400 correlation_id largo", "GET", A + "/eventos?correlation_id=" + "a" * 101, "El filtro no puede superar 100 caracteres.",
-           rol="analista", codigo=400, tipo="validacion")
-    c.caso("eventos 400 paginacion invalida", "GET", A + "/eventos?por_pagina=0", "por_pagina fuera de rango.", rol="analista",
-           codigo=400, tipo="validacion")
-    c.caso("eventos 403 cliente", "GET", A + "/eventos", "Rol sin permiso.", rol="cliente", codigo=403, tipo="sin_permiso")
+    c.carpeta("01 Rutas de analisis retiradas (410)")
+    # El analisis salio de este servicio (RN-12, RNF-23): las rutas viejas responden 410 y
+    # dicen donde vive cada cosa; sirven para detectar clientes que no migraron.
+    for nombre, metodo, ruta in (
+            ("clasificar-motivo", "POST", "/clasificar-motivo"), ("sincronizar", "POST", "/sincronizar"),
+            ("pareto", "GET", "/pareto"), ("resumen", "GET", "/resumen"),
+            ("alertas-fraude", "GET", "/alertas-fraude"), ("eventos", "GET", "/eventos")):
+        c.caso(f"{nombre} 410 retirado", metodo, A + ruta,
+               "La ruta ya no se ofrece aqui: responde 410 servicio_movido con el servicio sucesor.",
+               rol="analista", body={} if metodo == "POST" else None, codigo=410, tipo="servicio_movido",
+               ep="/api/v1/analisis/{ruta}",
+               explica="Ver docs/MIGRACION_ANALISIS_8008.md: motivos en clasificacion-motivos, Pareto y alertas "
+                       "en reportes-analitica, eventos en /api/v1/auditoria/eventos.")
 
     c.carpeta("04 Auditoria (bitacora)")
     c.caso("bitacora 200 paginada", "GET", U + "?pagina=1&por_pagina=5", "RF-30, RN-12: bitacora de operaciones.", rol="analista",
