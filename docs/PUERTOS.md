@@ -1,8 +1,8 @@
-# Contenedores y puertos del tercer parcial (PROPUESTA)
+# Contenedores y puertos internos del tercer parcial
 
-> Estado: **propuesta para acordar en la reunion de arranque**. Nadie crea un
-> contenedor nuevo hasta que el equipo apruebe esta tabla, para que dos
-> personas no tomen el mismo puerto ni el mismo nombre.
+> Los números 8000–8021 identifican los servicios en desarrollo y en la
+> documentación histórica. En Docker todos escuchan en `8000` dentro de la red
+> privada y los clientes acceden exclusivamente mediante Nginx por 80/443.
 
 La retroalimentacion del segundo parcial pide cubrir 22 dominios funcionales,
 pero aclara que **no es obligatorio desplegar 22 contenedores**: se pueden
@@ -36,31 +36,27 @@ Los puertos 8009, 8012, 8015, 8016, 8019 y 8022 quedan **libres a proposito**:
 corresponden a dominios agrupados en otro contenedor. Conservar la numeracion de
 la retroalimentacion hace evidente que dominio absorbio a cual.
 
-## Firewall de GCP
+## Publicación y firewall de GCP
 
-Proyecto `integracion-505116`, red `default`. Solo se abren los puertos que tienen un
-servicio, y los microservicios solo para las IPs del equipo, no para todo internet:
+La configuración objetivo publica únicamente el reverse proxy:
 
-| Regla | Puertos | Origen |
-|---|---|---|
-| `permitir-8000-devoluciones` | tcp:8000 (monolito web) | cualquier IP |
-| `permitir-servicios-8001-8008` | tcp:8001-8008 (microservicios originales) | dos IPs del equipo |
-| `permitir-servicios-8010-8021` | tcp:8010, 8011, 8013, 8018, 8020 y 8021 (tercer parcial) | las mismas dos IPs |
+| Entrada | Puerto público | Destino | Origen recomendado |
+|---|---:|---|---|
+| HTTP | tcp:80 | Nginx; redirección a HTTPS cuando TLS está activo | Internet |
+| HTTPS | tcp:443 | Nginx; rutas web y API | Internet |
+| SSH | tcp:22 | administración de la VM | IPs administrativas |
 
-Verificado el 2026-11-22 desde una de esas IPs: el `/health` de los seis puertos nuevos
-responde 200 y 8009, 8012, 8014 y 8019 siguen cerrados. Desde otra IP no se ve nada: hay
-que sumarla a la regla (el comando reemplaza la lista completa, asi que se repiten las
-IPs actuales; se ven con `gcloud compute firewall-rules describe permitir-servicios-8010-8021`).
-Las IPs no se escriben en el repositorio.
+PostgreSQL, Redis y MongoDB se enlazan solamente a `127.0.0.1` para tareas de
+administración. Web y microservicios no publican puertos del host: usan
+`expose: 8000` en la red Docker interna `orvia_backend`.
 
-```bash
-gcloud compute firewall-rules update permitir-servicios-8010-8021 \
-  --source-ranges=IP_1/32,IP_2/32,IP_NUEVA/32
-```
+Las reglas históricas que permiten 8000–8021 deben deshabilitarse **después** de
+desplegar Nginx y comprobar los recorridos por 80/443. No se eliminan a ciegas:
+primero se ejecuta `scripts/probar_proxy.py`, se valida la app web y los clientes,
+y luego se comprueba desde una red externa que esos puertos ya no respondan.
 
-Al agregar un servicio con puerto nuevo, se agrega ese puerto a la regla correspondiente
-y se actualiza esta tabla. Antes decia que una regla `permitir-microservicios-david` abria
-8001-8021; esa regla no existe en el proyecto (se comprobo el 2026-11-22).
+Al agregar un servicio nuevo se crea su ruta en `infra/nginx/conf.d/`; no se abre
+otro puerto público. La matriz ejecutable está en `docs/REVERSE_PROXY.md`.
 
 ## Por que se agrupan
 

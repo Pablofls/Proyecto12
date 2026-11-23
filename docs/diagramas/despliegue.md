@@ -1,108 +1,72 @@
 # Diagrama de despliegue
 
-Nodo fisico: la maquina virtual de Google Compute Engine del equipo (CentOS
-Stream 10 con SELinux en `Enforcing`, segun `docs/BITACORA.md`). Todo corre en
-contenedores de un unico `docker-compose.yml`. Los puertos y la direccion de
-enlace salen literalmente del compose.
+Nodo físico: VM de Google Compute Engine con Docker Compose. Nginx es el único
+punto de entrada; las aplicaciones y microservicios sólo exponen el puerto 8000
+a la red interna `orvia_backend`.
 
-Trazabilidad: RNF-02, RNF-03, RNF-22, RNF-27.
+Trazabilidad: RNF-02, RNF-03, RNF-13, RNF-14, RNF-22, RNF-27.
 
 ```mermaid
 flowchart TB
-    INET(("Internet / red del equipo"))
+    CLIENTES["Navegador · Android · Escritorio · POS/ERP"]
+    FW{{"Firewall GCP<br/>80 / 443"}}
 
-    subgraph VM["VM de GCP - Compute Engine (Docker Engine + Docker Compose)"]
-        direction TB
-
-        NATIVO["PostgreSQL nativo de la VM<br/>:5432 (NO es del proyecto)"]
-
-        subgraph PUB["Publicados en 0.0.0.0 (accesibles segun el firewall de GCP)"]
-            APP["app (web) 0.0.0.0:8000 -> 8000"]
-            AUTH["auth 0.0.0.0:8001 -> 8000"]
-            DEV["devoluciones 0.0.0.0:8002 -> 8000"]
-            LOG["logistica 0.0.0.0:8003 -> 8000"]
-            INS["inspecciones 0.0.0.0:8004 -> 8000"]
-            REE["reembolsos-costos 0.0.0.0:8005 -> 8000"]
-            VEN["ventas-catalogos 0.0.0.0:8006 -> 8000"]
-            EVI["evidencias 0.0.0.0:8007 -> 8000"]
-            ANA["analisis-auditoria 0.0.0.0:8008 -> 8000"]
+    subgraph VM["VM GCP · Docker Compose"]
+        PROXY["Nginx reverse proxy<br/>HTTP :80 · HTTPS :443"]
+        subgraph BACKEND["orvia_backend · red interna"]
+            WEB["app web :8000"]
+            AUTH["auth :8000"]
+            FLUJO["devoluciones · logística · inspecciones<br/>reembolsos · evidencias :8000"]
+            CALIDAD["ventas/trazabilidad · motivos · proveedores<br/>causa raíz · reportes · auditoría :8000"]
+            SOPORTE["sincronización · integraciones/monitoreo :8000"]
+            PG[("PostgreSQL :5432")]
+            REDIS[("Redis :6379")]
+            MONGO[("MongoDB :27017")]
         end
-
-        subgraph LOCAL["Publicados solo en 127.0.0.1 (solo desde la propia VM)"]
-            PG[("postgres:16-alpine<br/>127.0.0.1:55432 -> 5432")]
-            RD[("redis:7-alpine<br/>127.0.0.1:56379 -> 6379")]
-            MG[("mongo:7<br/>127.0.0.1:57017 -> 27017")]
-        end
-
-        subgraph VOLS["Volumenes con nombre"]
-            V1[/"postgres_data"/]
-            V2[/"redis_data"/]
-            V3[/"mongo_data"/]
-            V4[/"evidencias_data"/]
-        end
-
-        RED{{"Red por defecto de Docker Compose<br/>DNS por nombre de servicio: postgres, redis, mongo, auth..."}}
+        LOCAL["Administración local VM<br/>127.0.0.1:55432 / 56379 / 57017"]
     end
 
-    INET -->|"HTTP :8000"| APP
-    INET -->|"HTTP :8001-8008<br/>(Swagger /docs, /health)"| AUTH
-    APP --- RED
-    AUTH --- RED
-    DEV --- RED
-    LOG --- RED
-    INS --- RED
-    REE --- RED
-    VEN --- RED
-    EVI --- RED
-    ANA --- RED
-    RED --- PG
-    RED --- RD
-    RED --- MG
-
-    PG --- V1
-    RD --- V2
-    MG --- V3
-    EVI --- V4
+    CLIENTES --> FW --> PROXY
+    PROXY --> WEB & AUTH & FLUJO & CALIDAD & SOPORTE
+    WEB & AUTH & FLUJO & CALIDAD & SOPORTE --> PG
+    AUTH & FLUJO & CALIDAD & SOPORTE --> REDIS
+    FLUJO & SOPORTE --> MONGO
+    LOCAL -.-> PG & REDIS & MONGO
 ```
 
-## Puertos
+## Puertos publicados
 
-| Contenedor | Puerto host | Enlace | Puerto interno | Comentario |
-|---|---:|---|---:|---|
-| app (web) | `${APP_PORT:-8000}` | `0.0.0.0` | 8000 | monta `./:/srv/app:z` (SELinux) |
-| auth | 8001 | `0.0.0.0` | 8000 | con `healthcheck` |
-| devoluciones | 8002 | `0.0.0.0` | 8000 | con `healthcheck` |
-| logistica | 8003 | `0.0.0.0` | 8000 | sin `healthcheck` en el compose |
-| inspecciones | 8004 | `0.0.0.0` | 8000 | sin `healthcheck` en el compose |
-| reembolsos-costos | 8005 | `0.0.0.0` | 8000 | sin `healthcheck` en el compose |
-| ventas-catalogos | 8006 | `0.0.0.0` | 8000 | con `healthcheck` |
-| evidencias | 8007 | `0.0.0.0` | 8000 | con `healthcheck`; volumen `evidencias_data` en `/srv/evidencias_privadas` |
-| analisis-auditoria | 8008 | `0.0.0.0` | 8000 | con `healthcheck` |
-| postgres | 55432 | `127.0.0.1` | 5432 | el 5432 de la VM lo ocupa un PostgreSQL nativo ajeno |
-| redis | 56379 | `127.0.0.1` | 6379 | `--appendonly yes` |
-| mongo | 57017 | `127.0.0.1` | 27017 | `init.js` solo corre con el volumen vacio |
+| Contenedor | Host | Contenedor | Alcance |
+|---|---:|---:|---|
+| proxy | `${PROXY_HTTP_PORT:-80}` | 8080 | público; redirige a TLS en la variante HTTPS |
+| proxy (TLS) | `${PROXY_HTTPS_PORT:-443}` | 8443 | público; certificado externo al repositorio |
+| postgres | 127.0.0.1:55432 | 5432 | administración local de la VM |
+| redis | 127.0.0.1:56379 | 6379 | administración local de la VM |
+| mongo | 127.0.0.1:57017 | 27017 | administración local de la VM |
 
-Los contenedores se hablan por la red interna de Compose usando el nombre del
-servicio y el puerto **interno** (por ejemplo `http://auth:8000`,
-`postgres:5432`); los puertos `55432/56379/57017` solo sirven para clientes
-ejecutados dentro de la VM.
+Web y microservicios usan `expose: 8000`, no `ports`; Docker DNS resuelve sus
+nombres únicamente dentro de `orvia_backend`. Nginx pertenece además a
+`orvia_public`, por lo que es el único puente entre Internet y el backend.
 
-Los servicios sin `healthcheck` en el compose (logistica, inspecciones,
-reembolsos-costos) igualmente exponen `GET /health`; el panel web
-`/integracion/servicios` consulta los ocho.
+## Enrutamiento
 
-## Volumenes
+- `/` → aplicación web.
+- `/api/v1/<dominio>` → microservicio propietario del contrato.
+- `/servicios/<nombre>/docs` → Swagger del servicio.
+- `/servicios/<nombre>/health` → health check del servicio.
+- `/proxy-health` → salud de Nginx sin dependencia del backend.
+
+La matriz completa está en `docs/REVERSE_PROXY.md` y la configuración ejecutable
+en `infra/nginx/`.
+
+## Volúmenes
 
 | Volumen | Montado en | Contenido |
 |---|---|---|
-| `postgres_data` | `/var/lib/postgresql/data` (postgres) | datos de PostgreSQL |
-| `redis_data` | `/data` (redis) | AOF de Redis |
-| `mongo_data` | `/data/db` (mongo) | datos de MongoDB |
-| `evidencias_data` | `/srv/evidencias_privadas` (evidencias) | archivos JPG/PNG/PDF con nombre aleatorio |
+| `postgres_data` | `/var/lib/postgresql/data` | datos transaccionales |
+| `redis_data` | `/data` | sesiones, revocación, caché y bloqueos |
+| `mongo_data` | `/data/db` | documentos y eventos |
+| `evidencias_data` | `/srv/evidencias_privadas` | archivos privados |
 
-> **EVIDENCIA PENDIENTE [EV-01]:** captura de `docker compose ps` en la VM con
-> los 12 contenedores y sus puertos. <!-- EVIDENCIA PENDIENTE: EV-01 docker compose ps -->
-
-> **EVIDENCIA PENDIENTE [EV-02]:** captura de las reglas de firewall de GCP y
-> de la VM en la consola de Compute Engine.
-> <!-- EVIDENCIA PENDIENTE: EV-02 firewall y VM en consola GCP -->
+La evidencia debe mostrar que sólo proxy publica 80/443 y que las API responden
+por `/servicios/`, no mediante 8001–8021.

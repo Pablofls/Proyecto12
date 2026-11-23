@@ -105,8 +105,8 @@ parte pendiente, `pendiente` si corresponde a un parcial posterior.
 | RNF-10 | Validar los datos antes de almacenarlos | Validacion en navegador y servidor en cada blueprint | implementado |
 | RNF-11 | Proteccion contra inyeccion SQL y XXE | Parametros ligados en `apps/web/app/db.py` y `shared/infra.py`; listas blancas en `catalogos.py` y `services/ventas_catalogos`; parser `lxml` sin entidades ni red en `shared/xsd.py`; XXE probado en la VM por E2E FMT-07 (400 `xml_invalido`, entidad no resuelta) | implementado |
 | RNF-12 | Registro de intentos fallidos y bloqueo | `apps/web/app/cache.py`, `db/migrations/004_control_accesos.sql` | implementado |
-| RNF-13 | Limitacion de peticiones | `shared/infra.py:limitar`; aplicado solo en `auth` (`/login`, `/refresh`) y `devoluciones` (alta). Los otros seis servicios y el web no limitan | parcial |
-| RNF-14 | Cifrado y secretos fuera del codigo | `.env` fuera de git, `apps/web/app/config.py` | parcial (falta HTTPS) |
+| RNF-13 | Limitacion de peticiones | `shared/infra.py:limitar` aplica reglas de negocio; Nginx agrega límite general y uno específico para login | implementado |
+| RNF-14 | Cifrado y secretos fuera del codigo | `.env` fuera de git; `docker-compose.tls.yml` termina TLS 1.2/1.3 en Nginx con certificados externos al repositorio | implementado al desplegar la variante TLS |
 | RNF-15 | Enlaces firmados para evidencias privadas | `services/evidencias`: enlace HMAC-SHA256 de 15 min (`GET /{id}/enlace`) sobre archivos en volumen privado; el bucket es logico, sin GCS todavia | parcial (falta GCS) |
 | RNF-16 | Ocultar informacion sensible | Mensaje de login generico; bitacora sin datos sensibles | implementado |
 | RNF-17 | Separacion por organizacion | No aplica en el alcance actual | pendiente |

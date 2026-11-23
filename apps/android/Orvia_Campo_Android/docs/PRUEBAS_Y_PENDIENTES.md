@@ -3,7 +3,7 @@
 ## Evidencia mínima para presentar al profesor
 
 - [ ] App compilada con Gradle `assembleDebug`; guardar nombre de APK, commit y captura de versión.
-- [ ] Login cliente por auth 8001; captura petición/respuesta censurando tokens.
+- [ ] Login cliente por `/api/v1/auth` a través del reverse proxy; captura petición/respuesta censurando tokens.
 - [ ] Lista de compras real (`ventas-catalogos` 8006), eligibilidad y alta válida en 8002.
 - [ ] Alta inválida: venta ajena o fuera de plazo. Comprobar HTTP 403/409 según contrato.
 - [ ] Cámara: fotografía JPG real; registro de archivo en 8007 con metadatos PostgreSQL/MongoDB.

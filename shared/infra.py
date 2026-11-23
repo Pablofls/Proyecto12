@@ -110,8 +110,16 @@ def limitar(recurso, maximo, ventana_seg, sujeto=None):
 # Utilidades
 # --------------------------------------------------------------------------- #
 def ip_origen():
-    # No se lee X-Forwarded-For: no hay proxy delante de los servicios y el
-    # cliente podria inventar ese header para saltarse el rate limit (RNF-13).
+    # Solo se confia en el ultimo salto cuando los puertos de los servicios no
+    # estan publicados y Nginx es el unico punto de entrada. Nginx agrega la IP
+    # que observo al final de X-Forwarded-For, por lo que una cabecera inventada
+    # por el cliente no sustituye esta posicion.
+    if os.environ.get("TRUST_PROXY_HEADERS", "false").lower() == "true":
+        reenviadas = request.headers.get("X-Forwarded-For", "")
+        if reenviadas:
+            candidata = reenviadas.rsplit(",", 1)[-1].strip()
+            if candidata:
+                return candidata[:64]
     return request.remote_addr or "-"
 
 

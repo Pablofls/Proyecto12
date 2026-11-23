@@ -128,30 +128,31 @@ docker compose exec -T postgres psql -U devoluciones_app -d devoluciones < db/se
 docker compose exec app python scripts/seed_demo.py
 ```
 
-Comprobar que responde:
+Comprobar que responde a través del único punto de entrada:
 
 ```bash
-curl -s localhost:8000/health
+curl -s localhost/proxy-health
+curl -s localhost/health
 ```
 
 Debe devolver `"estado": "ok"` con PostgreSQL y Redis en `true`.
 
 ### Abrir el puerto en GCP
 
-La aplicacion escucha en el puerto 8000. Para verla desde el navegador hay que
-permitir ese puerto en el firewall del proyecto de GCP:
+Nginx es el único componente público. Para HTTP/HTTPS se permiten únicamente
+los puertos 80 y 443:
 
 ```bash
-gcloud compute firewall-rules create permitir-8000 \
-  --allow=tcp:8000 --description="Monolito de devoluciones (primer parcial)"
+gcloud compute firewall-rules create permitir-orvia-web \
+  --allow=tcp:80,tcp:443 --description="Punto de entrada Orvia"
 ```
 
-Despues se entra en `http://IP_EXTERNA_DE_LA_VM:8000`.
+Después se entra en `http://IP_EXTERNA_DE_LA_VM` o al dominio HTTPS.
 
-Los microservicios (8001 a 8021) tienen sus propias reglas y solo aceptan las IPs del
-equipo; el detalle, como comprobarlo y como agregar una IP estan en `docs/PUERTOS.md`
-(seccion "Firewall de GCP"). Si desde tu casa un `/health` no responde, casi seguro tu
-IP no esta en la regla; desde la VM siempre responde con `localhost`.
+Los microservicios ya no publican `8001–8021`; Nginx los alcanza por la red
+interna. Swagger y health checks se consultan mediante
+`/servicios/<servicio>/docs` y `/servicios/<servicio>/health`. Consulte
+`docs/REVERSE_PROXY.md` para HTTPS, certificados y diagnóstico.
 
 PostgreSQL y Redis estan publicados solo en `127.0.0.1` dentro de la VM, asi que
 no quedan expuestos a internet aunque el puerto 8000 si lo este. Se publican en

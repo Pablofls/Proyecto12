@@ -3,6 +3,40 @@
 # compose en su laptop: desde casa se escribe codigo y se sube por git.
 
 services:
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: orvia_proxy
+    restart: unless-stopped
+    depends_on:
+      app: {condition: service_started}
+      auth: {condition: service_started}
+      devoluciones: {condition: service_started}
+      logistica: {condition: service_started}
+      inspecciones: {condition: service_started}
+      reembolsos-costos: {condition: service_started}
+      ventas-catalogos: {condition: service_started}
+      evidencias: {condition: service_started}
+      analisis-auditoria: {condition: service_started}
+      reportes-analitica: {condition: service_started}
+      causa-raiz: {condition: service_started}
+      sincronizacion: {condition: service_started}
+      proveedores: {condition: service_started}
+      integraciones-monitoreo: {condition: service_started}
+      clasificacion-motivos: {condition: service_started}
+    ports:
+      - "0.0.0.0:${PROXY_HTTP_PORT:-80}:8080"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro,z
+      - ./infra/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro,z
+      - ./infra/nginx/conf.d/orvia-http.conf:/etc/nginx/conf.d/orvia.conf:ro,z
+      - ./infra/nginx/snippets/proxy-common.conf:/etc/nginx/snippets/proxy-common.conf:ro,z
+    networks: [default, public]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/proxy-health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
   postgres:
     image: postgres:16-alpine
     container_name: devoluciones_postgres
@@ -84,8 +118,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "0.0.0.0:${APP_PORT:-8000}:8000"
+    expose: ["8000"]
     volumes:
       # La etiqueta :z reetiqueta el directorio para SELinux, que en CentOS
       # esta en modo Enforcing y de otro modo impide al contenedor leer el
@@ -94,7 +127,8 @@ services:
 
   # ------------------------------------------------------------------------ #
   # Microservicios (segundo parcial). Se construyen desde la raiz para poder
-  # copiar shared/. Exponen el puerto 8000 interno en 8001, 8002, ...
+  # copiar shared/. Todos exponen 8000 sólo en la red interna; Nginx conserva
+  # las rutas públicas estables sin revelar el puerto o contenedor de destino.
   # ------------------------------------------------------------------------ #
   auth:
     build:
@@ -108,8 +142,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "0.0.0.0:8001:8000"
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -126,7 +159,7 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
-    ports: ["0.0.0.0:8003:8000"]
+    expose: ["8000"]
 
   inspecciones:
     build:
@@ -139,7 +172,7 @@ services:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
       mongo: {condition: service_healthy}
-    ports: ["0.0.0.0:8004:8000"]
+    expose: ["8000"]
 
   disposicion-inventario:
     build:
@@ -168,7 +201,7 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
-    ports: ["0.0.0.0:8005:8000"]
+    expose: ["8000"]
 
   ventas-catalogos:
     build:
@@ -180,7 +213,7 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
-    ports: ["0.0.0.0:8006:8000"]
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -202,7 +235,7 @@ services:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
       mongo: {condition: service_healthy}
-    ports: ["0.0.0.0:8007:8000"]
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -220,7 +253,7 @@ services:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
       mongo: {condition: service_healthy}
-    ports: ["0.0.0.0:8008:8000"]
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -239,7 +272,7 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
-    ports: ["0.0.0.0:8018:8000"]
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -262,8 +295,7 @@ services:
         condition: service_healthy
       mongo:
         condition: service_healthy
-    ports:
-      - "0.0.0.0:8002:8000"
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -282,7 +314,7 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
-    ports: ["0.0.0.0:8011:8000"]
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -306,7 +338,7 @@ services:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
       mongo: {condition: service_healthy}
-    ports: ["0.0.0.0:8020:8000"]
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -325,7 +357,7 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
-    ports: ["0.0.0.0:8013:8000"]
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -348,7 +380,7 @@ services:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
       mongo: {condition: service_healthy}
-    ports: ["0.0.0.0:8021:8000"]
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -367,7 +399,7 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
-    ports: ["0.0.0.0:8010:8000"]
+    expose: ["8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 15s
@@ -379,3 +411,9 @@ volumes:
   redis_data:
   mongo_data:
   evidencias_data:
+
+networks:
+  default:
+    name: orvia_backend
+  public:
+    name: orvia_public

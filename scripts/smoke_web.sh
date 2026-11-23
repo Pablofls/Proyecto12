@@ -5,14 +5,14 @@
 # (campanita, formularios de resolucion). Sirve para comprobar un cambio de interfaz
 # antes y despues de integrarlo (RNF-25, RNF-26, RF-29).
 #
-#   bash scripts/smoke_web.sh                 # contra http://localhost:8000
-#   WEB=http://34.51.108.167:8000 bash scripts/smoke_web.sh
+#   bash scripts/smoke_web.sh                 # contra http://localhost vía Nginx
+#   WEB=https://orvia.example bash scripts/smoke_web.sh
 #   NUEVO_PANEL=1 bash scripts/smoke_web.sh   # tras integrar el rediseno: tambien /integracion/servicios/estado
 #
 # Requiere PASSWORD_DEMO en el .env (no se imprime). No modifica datos: solo GET.
 set -uo pipefail
 cd "$(dirname "$0")/.."
-WEB="${WEB:-http://localhost:8000}"
+WEB="${WEB:-http://localhost}"
 PASS="$(grep -E '^PASSWORD_DEMO=' .env | head -1 | cut -d= -f2-)"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 fallos=0; total=0
